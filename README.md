@@ -42,4 +42,4 @@ cd frontend
 GITHUB_PAGES=true npm run build
 ```
 
-Before the deploy workflow can publish, enable GitHub Pages for the repository and set the source to **GitHub Actions** in repository settings. The default workflow token cannot enable Pages on a new repository by itself.
+The deploy workflow publishes `frontend/dist` to the `gh-pages` branch. In GitHub Pages settings, use **Deploy from a branch** and select `gh-pages` / root. The first workflow run creates the branch.
