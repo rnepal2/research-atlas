@@ -1,0 +1,364 @@
+topics:
+  - slug: large-language-models
+    label: Large Language Models
+    domain: Physical Sciences
+    field: Computer Science
+    subfield: Artificial Intelligence
+    work_area: Generative AI / LLM
+    description: Large language models, transformers, foundation models, retrieval augmented generation, and evaluation.
+    openalex_topic_ids:
+      - https://openalex.org/T10028
+    keyword_queries:
+      - large language model
+      - transformer language model
+      - foundation model artificial intelligence
+      - language model evaluation
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: retrieval-augmented-generation
+    label: Retrieval Augmented Generation
+    domain: Physical Sciences
+    field: Computer Science
+    subfield: Artificial Intelligence
+    work_area: Generative AI / LLM
+    description: Retrieval-augmented generation, grounded generation, dense retrieval, vector search, and knowledge-intensive NLP.
+    openalex_topic_ids:
+      - https://openalex.org/T10028
+    keyword_queries:
+      - retrieval augmented generation
+      - retrieval-augmented generation
+      - dense retrieval language model
+      - knowledge intensive NLP
+    collection: { years_back: 10, max_works: 180 }
+
+  - slug: ai-agents
+    label: AI Agents
+    domain: Physical Sciences
+    field: Computer Science
+    subfield: Artificial Intelligence
+    work_area: Generative AI / LLM
+    description: Autonomous agents, tool-using language models, planning, multi-agent systems, and agentic workflows.
+    openalex_topic_ids: []
+    keyword_queries:
+      - autonomous AI agents
+      - language model agents
+      - tool using language models
+      - multi-agent systems artificial intelligence
+    collection: { years_back: 10, max_works: 180 }
+
+  - slug: graph-neural-networks
+    label: Graph Neural Networks
+    domain: Physical Sciences
+    field: Computer Science
+    subfield: Artificial Intelligence
+    work_area: AI Methods
+    description: Graph neural networks, graph representation learning, graph transformers, and geometric deep learning.
+    openalex_topic_ids:
+      - https://openalex.org/T11273
+    keyword_queries:
+      - graph neural networks
+      - graph representation learning
+      - geometric deep learning
+    collection: { years_back: 10, max_works: 180 }
+
+  - slug: reinforcement-learning
+    label: Reinforcement Learning
+    domain: Physical Sciences
+    field: Computer Science
+    subfield: Artificial Intelligence
+    work_area: AI Methods
+    description: Reinforcement learning, decision processes, robotics control, policy optimization, and agent learning.
+    openalex_topic_ids:
+      - https://openalex.org/T10462
+    keyword_queries:
+      - reinforcement learning
+      - policy optimization reinforcement learning
+      - deep reinforcement learning robotics
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: causal-inference
+    label: Causal Inference
+    domain: Physical Sciences
+    field: Mathematics
+    subfield: Statistics and Probability
+    work_area: AI Methods
+    description: Causal inference, treatment effects, causal discovery, counterfactual modeling, and Bayesian causal methods.
+    openalex_topic_ids:
+      - https://openalex.org/T10845
+    keyword_queries:
+      - causal inference
+      - causal discovery machine learning
+      - heterogeneous treatment effects
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: computer-vision
+    label: Computer Vision
+    domain: Physical Sciences
+    field: Computer Science
+    subfield: Computer Vision and Pattern Recognition
+    work_area: AI Methods
+    description: Deep learning for vision, recognition, detection, segmentation, multimodal perception, and visual representation learning.
+    openalex_topic_ids:
+      - https://openalex.org/T10036
+    keyword_queries:
+      - computer vision deep learning
+      - vision transformer
+      - image segmentation deep learning
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: multiple-myeloma
+    label: Multiple Myeloma
+    domain: Health Sciences
+    field: Medicine
+    subfield: Hematology
+    work_area: Oncology
+    description: Diagnosis, molecular classification, therapies, minimal residual disease, and treatment outcomes in multiple myeloma.
+    openalex_topic_ids:
+      - https://openalex.org/T10649
+    keyword_queries:
+      - multiple myeloma minimal residual disease
+      - multiple myeloma immunotherapy
+      - myeloma proteasome inhibitor
+    collection: { years_back: 10, max_works: 180 }
+
+  - slug: cancer-immunotherapy
+    label: Cancer Immunotherapy
+    domain: Health Sciences
+    field: Medicine
+    subfield: Oncology
+    work_area: Oncology
+    description: Immune checkpoint blockade, tumor immune response, biomarkers, and immunotherapy outcomes.
+    openalex_topic_ids:
+      - https://openalex.org/T10158
+    keyword_queries:
+      - cancer immunotherapy biomarkers
+      - immune checkpoint blockade
+      - tumor immune microenvironment
+    collection: { years_back: 10, max_works: 180 }
+
+  - slug: car-t-cell-therapy
+    label: CAR-T Cell Therapy
+    domain: Health Sciences
+    field: Medicine
+    subfield: Oncology
+    work_area: Oncology
+    description: CAR-T therapies, engineered T cells, hematologic malignancies, toxicity, and treatment response.
+    openalex_topic_ids:
+      - https://openalex.org/T11491
+    keyword_queries:
+      - CAR T cell therapy
+      - chimeric antigen receptor T cell
+      - CAR-T toxicity cytokine release syndrome
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: lung-cancer
+    label: Lung Cancer
+    domain: Health Sciences
+    field: Medicine
+    subfield: Pulmonary and Respiratory Medicine
+    work_area: Oncology
+    description: Lung cancer diagnosis, targeted treatment, mutations, immunotherapy, and clinical outcomes.
+    openalex_topic_ids:
+      - https://openalex.org/T10202
+      - https://openalex.org/T10417
+    keyword_queries:
+      - non-small cell lung cancer immunotherapy
+      - lung cancer targeted therapy EGFR ALK
+    collection: { years_back: 10, max_works: 180 }
+
+  - slug: breast-cancer
+    label: Breast Cancer
+    domain: Life Sciences
+    field: Biochemistry, Genetics and Molecular Biology
+    subfield: Cancer Research
+    work_area: Oncology
+    description: Breast cancer treatments, hormone receptor biology, biomarkers, genomics, and metastatic disease.
+    openalex_topic_ids:
+      - https://openalex.org/T10183
+    keyword_queries:
+      - breast cancer treatment biomarkers
+      - metastatic breast cancer therapy
+      - HER2 breast cancer
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: colorectal-cancer
+    label: Colorectal Cancer
+    domain: Health Sciences
+    field: Medicine
+    subfield: Oncology
+    work_area: Oncology
+    description: Colorectal cancer screening, detection, genetics, treatment, and surgical outcomes.
+    openalex_topic_ids:
+      - https://openalex.org/T10552
+    keyword_queries:
+      - colorectal cancer screening detection
+      - colorectal cancer biomarkers
+      - colorectal cancer immunotherapy
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: immunology
+    label: T-cell and B-cell Immunology
+    domain: Life Sciences
+    field: Immunology and Microbiology
+    subfield: Immunology
+    work_area: Immunology
+    description: T-cell and B-cell function, adaptive immunity, immune regulation, and disease mechanisms.
+    openalex_topic_ids:
+      - https://openalex.org/T10031
+    keyword_queries:
+      - T cell B cell immunology
+      - adaptive immunity immune regulation
+      - immune cell signaling
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: pulmonary-hypertension
+    label: Pulmonary Hypertension
+    domain: Health Sciences
+    field: Medicine
+    subfield: Pulmonary and Respiratory Medicine
+    work_area: Cardiopulmonary
+    description: Pulmonary hypertension and PAH mechanisms, treatment, vascular remodeling, and clinical outcomes.
+    openalex_topic_ids:
+      - https://openalex.org/T10728
+    keyword_queries:
+      - pulmonary arterial hypertension
+      - PAH pulmonary hypertension
+      - pulmonary vascular remodeling
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: alzheimers-disease
+    label: Alzheimer's Disease
+    domain: Health Sciences
+    field: Medicine
+    subfield: Neurology
+    work_area: Neuroscience
+    description: Alzheimer's disease, amyloid, tau, neurodegeneration, biomarkers, and disease-modifying therapy.
+    openalex_topic_ids: []
+    keyword_queries:
+      - Alzheimer's disease amyloid tau
+      - Alzheimer disease biomarkers
+      - Alzheimer's disease disease modifying therapy
+      - neurodegeneration Alzheimer's
+    collection: { years_back: 10, max_works: 180 }
+
+  - slug: crispr
+    label: CRISPR and Genetic Engineering
+    domain: Life Sciences
+    field: Biochemistry, Genetics and Molecular Biology
+    subfield: Molecular Biology
+    work_area: Genomics
+    description: CRISPR systems, gene editing, genome engineering, delivery, and therapeutic applications.
+    openalex_topic_ids:
+      - https://openalex.org/T10878
+    keyword_queries:
+      - CRISPR gene editing
+      - genome engineering CRISPR
+      - CRISPR therapeutics
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: spatial-transcriptomics
+    label: Spatial Transcriptomics
+    domain: Life Sciences
+    field: Biochemistry, Genetics and Molecular Biology
+    subfield: Molecular Biology
+    work_area: Genomics
+    description: Spatially resolved transcriptomic profiling, single-cell spatial methods, tissue atlases, and computational analysis.
+    openalex_topic_ids:
+      - https://openalex.org/T11289
+    keyword_queries:
+      - spatial transcriptomics
+      - spatially resolved transcriptomics
+      - single-cell spatial profiling
+    collection: { years_back: 10, max_works: 180 }
+
+  - slug: quantum-computing
+    label: Quantum Computing
+    domain: Physical Sciences
+    field: Computer Science
+    subfield: Artificial Intelligence
+    work_area: Physics
+    description: Quantum computing algorithms, architectures, error correction, quantum information, and quantum hardware.
+    openalex_topic_ids:
+      - https://openalex.org/T10682
+    keyword_queries:
+      - quantum computing algorithms architecture
+      - quantum error correction
+      - quantum information processing
+    collection: { years_back: 10, max_works: 180 }
+
+  - slug: quantum-materials
+    label: Quantum Materials
+    domain: Physical Sciences
+    field: Physics and Astronomy
+    subfield: Atomic and Molecular Physics, and Optics
+    work_area: Physics
+    description: Quantum structures, devices, transport phenomena, semiconductors, and materials for quantum technologies.
+    openalex_topic_ids:
+      - https://openalex.org/T10022
+    keyword_queries:
+      - quantum materials
+      - semiconductor quantum structures
+      - topological quantum materials
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: condensed-matter-physics
+    label: Condensed Matter Physics
+    domain: Physical Sciences
+    field: Physics and Astronomy
+    subfield: Condensed Matter Physics
+    work_area: Physics
+    description: Advanced condensed matter systems, electronic structure, superconductivity, topology, and correlated materials.
+    openalex_topic_ids:
+      - https://openalex.org/T11682
+    keyword_queries:
+      - condensed matter physics
+      - correlated electron systems
+      - superconductivity condensed matter
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: particle-physics
+    label: Particle Physics
+    domain: Physical Sciences
+    field: Physics and Astronomy
+    subfield: Nuclear and High Energy Physics
+    work_area: Physics
+    description: Theoretical and experimental particle physics, high-energy collisions, detectors, and fundamental interactions.
+    openalex_topic_ids:
+      - https://openalex.org/T10048
+    keyword_queries:
+      - particle physics experiment theory
+      - high energy physics detector
+      - standard model particle physics
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: battery-materials
+    label: Battery Materials
+    domain: Physical Sciences
+    field: Engineering
+    subfield: Electrical and Electronic Engineering
+    work_area: Materials
+    description: Battery materials, electrodes, electrolytes, lithium-ion and next-generation battery technologies.
+    openalex_topic_ids:
+      - https://openalex.org/T10018
+      - https://openalex.org/T10281
+    keyword_queries:
+      - battery materials
+      - solid state battery materials
+      - lithium ion battery cathode electrolyte
+    collection: { years_back: 10, max_works: 180 }
+
+  - slug: fusion-plasma
+    label: Fusion and Plasma Physics
+    domain: Physical Sciences
+    field: Physics and Astronomy
+    subfield: Nuclear and High Energy Physics
+    work_area: Physics
+    description: Plasma physics, laser-plasma interactions, fusion diagnostics, confinement, and high-energy plasma systems.
+    openalex_topic_ids:
+      - https://openalex.org/T10384
+    keyword_queries:
+      - fusion energy plasma physics
+      - magnetic confinement fusion
+      - laser plasma diagnostics
+    collection: { years_back: 10, max_works: 160 }
+

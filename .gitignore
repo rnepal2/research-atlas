@@ -1,0 +1,16 @@
+.DS_Store
+__pycache__/
+*.pyc
+
+/.cache/
+/.venv/
+
+/data/raw/
+/data/processed/*/
+!/data/processed/
+!/data/processed/atlas.json
+
+/frontend/dist/
+/frontend/node_modules/
+/frontend/public/data/
+data/raw/*.jsonl
