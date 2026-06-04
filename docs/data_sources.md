@@ -1,35 +1,36 @@
 # Data Sources
 
-## OpenAlex
+Research Atlas currently uses OpenAlex only.
 
-Primary source: OpenAlex API and OpenAlex Topics.
+## Snapshot
 
-Research Atlas uses:
+- 51 curated topic profiles
+- 3 OpenAlex-aligned domains: Physical Sciences, Health Sciences, Life Sciences
+- Compact published artifact: `data/processed/atlas.json`
+- Synced frontend copy: `frontend/public/data/atlas.json`
+- Raw OpenAlex JSONL and API cache files stay local and are not committed
+
+## OpenAlex Entities
+
+The pipeline collects and derives product data from:
 
 - Works
+- Topics and topic metadata
 - Authors through work authorships
 - Institutions through work authorships
-- Sources through primary locations
-- Topics through `primary_topic` and `topics`
+- Countries through institution country codes
+- Sources through primary work locations
 
-API behavior encoded in the collector:
+The collector supports `OPENALEX_API_KEY`, cursor pagination, retries, rate limiting, local caching, topic-id filters, and keyword fallback queries for newer or fuzzier areas.
 
-- `OPENALEX_API_KEY` is passed as `api_key=...`
-- Cursor pagination is used for works
-- Topic filters use `topics.id`
-- Keyword fallback uses OpenAlex work search
-- Raw JSONL stays local by default
-- Processed JSON artifacts are compact enough for GitHub Pages
+## Refresh
 
-## Optional Future Sources
+```bash
+./src/refresh_data.sh --max-works 260
+```
 
-Potential enrichment sources:
+Set `OPENALEX_API_KEY` before production refreshes when possible. Public OpenAlex access works for development, but an API key is more reliable for larger runs.
 
-- Crossref for DOI metadata checks
-- NIH RePORTER for biomedical grant context
-- PubMed for MeSH terms in biomedical domains
-- ROR for institution metadata
-- OpenCitations for citation enrichment
+## Future Enrichment
 
-These are intentionally out of scope for the MVP.
-
+Good next sources are Crossref for DOI checks, PubMed for biomedical indexing, NIH RePORTER for grant context, ROR for institution metadata, and OpenCitations for citation graph enrichment.

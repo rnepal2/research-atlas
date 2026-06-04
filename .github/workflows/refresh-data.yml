@@ -29,7 +29,7 @@ jobs:
       - name: Refresh static artifact
         env:
           OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
-        run: python scripts/refresh_data.py --max-works "${{ inputs.max_works }}"
+        run: ./src/refresh_data.sh --max-works "${{ inputs.max_works }}"
 
       - name: Commit refreshed artifact
         uses: stefanzweifel/git-auto-commit-action@v5

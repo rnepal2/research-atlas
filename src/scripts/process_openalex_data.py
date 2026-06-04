@@ -11,7 +11,7 @@ from typing import Any
 
 import yaml
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from src.analytics.network_metrics import betweenness_centrality, coauthor_edges, degree_centrality

@@ -22,7 +22,7 @@ export function TopicSelector({ atlas, selected, onChange }: TopicSelectorProps)
   }
 
   return (
-    <div className="selector-grid">
+    <div className="grid grid-cols-[minmax(180px,0.85fr)_minmax(220px,1fr)_minmax(280px,1.25fr)] gap-3.5 max-[1160px]:grid-cols-2 max-[760px]:grid-cols-1">
       <SelectField
         label="OpenAlex domain"
         value={selected.domain}

@@ -52,16 +52,21 @@ export function TrendChart({ rows }: TrendChartProps) {
   const xTicks = visibleRows.filter((_, index) => index % 2 === 0 || index === visibleRows.length - 1)
 
   return (
-    <div className="chart-frame">
-      <div className="chart-controls" aria-label="Publication trend range">
-        <Button variant={range === '5y' ? 'default' : 'ghost'} size="sm" type="button" onClick={() => setRange('5y')}>
-          5Y
-        </Button>
-        <Button variant={range === '10y' ? 'default' : 'ghost'} size="sm" type="button" onClick={() => setRange('10y')}>
-          10Y
-        </Button>
+    <div className="min-h-[326px] max-[760px]:min-h-[300px]">
+      <div className="mb-2 flex justify-end">
+        <div
+          className="inline-flex gap-1 rounded-[7px] border border-border bg-[color-mix(in_srgb,var(--card-solid)_82%,transparent)] p-[3px]"
+          aria-label="Publication trend range"
+        >
+          <Button className="min-h-[26px] px-[9px] text-[0.68rem]" variant={range === '5y' ? 'default' : 'ghost'} size="sm" type="button" onClick={() => setRange('5y')}>
+            5Y
+          </Button>
+          <Button className="min-h-[26px] px-[9px] text-[0.68rem]" variant={range === '10y' ? 'default' : 'ghost'} size="sm" type="button" onClick={() => setRange('10y')}>
+            10Y
+          </Button>
+        </div>
       </div>
-      <svg className="chart-svg" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Publication and citation velocity trend">
+      <svg className="w-full" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Publication and citation velocity trend">
         <defs>
           <linearGradient id="works-area-gradient" x1="0" x2="0" y1="0" y2="1">
             <stop offset="0%" stopColor="var(--chart-primary)" stopOpacity="0.28" />
@@ -70,39 +75,39 @@ export function TrendChart({ rows }: TrendChartProps) {
         </defs>
         {yTicks.map((tick) => (
           <g key={tick}>
-            <line className="chart-grid-line" x1={margin.left} x2={width - margin.right} y1={yWorks(tick)} y2={yWorks(tick)} />
-            <text className="axis-label" x={margin.left - 12} y={yWorks(tick) + 4} textAnchor="end">
+            <line className="stroke-[color-mix(in_srgb,var(--foreground)_16%,transparent)] [stroke-width:1]" x1={margin.left} x2={width - margin.right} y1={yWorks(tick)} y2={yWorks(tick)} />
+            <text className="fill-muted-foreground text-[11px]" x={margin.left - 12} y={yWorks(tick) + 4} textAnchor="end">
               {formatCompact(tick)}
             </text>
           </g>
         ))}
         {velocityTicks.map((tick) => (
-          <text key={tick} className="axis-label axis-label-right" x={width - margin.right + 14} y={yVelocity(tick) + 4}>
+          <text key={tick} className="fill-[color-mix(in_srgb,var(--chart-secondary)_72%,var(--muted-foreground))] text-[11px]" x={width - margin.right + 14} y={yVelocity(tick) + 4}>
             {formatCompact(tick)}
           </text>
         ))}
         {xTicks.map((row) => (
-          <text key={row.year} className="axis-label" x={x(row.year)} y={height - 8} textAnchor="middle">
+          <text key={row.year} className="fill-muted-foreground text-[11px]" x={x(row.year)} y={height - 8} textAnchor="middle">
             {row.year}
           </text>
         ))}
-        <text className="axis-title" x={margin.left} y={15}>
+        <text className="fill-[color-mix(in_srgb,var(--foreground)_74%,transparent)] text-[11px] font-bold" x={margin.left} y={15}>
           Works
         </text>
-        <text className="axis-title axis-title-right" x={width - margin.right} y={15} textAnchor="end">
+        <text className="fill-[color-mix(in_srgb,var(--chart-secondary)_72%,var(--muted-foreground))] text-[11px] font-bold" x={width - margin.right} y={15} textAnchor="end">
           Citation velocity
         </text>
-        <path className="area-works" d={workArea} />
-        {citationLine && <path className="line-citations" d={citationLine} />}
-        {workLine && <path className="line-works" d={workLine} />}
+        <path className="fill-[url(#works-area-gradient)]" d={workArea} />
+        {citationLine && <path className="fill-none stroke-chart-secondary [stroke-dasharray:5_6] [stroke-width:2.4]" d={citationLine} />}
+        {workLine && <path className="fill-none stroke-chart-primary [stroke-width:3.2]" d={workLine} />}
         {visibleRows.map((row) => (
           <g key={row.year}>
-            <circle className="chart-dot" cx={x(row.year)} cy={yWorks(row.works)} r={4.5}>
+            <circle className="fill-card-solid stroke-chart-primary [stroke-width:2.2]" cx={x(row.year)} cy={yWorks(row.works)} r={4.5}>
               <title>
                 {row.year}: {formatCompact(row.works)} works
               </title>
             </circle>
-            <circle className="chart-dot chart-dot-velocity" cx={x(row.year)} cy={yVelocity(row.citationVelocity)} r={3.5}>
+            <circle className="fill-card-solid stroke-chart-secondary [stroke-width:2.2]" cx={x(row.year)} cy={yVelocity(row.citationVelocity)} r={3.5}>
               <title>
                 {row.year}: {formatCompact(row.citationVelocity)} citation velocity
               </title>
@@ -110,13 +115,13 @@ export function TrendChart({ rows }: TrendChartProps) {
           </g>
         ))}
       </svg>
-      <div className="legend">
-        <span>
-          <span className="dot" />
+      <div className="-mt-1 flex items-center gap-4 text-[0.74rem] text-muted-foreground">
+        <span className="inline-flex items-center gap-[7px]">
+          <span className="size-[7px] rounded-full bg-primary" />
           Works
         </span>
-        <span>
-          <span className="dot coral" />
+        <span className="inline-flex items-center gap-[7px]">
+          <span className="size-[7px] rounded-full bg-accent-2" />
           Citation velocity
         </span>
       </div>

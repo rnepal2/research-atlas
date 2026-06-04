@@ -7,7 +7,8 @@ import sys
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
+SCRIPT_DIR = Path(__file__).resolve().parent
 
 
 def run(command: list[str]) -> None:
@@ -31,7 +32,7 @@ def main() -> None:
     if not args.skip_collect:
         collect = [
             sys.executable,
-            "scripts/collect_openalex_data.py",
+            str(SCRIPT_DIR / "collect_openalex_data.py"),
             "--config",
             args.config,
             "--output-dir",
@@ -47,7 +48,7 @@ def main() -> None:
 
     process = [
         sys.executable,
-        "scripts/process_openalex_data.py",
+        str(SCRIPT_DIR / "process_openalex_data.py"),
         "--config",
         args.config,
         "--raw-dir",
@@ -60,8 +61,8 @@ def main() -> None:
     run(process)
 
     artifact = str(Path(args.processed_dir) / "atlas.json")
-    run([sys.executable, "scripts/validate_static_data.py", "--artifact", artifact])
-    run([sys.executable, "scripts/sync_public_data.py", "--source", artifact, "--target", args.public_artifact])
+    run([sys.executable, str(SCRIPT_DIR / "validate_static_data.py"), "--artifact", artifact])
+    run([sys.executable, str(SCRIPT_DIR / "sync_public_data.py"), "--source", artifact, "--target", args.public_artifact])
 
 
 if __name__ == "__main__":

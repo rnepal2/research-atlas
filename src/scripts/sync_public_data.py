@@ -6,7 +6,7 @@ import shutil
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def main() -> None:
@@ -18,7 +18,7 @@ def main() -> None:
     source = Path(args.source)
     target = Path(args.target)
     if not source.exists():
-        raise SystemExit(f"Missing {source}; run scripts/process_openalex_data.py first.")
+        raise SystemExit(f"Missing {source}; run src/scripts/process_openalex_data.py first.")
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(source, target)
     print(f"Copied {source} -> {target}")

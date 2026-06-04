@@ -1,6 +1,22 @@
 import { Activity, ArrowUpRight, Filter } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, SelectField, ScrollArea } from '../components/ui'
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  ScrollArea,
+  SelectField,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../components/ui'
 import type { AtlasData } from '../data/types'
 import { formatNumber, formatPercent, formatScore } from '../lib/format'
 import { navigate } from '../lib/router'
@@ -8,6 +24,17 @@ import { navigate } from '../lib/router'
 interface TrendingPageProps {
   atlas: AtlasData
 }
+
+const tableClass =
+  'min-w-[760px] border-collapse [&_strong]:font-[650] [&_strong]:text-foreground'
+const headClass =
+  'sticky top-0 z-[2] h-auto border-b border-border bg-[linear-gradient(180deg,color-mix(in_srgb,var(--card-solid)_96%,transparent),color-mix(in_srgb,var(--card-solid)_90%,transparent))] px-2 py-[9px] text-left text-[0.66rem] font-bold tracking-[0] text-muted-foreground uppercase backdrop-blur-[14px]'
+const cellClass =
+  'border-b border-border px-2 py-[9px] text-[0.79rem] leading-[1.35] whitespace-normal text-[color-mix(in_srgb,var(--foreground)_82%,var(--muted-foreground))]'
+const rowClass = 'transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_5%,transparent)]'
+
+const scorePillClass =
+  'inline-flex h-[26px] min-w-11 items-center justify-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--primary)_18%,transparent)] px-[7px] text-[0.74rem] font-bold text-primary [&_svg]:size-4'
 
 export function TrendingPage({ atlas }: TrendingPageProps) {
   const [domain, setDomain] = useState('All domains')
@@ -18,16 +45,16 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
   )
 
   return (
-    <div className="page">
-      <section className="page-heading">
-        <div>
-          <h1 className="page-title">Trending Intelligence</h1>
-          <p className="page-intro">
+    <div className="grid min-w-0 gap-3">
+      <section className="flex min-w-0 items-start justify-between gap-[18px] max-[760px]:flex-col max-[760px]:items-stretch">
+        <div className="min-w-0">
+          <h1 className="m-0 font-display text-[clamp(1.7rem,2.08vw,1.9rem)] leading-[1.2] font-[740] tracking-[0]">Trending Intelligence</h1>
+          <p className="mt-2 mb-0 max-w-[820px] text-[0.91rem] leading-[1.55] text-muted-foreground [overflow-wrap:anywhere]">
             Topic momentum normalized away from raw field size, with filters by OpenAlex domain and direct paths into the Atlas view.
           </p>
         </div>
         <SelectField
-          className="compact-select"
+          className="w-[min(260px,100%)] shrink-0 max-[760px]:w-full"
           label="Filter"
           value={domain}
           onValueChange={setDomain}
@@ -35,16 +62,29 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
         />
       </section>
 
-      <section className="frontier-grid">
+      <section className="grid grid-cols-4 gap-2.5 max-[1160px]:grid-cols-2 max-[760px]:grid-cols-1">
         {rows.slice(0, 4).map((topic, index) => (
-          <Card className="frontier-card" key={topic.slug}>
-            <CardContent>
-              <Badge variant={index === 0 ? 'default' : 'secondary'}>Rank {index + 1}</Badge>
-              <h3>{topic.label}</h3>
-              <span className="frontier-value">{formatScore(topic.trendScore)}</span>
-              <p className="muted">
-                {topic.domain} / {topic.workArea}
-              </p>
+          <Card
+            className="group relative min-h-[152px] overflow-hidden bg-[linear-gradient(145deg,color-mix(in_srgb,var(--primary)_7%,transparent),transparent_56%),var(--card)] hover:border-[color-mix(in_srgb,var(--primary)_34%,var(--border))]"
+            key={topic.slug}
+          >
+            <span className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,var(--primary),transparent)] opacity-80" />
+            <CardContent className="grid min-h-[152px] content-between gap-4">
+              <div className="flex items-center justify-between gap-2">
+                <Badge variant={index === 0 ? 'default' : 'outline'}>#{String(index + 1).padStart(2, '0')}</Badge>
+                <span className="truncate text-[0.68rem] font-bold uppercase text-muted-foreground">{topic.domain}</span>
+              </div>
+              <div className="grid gap-2">
+                <h3 className="m-0 line-clamp-2 min-h-[2.35em] text-[0.98rem] leading-[1.22] font-[720]">{topic.label}</h3>
+                <p className="m-0 line-clamp-1 text-[0.75rem] text-muted-foreground">{topic.workArea}</p>
+              </div>
+              <div className="flex items-end justify-between gap-3">
+                <div className="grid gap-0.5">
+                  <span className="text-[0.64rem] font-bold uppercase text-muted-foreground">Trend score</span>
+                  <strong className="text-[1.38rem] leading-none font-[760] text-primary">{formatScore(topic.trendScore)}</strong>
+                </div>
+                <Badge variant="secondary">{formatNumber(topic.worksLast3Years)} works</Badge>
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -59,55 +99,55 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
           <Filter aria-hidden="true" />
         </CardHeader>
         <CardContent>
-          <ScrollArea className="table-scroll table-scroll-xl">
-            <table className="ranking-table">
-              <thead>
-                <tr>
-                  <th>Rank</th>
-                  <th>Topic</th>
-                  <th>OpenAlex path</th>
-                  <th>Top subtopic</th>
-                  <th>Recent works</th>
-                  <th>Growth</th>
-                  <th>Trend</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
+          <ScrollArea className="h-[560px] w-full">
+            <Table className={tableClass}>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className={headClass}>Rank</TableHead>
+                  <TableHead className={headClass}>Topic</TableHead>
+                  <TableHead className={headClass}>OpenAlex path</TableHead>
+                  <TableHead className={headClass}>Top subtopic</TableHead>
+                  <TableHead className={headClass}>Recent works</TableHead>
+                  <TableHead className={headClass}>Growth</TableHead>
+                  <TableHead className={headClass}>Trend</TableHead>
+                  <TableHead className={headClass} />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {rows.map((topic, index) => (
-                  <tr key={topic.slug}>
-                    <td>
+                  <TableRow className={rowClass} key={topic.slug}>
+                    <TableCell className={cellClass}>
                       <strong>{index + 1}</strong>
-                    </td>
-                    <td>
+                    </TableCell>
+                    <TableCell className={cellClass}>
                       <strong>{topic.label}</strong>
                       <br />
-                      <span className="muted">{topic.workArea}</span>
-                    </td>
-                    <td>
+                      <span className="text-muted-foreground">{topic.workArea}</span>
+                    </TableCell>
+                    <TableCell className={cellClass}>
                       {topic.domain}
                       <br />
-                      <span className="muted">{topic.field}</span>
-                    </td>
-                    <td>{topic.topSubtopic}</td>
-                    <td>{formatNumber(topic.worksLast3Years)}</td>
-                    <td>{formatPercent(topic.growthRate)}</td>
-                    <td>
-                      <span className="score-pill">
+                      <span className="text-muted-foreground">{topic.field}</span>
+                    </TableCell>
+                    <TableCell className={cellClass}>{topic.topSubtopic}</TableCell>
+                    <TableCell className={cellClass}>{formatNumber(topic.worksLast3Years)}</TableCell>
+                    <TableCell className={cellClass}>{formatPercent(topic.growthRate)}</TableCell>
+                    <TableCell className={cellClass}>
+                      <span className={scorePillClass}>
                         <Activity aria-hidden="true" />
                         {formatScore(topic.trendScore)}
                       </span>
-                    </td>
-                    <td>
+                    </TableCell>
+                    <TableCell className={cellClass}>
                       <Button variant="outline" size="sm" type="button" onClick={() => navigate(`/topic/${topic.slug}`)}>
                         Open
                         <ArrowUpRight aria-hidden="true" />
                       </Button>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </ScrollArea>
         </CardContent>
       </Card>

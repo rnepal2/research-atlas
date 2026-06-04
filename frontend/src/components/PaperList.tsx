@@ -10,20 +10,20 @@ interface PaperListProps {
 
 export function PaperList({ papers, limit = 6 }: PaperListProps) {
   return (
-    <ScrollArea className="paper-scroll">
-      <div className="paper-list">
+    <ScrollArea className="h-[390px]">
+      <div className="grid gap-0">
         {papers.slice(0, limit).map((paper) => (
-          <article className="paper-card" key={paper.openalexId}>
-            <h3>
+          <article className="grid gap-[7px] border-b border-border py-[11px] last:border-b-0" key={paper.openalexId}>
+            <h3 className="m-0 text-[0.86rem] leading-[1.35]">
               {paper.url ? (
-                <a href={paper.url} target="_blank" rel="noreferrer">
+                <a className="inline [&_svg]:ml-1 [&_svg]:inline [&_svg]:size-[13px] [&_svg]:align-[-2px]" href={paper.url} target="_blank" rel="noreferrer">
                   {paper.title} <ExternalLink aria-hidden="true" />
                 </a>
               ) : (
                 paper.title
               )}
             </h3>
-            <div className="paper-meta">
+            <div className="flex flex-wrap gap-x-3 gap-y-2 text-[0.72rem] text-muted-foreground">
               <span>{paper.year}</span>
               <span>{paper.source}</span>
               <span>{formatCompact(paper.citations)} citations</span>

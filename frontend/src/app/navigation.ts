@@ -12,5 +12,5 @@ export const navItems: NavItem[] = [
   { label: 'Trending', path: '/trending', icon: TrendingUp },
   { label: 'Researchers', path: '/researchers', icon: Users },
   { label: 'Networks', path: '/networks', icon: Network },
-  { label: 'Information', path: '/methodology', icon: Info },
+  { label: 'About', path: '/about', icon: Info },
 ]

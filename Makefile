@@ -3,10 +3,10 @@ PYTHON ?= python3
 .PHONY: data-refresh data-sync validate-data
 
 data-refresh:
-	$(PYTHON) scripts/refresh_data.py
+	./src/refresh_data.sh
 
 data-sync:
-	$(PYTHON) scripts/sync_public_data.py
+	$(PYTHON) src/scripts/sync_public_data.py
 
 validate-data:
-	$(PYTHON) scripts/validate_static_data.py
+	$(PYTHON) src/scripts/validate_static_data.py

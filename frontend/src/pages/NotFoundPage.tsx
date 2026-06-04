@@ -8,7 +8,7 @@ interface NotFoundPageProps {
 
 export function NotFoundPage({ atlas }: NotFoundPageProps) {
   return (
-    <div className="page">
+    <div className="grid min-w-0 gap-3">
       <Card>
         <CardHeader>
           <div>
@@ -23,4 +23,3 @@ export function NotFoundPage({ atlas }: NotFoundPageProps) {
     </div>
   )
 }
-

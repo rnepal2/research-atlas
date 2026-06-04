@@ -10,14 +10,16 @@ import { TrendingPage } from '../pages/TrendingPage'
 interface RenderRouteParams {
   atlas: AtlasData
   path: string
+  theme: 'dark' | 'light'
+  onThemeChange: () => void
 }
 
-export function renderRoute({ atlas, path }: RenderRouteParams) {
+export function renderRoute({ atlas, path, theme, onThemeChange }: RenderRouteParams) {
   const topicMatch = path.match(/^\/topic\/([^/]+)(?:\/([^/]+))?$/)
   const matchedTopic = topicMatch ? findTopic(atlas, topicMatch[1]) : undefined
 
   if (path === '/' || (topicMatch && matchedTopic && !topicMatch[2])) {
-    return <AtlasPage atlas={atlas} initialTopicSlug={matchedTopic?.slug} />
+    return <AtlasPage atlas={atlas} initialTopicSlug={matchedTopic?.slug} theme={theme} onThemeChange={onThemeChange} />
   }
   if (path === '/trending') {
     return <TrendingPage atlas={atlas} />
@@ -28,7 +30,7 @@ export function renderRoute({ atlas, path }: RenderRouteParams) {
   if (path === '/networks' || (topicMatch && matchedTopic && topicMatch[2] === 'network')) {
     return <NetworksPage atlas={atlas} initialTopicSlug={matchedTopic?.slug} />
   }
-  if (path === '/methodology') {
+  if (path === '/about' || path === '/methodology') {
     return <MethodologyPage atlas={atlas} />
   }
   return <NotFoundPage atlas={atlas} />

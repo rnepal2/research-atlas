@@ -24,6 +24,16 @@ interface HoverState {
 
 const palette = ['#23d7cf', '#d8a84a', '#e56f61', '#74d69b', '#7da4ff', '#caa7ff', '#f2c46d', '#8ee8df']
 
+function graphColors() {
+  const light = document.documentElement.dataset.theme === 'light'
+  return {
+    edge: light ? 'rgba(4, 123, 117, 0.34)' : 'rgba(35, 215, 207, 0.18)',
+    mutedEdge: light ? 'rgba(4, 123, 117, 0.18)' : 'rgba(35, 215, 207, 0.08)',
+    fadedNode: light ? 'rgba(95, 112, 118, 0.34)' : 'rgba(155, 173, 178, 0.24)',
+    label: light ? '#11191d' : '#dff6f4',
+  }
+}
+
 function hash(value: string) {
   return [...value].reduce((acc, char) => acc + char.charCodeAt(0), 0)
 }
@@ -39,6 +49,7 @@ function initialPosition(id: string, communityIndex: number, communityCount: num
 
 function buildGraph(network: NetworkData, mode: 'author' | 'institution') {
   const graph = new Graph({ multi: true, type: 'undirected' })
+  const colors = graphColors()
   const sourceNodes = network.nodes.slice(0, mode === 'institution' ? 90 : 115)
   const communities = [...new Set(sourceNodes.map((node) => node.community || 'Mixed'))].slice(0, 8)
   const communityIndex = new Map(communities.map((community, index) => [community, index]))
@@ -54,7 +65,7 @@ function buildGraph(network: NetworkData, mode: 'author' | 'institution') {
       type: 'circle',
       x: position.x,
       y: position.y,
-      label: index < 24 ? node.label : '',
+      label: '',
       fullLabel: node.label,
       color,
       size: mode === 'institution' ? 5 + Math.min(13, Math.sqrt(score) * 1.45) : 4 + Math.min(11, Math.sqrt(score) * 1.22),
@@ -70,7 +81,9 @@ function buildGraph(network: NetworkData, mode: 'author' | 'institution') {
     }
     const edgeId = `${edge.source}:${edge.target}:${index}`
     graph.addEdgeWithKey(edgeId, edge.source, edge.target, {
-      color: 'rgba(35, 215, 207, 0.16)',
+      color: colors.edge,
+      baseColor: colors.edge,
+      mutedColor: colors.mutedEdge,
       size: Math.max(0.4, Math.min(2.4, Math.sqrt(edge.weight) * 0.55)),
       weight: edge.weight,
     })
@@ -88,7 +101,7 @@ function buildGraph(network: NetworkData, mode: 'author' | 'institution') {
     },
   })
 
-  return { graph, communities, communityIndex }
+  return { graph, communities, communityIndex, colors }
 }
 
 export function IntelligenceNetwork({ network, mode }: IntelligenceNetworkProps) {
@@ -111,6 +124,7 @@ export function IntelligenceNetwork({ network, mode }: IntelligenceNetworkProps)
       allowInvalidContainer: true,
       defaultEdgeType: 'line',
       defaultNodeColor: '#23d7cf',
+      defaultDrawNodeHover: () => {},
       enableEdgeEvents: false,
       edgeReducer: (edge, data) => {
         if (!hoveredNode) {
@@ -120,14 +134,14 @@ export function IntelligenceNetwork({ network, mode }: IntelligenceNetworkProps)
         const connected = source === hoveredNode || target === hoveredNode
         return {
           ...data,
-          color: connected ? 'rgba(35, 215, 207, 0.26)' : 'rgba(155, 173, 178, 0.045)',
-          size: connected ? Math.min(2.2, Number(data.size || 1) * 1.28) : 0.28,
+          color: connected ? data.baseColor || graphBundle.colors.edge : data.mutedColor || graphBundle.colors.mutedEdge,
+          size: connected ? Number(data.size || 1) : 0.28,
         }
       },
-      labelColor: { color: '#dff6f4' },
+      labelColor: { color: graphBundle.colors.label },
       labelDensity: 0.08,
-      labelFont: 'IBM Plex Sans',
-      labelRenderedSizeThreshold: 11,
+      labelFont: 'Inter',
+      labelRenderedSizeThreshold: 1000,
       minCameraRatio: 0.42,
       maxCameraRatio: 2.2,
       nodeReducer: (node, data) => {
@@ -158,7 +172,7 @@ export function IntelligenceNetwork({ network, mode }: IntelligenceNetworkProps)
         return {
           ...data,
           label: '',
-          color: 'rgba(155, 173, 178, 0.24)',
+          color: graphBundle.colors.fadedNode,
           size: Math.max(2, size * 0.62),
           zIndex: 0,
         }
@@ -249,44 +263,52 @@ export function IntelligenceNetwork({ network, mode }: IntelligenceNetworkProps)
   }
 
   return (
-    <div className="network-canvas network-canvas-sigma">
-      <div className="network-toolbar" aria-label="Network viewport controls">
-        <Button variant="outline" size="icon" type="button" onClick={() => zoom(-0.22)} aria-label="Zoom in network">
+    <div className="relative min-h-[640px] overflow-hidden max-[760px]:min-h-[470px]">
+      <div className="absolute top-2.5 right-2.5 z-[3] grid gap-[5px]" aria-label="Network viewport controls">
+        <Button className="size-[30px]" variant="outline" size="icon" type="button" onClick={() => zoom(-0.22)} aria-label="Zoom in network">
           <Plus aria-hidden="true" />
         </Button>
-        <Button variant="outline" size="icon" type="button" onClick={() => zoom(0.22)} aria-label="Zoom out network">
+        <Button className="size-[30px]" variant="outline" size="icon" type="button" onClick={() => zoom(0.22)} aria-label="Zoom out network">
           <Minus aria-hidden="true" />
         </Button>
-        <Button variant="outline" size="icon" type="button" onClick={reset} aria-label="Reset network viewport">
+        <Button className="size-[30px]" variant="outline" size="icon" type="button" onClick={reset} aria-label="Reset network viewport">
           <LocateFixed aria-hidden="true" />
         </Button>
       </div>
-      <div className="network-sigma-stage" ref={containerRef} />
-      <div className="network-interaction-hint">Drag nodes to rearrange clusters. Scroll or use controls to zoom.</div>
-      <div className="network-community-legend">
+      <div
+        className="absolute inset-0 cursor-grab bg-[radial-gradient(circle_at_50%_50%,color-mix(in_srgb,var(--primary)_7%,transparent),transparent_46%),linear-gradient(90deg,var(--background-grid)_1px,transparent_1px),linear-gradient(0deg,var(--background-grid)_1px,transparent_1px)] bg-[length:auto,42px_42px,42px_42px] [&.is-dragging]:cursor-grabbing"
+        ref={containerRef}
+      />
+      <div className="pointer-events-none absolute bottom-3 left-3 z-[2] max-w-[300px] rounded-card border border-border bg-[color-mix(in_srgb,var(--card-solid)_78%,transparent)] px-[9px] py-[7px] text-[0.68rem] font-bold text-muted-foreground backdrop-blur-xl">
+        Drag nodes to rearrange clusters. Scroll or use controls to zoom.
+      </div>
+      <div className="absolute top-3 left-3 z-[2] grid max-w-[210px] gap-[7px] rounded-card border border-border bg-[color-mix(in_srgb,var(--card-solid)_84%,transparent)] p-2.5 backdrop-blur-[14px]">
         {graphBundle.communities.slice(0, 6).map((community) => (
-          <span key={community}>
-            <i style={{ background: palette[(graphBundle.communityIndex.get(community) || 0) % palette.length] }} />
+          <span className="flex items-center gap-[7px] text-[0.7rem] font-bold text-muted-foreground" key={community}>
+            <i className="size-2 rounded-full shadow-[0_0_12px_currentColor]" style={{ background: palette[(graphBundle.communityIndex.get(community) || 0) % palette.length] }} />
             {community.slice(0, 22)}
           </span>
         ))}
       </div>
       {hover && (
-        <div className="network-hover-card" style={{ left: hover.x + 14, top: hover.y + 14 }}>
-          <strong>{hover.node.label}</strong>
-          <span>{hover.node.community}</span>
-          <span>{hover.node.institution || hover.node.country || 'Institution not resolved'}</span>
-          <em>{formatScore(hover.node.score)} score</em>
+        <div
+          className="pointer-events-none absolute z-[4] grid w-[min(250px,calc(100%-24px))] gap-1 rounded-card border border-[color-mix(in_srgb,var(--primary)_34%,var(--border))] bg-[color-mix(in_srgb,var(--card-solid)_95%,#ffffff)] px-[11px] py-2.5 shadow-atlas"
+          style={{ left: hover.x + 14, top: hover.y + 14 }}
+        >
+          <strong className="text-[0.84rem] leading-[1.2] text-foreground">{hover.node.label}</strong>
+          <span className="text-[0.72rem] leading-[1.35] text-muted-foreground">{hover.node.community}</span>
+          <span className="text-[0.72rem] leading-[1.35] text-muted-foreground">{hover.node.institution || hover.node.country || 'Institution not resolved'}</span>
+          <em className="text-[0.72rem] leading-[1.35] font-bold not-italic text-primary">{formatScore(hover.node.score)} score</em>
         </div>
       )}
       {selected && (
-        <aside className="network-node-detail">
-          <span className="section-kicker">Selected node</span>
-          <strong>{selected.label}</strong>
-          <p>{selected.institution || selected.country || selected.community}</p>
-          <div>
-            <span>{formatScore(selected.score)} score</span>
-            {selected.works && <span>{formatCompact(selected.works)} works</span>}
+        <aside className="absolute right-3 bottom-3 z-[4] grid w-[min(250px,calc(100%-24px))] gap-1 rounded-card border border-[color-mix(in_srgb,var(--primary)_34%,var(--border))] bg-[color-mix(in_srgb,var(--card-solid)_95%,#ffffff)] px-[11px] py-2.5 shadow-atlas">
+          <span className="text-[0.68rem] font-bold uppercase text-muted-foreground">Selected node</span>
+          <strong className="text-[0.84rem] leading-[1.2] text-foreground">{selected.label}</strong>
+          <p className="m-0 text-[0.72rem] leading-[1.35] text-muted-foreground">{selected.institution || selected.country || selected.community}</p>
+          <div className="flex flex-wrap gap-1.5">
+            <span className="text-[0.72rem] leading-[1.35] font-bold text-primary">{formatScore(selected.score)} score</span>
+            {selected.works && <span className="text-[0.72rem] leading-[1.35] font-bold text-primary">{formatCompact(selected.works)} works</span>}
           </div>
         </aside>
       )}

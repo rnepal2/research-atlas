@@ -106,6 +106,81 @@ topics:
       - image segmentation deep learning
     collection: { years_back: 10, max_works: 160 }
 
+  - slug: diffusion-models
+    label: Diffusion Models
+    domain: Physical Sciences
+    field: Computer Science
+    subfield: Artificial Intelligence
+    work_area: Generative AI / LLM
+    description: Diffusion models, score-based generative modeling, text-to-image systems, and controllable generation.
+    openalex_topic_ids: []
+    keyword_queries:
+      - diffusion models generative AI
+      - score based generative modeling
+      - text to image diffusion model
+      - denoising diffusion probabilistic model
+    collection: { years_back: 10, max_works: 180 }
+
+  - slug: multimodal-foundation-models
+    label: Multimodal Foundation Models
+    domain: Physical Sciences
+    field: Computer Science
+    subfield: Artificial Intelligence
+    work_area: Generative AI / LLM
+    description: Vision-language models, multimodal foundation models, image-text reasoning, and multimodal evaluation.
+    openalex_topic_ids: []
+    keyword_queries:
+      - multimodal foundation models
+      - vision language model
+      - multimodal large language model
+      - image text representation learning
+    collection: { years_back: 10, max_works: 180 }
+
+  - slug: natural-language-processing
+    label: Natural Language Processing
+    domain: Physical Sciences
+    field: Computer Science
+    subfield: Artificial Intelligence
+    work_area: Generative AI / LLM
+    description: Natural language processing, representation learning, information extraction, language understanding, and evaluation.
+    openalex_topic_ids: []
+    keyword_queries:
+      - natural language processing deep learning
+      - language understanding NLP
+      - information extraction natural language processing
+      - neural machine translation language model
+    collection: { years_back: 10, max_works: 200 }
+
+  - slug: machine-learning-systems
+    label: Machine Learning Systems
+    domain: Physical Sciences
+    field: Computer Science
+    subfield: Computer Science Applications
+    work_area: AI Methods
+    description: Scalable ML systems, distributed training, inference optimization, data pipelines, and model serving.
+    openalex_topic_ids: []
+    keyword_queries:
+      - machine learning systems
+      - distributed deep learning training
+      - model serving inference optimization
+      - MLOps machine learning pipeline
+    collection: { years_back: 10, max_works: 170 }
+
+  - slug: robotics
+    label: Robotics
+    domain: Physical Sciences
+    field: Engineering
+    subfield: Control and Systems Engineering
+    work_area: AI Methods
+    description: Robotics, autonomous systems, manipulation, embodied AI, planning, perception, and control.
+    openalex_topic_ids: []
+    keyword_queries:
+      - robotics autonomous systems
+      - robot manipulation learning
+      - embodied artificial intelligence robotics
+      - robot perception control
+    collection: { years_back: 10, max_works: 170 }
+
   - slug: multiple-myeloma
     label: Multiple Myeloma
     domain: Health Sciences
@@ -196,6 +271,77 @@ topics:
       - colorectal cancer immunotherapy
     collection: { years_back: 10, max_works: 160 }
 
+  - slug: oncology-biomarkers
+    label: Oncology Biomarkers
+    domain: Health Sciences
+    field: Medicine
+    subfield: Oncology
+    work_area: Oncology
+    description: Cancer biomarkers for diagnosis, therapy selection, response monitoring, liquid biopsy, and resistance.
+    openalex_topic_ids: []
+    keyword_queries:
+      - oncology biomarkers precision medicine
+      - cancer biomarker liquid biopsy
+      - tumor biomarker immunotherapy response
+      - molecular biomarker cancer therapy
+    collection: { years_back: 10, max_works: 180 }
+
+  - slug: prostate-cancer
+    label: Prostate Cancer
+    domain: Health Sciences
+    field: Medicine
+    subfield: Oncology
+    work_area: Oncology
+    description: Prostate cancer diagnosis, androgen signaling, radiotherapy, biomarkers, and metastatic treatment.
+    openalex_topic_ids: []
+    keyword_queries:
+      - prostate cancer biomarkers treatment
+      - metastatic castration resistant prostate cancer
+      - prostate cancer androgen receptor therapy
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: pancreatic-cancer
+    label: Pancreatic Cancer
+    domain: Health Sciences
+    field: Medicine
+    subfield: Oncology
+    work_area: Oncology
+    description: Pancreatic cancer biology, early detection, tumor microenvironment, therapeutics, and clinical outcomes.
+    openalex_topic_ids: []
+    keyword_queries:
+      - pancreatic cancer early detection
+      - pancreatic ductal adenocarcinoma therapy
+      - pancreatic cancer tumor microenvironment
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: melanoma
+    label: Melanoma
+    domain: Health Sciences
+    field: Medicine
+    subfield: Oncology
+    work_area: Oncology
+    description: Melanoma immunotherapy, targeted therapy, resistance, biomarkers, and clinical outcomes.
+    openalex_topic_ids: []
+    keyword_queries:
+      - melanoma immunotherapy biomarkers
+      - melanoma targeted therapy resistance
+      - metastatic melanoma immune checkpoint
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: ovarian-cancer
+    label: Ovarian Cancer
+    domain: Health Sciences
+    field: Medicine
+    subfield: Oncology
+    work_area: Oncology
+    description: Ovarian cancer genetics, PARP inhibitors, immunotherapy, biomarkers, and recurrence.
+    openalex_topic_ids: []
+    keyword_queries:
+      - ovarian cancer PARP inhibitor
+      - ovarian cancer biomarkers recurrence
+      - epithelial ovarian cancer therapy
+    collection: { years_back: 10, max_works: 160 }
+
   - slug: immunology
     label: T-cell and B-cell Immunology
     domain: Life Sciences
@@ -226,6 +372,77 @@ topics:
       - pulmonary vascular remodeling
     collection: { years_back: 10, max_works: 160 }
 
+  - slug: acute-myeloid-leukemia
+    label: Acute Myeloid Leukemia
+    domain: Health Sciences
+    field: Medicine
+    subfield: Hematology
+    work_area: Oncology
+    description: AML genetics, targeted therapy, measurable residual disease, transplantation, and relapse biology.
+    openalex_topic_ids: []
+    keyword_queries:
+      - acute myeloid leukemia targeted therapy
+      - AML measurable residual disease
+      - acute myeloid leukemia relapse mutations
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: glp1-obesity-therapeutics
+    label: GLP-1 Obesity Therapeutics
+    domain: Health Sciences
+    field: Medicine
+    subfield: Endocrinology, Diabetes and Metabolism
+    work_area: Cardiometabolic
+    description: GLP-1 receptor agonists, incretin therapies, obesity treatment, cardiometabolic outcomes, and safety.
+    openalex_topic_ids: []
+    keyword_queries:
+      - GLP-1 receptor agonist obesity
+      - semaglutide obesity cardiometabolic outcomes
+      - incretin therapy obesity treatment
+      - tirzepatide obesity clinical trial
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: heart-failure
+    label: Heart Failure
+    domain: Health Sciences
+    field: Medicine
+    subfield: Cardiology and Cardiovascular Medicine
+    work_area: Cardiometabolic
+    description: Heart failure phenotypes, guideline-directed therapy, biomarkers, devices, and clinical outcomes.
+    openalex_topic_ids: []
+    keyword_queries:
+      - heart failure preserved ejection fraction
+      - heart failure guideline directed medical therapy
+      - heart failure biomarkers outcomes
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: chronic-kidney-disease
+    label: Chronic Kidney Disease
+    domain: Health Sciences
+    field: Medicine
+    subfield: Nephrology
+    work_area: Cardiometabolic
+    description: CKD progression, kidney outcomes, diabetes, cardiovascular risk, SGLT2 inhibitors, and biomarkers.
+    openalex_topic_ids: []
+    keyword_queries:
+      - chronic kidney disease progression biomarkers
+      - CKD SGLT2 inhibitor kidney outcomes
+      - chronic kidney disease cardiovascular risk
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: sepsis
+    label: Sepsis
+    domain: Health Sciences
+    field: Medicine
+    subfield: Critical Care and Intensive Care Medicine
+    work_area: Critical Care
+    description: Sepsis diagnosis, host response, biomarkers, organ failure, antimicrobial treatment, and outcomes.
+    openalex_topic_ids: []
+    keyword_queries:
+      - sepsis biomarkers host response
+      - sepsis organ failure critical care
+      - septic shock treatment outcomes
+    collection: { years_back: 10, max_works: 160 }
+
   - slug: alzheimers-disease
     label: Alzheimer's Disease
     domain: Health Sciences
@@ -254,6 +471,106 @@ topics:
       - CRISPR gene editing
       - genome engineering CRISPR
       - CRISPR therapeutics
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: single-cell-rna-sequencing
+    label: Single-cell RNA Sequencing
+    domain: Life Sciences
+    field: Biochemistry, Genetics and Molecular Biology
+    subfield: Molecular Biology
+    work_area: Genomics
+    description: Single-cell transcriptomics, cell atlases, scRNA-seq methods, clustering, annotation, and disease applications.
+    openalex_topic_ids: []
+    keyword_queries:
+      - single cell RNA sequencing
+      - scRNA-seq cell atlas
+      - single cell transcriptomics disease
+      - single cell sequencing computational analysis
+    collection: { years_back: 10, max_works: 180 }
+
+  - slug: gene-therapy
+    label: Gene Therapy
+    domain: Life Sciences
+    field: Biochemistry, Genetics and Molecular Biology
+    subfield: Molecular Medicine
+    work_area: Genomics
+    description: Gene therapy vectors, genome delivery, inherited disease treatment, safety, and clinical translation.
+    openalex_topic_ids: []
+    keyword_queries:
+      - gene therapy viral vector
+      - AAV gene therapy clinical trial
+      - gene therapy delivery safety
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: synthetic-biology
+    label: Synthetic Biology
+    domain: Life Sciences
+    field: Biochemistry, Genetics and Molecular Biology
+    subfield: Biotechnology
+    work_area: Bioengineering
+    description: Synthetic biology circuits, metabolic engineering, biological design, engineered cells, and biosystems.
+    openalex_topic_ids: []
+    keyword_queries:
+      - synthetic biology metabolic engineering
+      - engineered cells synthetic biology
+      - biological circuits synthetic biology
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: microbiome
+    label: Microbiome
+    domain: Life Sciences
+    field: Immunology and Microbiology
+    subfield: Microbiology
+    work_area: Microbiome
+    description: Human microbiome, metagenomics, host-microbe interaction, disease associations, and microbiome therapeutics.
+    openalex_topic_ids: []
+    keyword_queries:
+      - human microbiome metagenomics
+      - gut microbiome disease
+      - microbiome therapeutics host microbe
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: protein-design
+    label: Protein Design
+    domain: Life Sciences
+    field: Biochemistry, Genetics and Molecular Biology
+    subfield: Biochemistry
+    work_area: Bioengineering
+    description: Protein engineering, de novo protein design, structure prediction, generative protein models, and enzymes.
+    openalex_topic_ids: []
+    keyword_queries:
+      - protein design deep learning
+      - de novo protein design
+      - protein engineering generative model
+      - enzyme design protein structure
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: organoids
+    label: Organoids
+    domain: Life Sciences
+    field: Biochemistry, Genetics and Molecular Biology
+    subfield: Cell Biology
+    work_area: Disease Models
+    description: Organoid models, stem-cell-derived tissues, disease modeling, drug screening, and personalized medicine.
+    openalex_topic_ids: []
+    keyword_queries:
+      - organoids disease modeling
+      - stem cell derived organoids
+      - patient derived organoids drug screening
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: epigenomics
+    label: Epigenomics
+    domain: Life Sciences
+    field: Biochemistry, Genetics and Molecular Biology
+    subfield: Molecular Biology
+    work_area: Genomics
+    description: Epigenomics, chromatin accessibility, DNA methylation, regulatory genomics, and disease mechanisms.
+    openalex_topic_ids: []
+    keyword_queries:
+      - epigenomics chromatin accessibility
+      - DNA methylation epigenomics
+      - regulatory genomics disease
     collection: { years_back: 10, max_works: 160 }
 
   - slug: spatial-transcriptomics
@@ -362,3 +679,74 @@ topics:
       - laser plasma diagnostics
     collection: { years_back: 10, max_works: 160 }
 
+  - slug: materials-informatics
+    label: Materials Informatics
+    domain: Physical Sciences
+    field: Materials Science
+    subfield: Materials Science
+    work_area: Materials
+    description: Machine learning for materials discovery, property prediction, high-throughput screening, and materials databases.
+    openalex_topic_ids: []
+    keyword_queries:
+      - materials informatics machine learning
+      - materials discovery artificial intelligence
+      - high throughput materials screening
+      - materials property prediction deep learning
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: perovskite-solar-cells
+    label: Perovskite Solar Cells
+    domain: Physical Sciences
+    field: Materials Science
+    subfield: Electronic, Optical and Magnetic Materials
+    work_area: Materials
+    description: Perovskite photovoltaics, stability, interfaces, tandem solar cells, and scalable device fabrication.
+    openalex_topic_ids: []
+    keyword_queries:
+      - perovskite solar cells stability
+      - perovskite photovoltaics tandem solar cell
+      - perovskite solar cell interface engineering
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: superconductivity
+    label: Superconductivity
+    domain: Physical Sciences
+    field: Physics and Astronomy
+    subfield: Condensed Matter Physics
+    work_area: Physics
+    description: Superconducting materials, high-temperature superconductivity, pairing mechanisms, devices, and quantum applications.
+    openalex_topic_ids: []
+    keyword_queries:
+      - high temperature superconductivity
+      - superconducting materials condensed matter
+      - unconventional superconductivity
+      - superconducting quantum devices
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: gravitational-waves
+    label: Gravitational Waves
+    domain: Physical Sciences
+    field: Physics and Astronomy
+    subfield: Astronomy and Astrophysics
+    work_area: Physics
+    description: Gravitational-wave detection, compact binaries, multimessenger astronomy, detectors, and astrophysical inference.
+    openalex_topic_ids: []
+    keyword_queries:
+      - gravitational waves LIGO
+      - gravitational wave detection compact binary
+      - multimessenger astronomy gravitational waves
+    collection: { years_back: 10, max_works: 160 }
+
+  - slug: cosmology
+    label: Cosmology
+    domain: Physical Sciences
+    field: Physics and Astronomy
+    subfield: Astronomy and Astrophysics
+    work_area: Physics
+    description: Cosmology, dark matter, dark energy, cosmic microwave background, large-scale structure, and galaxy evolution.
+    openalex_topic_ids: []
+    keyword_queries:
+      - cosmology dark matter dark energy
+      - cosmic microwave background cosmology
+      - large scale structure cosmology
+    collection: { years_back: 10, max_works: 160 }

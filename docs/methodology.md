@@ -1,58 +1,40 @@
 # Methodology
 
-Research Atlas ranks and summarizes research domains using compact static artifacts generated from OpenAlex data. Metrics are intended as discovery aids, not definitive assessments of quality or importance.
+Research Atlas is a static OpenAlex snapshot. Its scores are discovery signals, not judgments of scientific quality.
 
-## Topic Trend Score
+## Topic Profiles
 
-The first version combines bounded normalized components so extreme growth does not saturate every ranking:
+Each topic is defined in `data/config/topics.yaml` with an OpenAlex-style domain, field, subfield, work area, optional topic IDs, and keyword fallback queries. The refresh pipeline collects recent works, deduplicates them by OpenAlex ID, and builds compact profiles for the frontend.
 
-- 35% recent work growth
-- 25% citation velocity growth
-- 20% active author growth
-- 10% institution growth
-- 10% cross-topic expansion
-- baseline size penalty for very large established areas
+## Trend Score
 
-Growth compares a recent three-year period with the prior three-year period where enough data exists.
+Trend score combines normalized recent signals:
+
+- Work growth
+- Citation velocity growth
+- Active author growth
+- Institution growth
+- Cross-topic expansion
+- A size penalty for very large established areas
+
+This keeps broad fields from automatically outranking smaller areas with faster momentum.
 
 ## Rising Researcher Score
 
-The rising researcher label means increasing visibility inside a selected topic, not "best researcher."
+Rising researcher means increasing visibility inside a selected topic. It is based on recent topic publications, citation velocity, growth versus the prior period, collaboration or bridge signal, and topic focus.
 
-The first version combines:
+## Institution Strength
 
-- 30% recent topic publications
-- 25% citation velocity
-- 20% growth versus prior period
-- 15% collaboration or bridge signal
-- 10% topic focus
+Institution strength combines topic publication share, citation share, rising-author presence, collaboration breadth, and subtopic breadth.
 
-Guardrails:
+## Networks
 
-- Require recent topic-relevant work
-- Treat ambiguous low-evidence authors cautiously
-- Show supporting signals alongside the score
-- Avoid normative claims about researcher quality
+Researcher networks use coauthorship edges. Institution networks use shared-work collaboration edges. Node scores come from the topic-level rankings, and community summaries are grouped from the processed graph metadata.
 
-## Institution Strength Score
+## Caveats
 
-The first version combines:
-
-- 35% topic publication share
-- 25% topic citation share
-- 20% rising author count
-- 10% collaboration centrality
-- 10% subtopic breadth
-
-## Bridge Researcher Score
-
-Bridge researchers connect otherwise separated clusters. The first version uses graph betweenness where available, plus cross-institution collaboration and subtopic diversity.
-
-## Limitations
-
-- OpenAlex topic assignments are model-generated and can be noisy.
-- Newer areas may require keyword supplementation before the topic taxonomy catches up.
-- Citation counts favor older papers unless citation velocity is considered.
+- OpenAlex topic assignment is model-generated and can be noisy.
+- Keyword fallback can capture adjacent work when a topic is new or broad.
+- Citations favor older papers, so the app also uses citation velocity.
 - Author and institution disambiguation depends on OpenAlex records.
-- Static snapshots can become stale between refreshes.
-- The MVP sample artifact is for product development; production deployments should regenerate artifacts from OpenAlex.
+- The public site is static until the pipeline is refreshed and rebuilt.

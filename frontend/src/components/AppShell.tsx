@@ -1,41 +1,40 @@
 import type React from 'react'
-import { ChevronsLeft, ChevronsRight, Command, Database, Moon, Search, Sun } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { ChevronsLeft, ChevronsRight, Command } from 'lucide-react'
+import { useState } from 'react'
 import type { NavItem } from '../app/navigation'
 import type { AtlasData } from '../data/types'
+import { cx } from '../lib/cx'
 import { formatDate } from '../lib/format'
 import { hrefFor, isActivePath, navigate } from '../lib/router'
-import { Button, Input, Separator } from './ui'
+import { Button, Separator } from './ui'
 
 interface AppShellProps {
   atlas: AtlasData
   navItems: NavItem[]
   activePath: string
-  theme: 'dark' | 'light'
-  onThemeChange: () => void
-  pageActions?: React.ReactNode
   children: React.ReactNode
 }
 
-export function AppShell({ atlas, navItems, activePath, theme, onThemeChange, pageActions, children }: AppShellProps) {
-  const [query, setQuery] = useState('')
+export function AppShell({ atlas, navItems, activePath, children }: AppShellProps) {
   const [collapsed, setCollapsed] = useState(false)
-  const matches = useMemo(() => {
-    const normalized = query.trim().toLowerCase()
-    if (!normalized) {
-      return []
-    }
-    return atlas.topics
-      .filter((topic) => `${topic.label} ${topic.domain} ${topic.field} ${topic.subfield} ${topic.workArea}`.toLowerCase().includes(normalized))
-      .slice(0, 8)
-  }, [atlas.topics, query])
 
   return (
-    <div className={`app-shell ${collapsed ? 'is-sidebar-collapsed' : ''}`}>
-      <aside className="sidebar" aria-label="Research Atlas navigation">
-        <div className="sidebar-head">
+    <div
+      className={cx(
+        'grid min-h-screen w-full items-start overflow-hidden transition-[grid-template-columns] duration-200 max-[1160px]:h-auto max-[1160px]:grid-cols-1 max-[1160px]:overflow-x-hidden max-[1160px]:overflow-y-visible',
+        collapsed ? 'grid-cols-[64px_minmax(0,1fr)]' : 'grid-cols-[256px_minmax(0,1fr)]',
+      )}
+    >
+      <aside
+        className={cx(
+          'sticky top-0 flex h-dvh max-h-dvh min-h-screen flex-col gap-[18px] overflow-hidden border-r border-border bg-[linear-gradient(180deg,color-mix(in_srgb,var(--sidebar-bg)_96%,transparent),color-mix(in_srgb,var(--sidebar-bg-end)_96%,transparent)),var(--sidebar-bg)] py-[22px] backdrop-blur-2xl max-[1160px]:static max-[1160px]:h-auto max-[1160px]:max-h-none max-[1160px]:min-h-0 max-[1160px]:w-full max-[1160px]:overflow-visible max-[1160px]:overflow-x-hidden max-[1160px]:border-r-0 max-[1160px]:border-b max-[1160px]:px-3 max-[1160px]:py-2.5',
+          collapsed ? 'px-2.5' : 'px-3.5',
+        )}
+        aria-label="Research Atlas navigation"
+      >
+        <div className={cx('flex items-start justify-between gap-2 max-[1160px]:hidden', collapsed && 'grid justify-items-center')}>
           <a
-            className="brand"
+            className={cx('flex min-w-0 items-center gap-3 py-1 pr-0 pb-[18px] pl-1.5', collapsed && 'pb-1 pl-0')}
             href={hrefFor('/')}
             onClick={(event) => {
               event.preventDefault()
@@ -43,12 +42,12 @@ export function AppShell({ atlas, navItems, activePath, theme, onThemeChange, pa
             }}
             title="Research Atlas"
           >
-            <span className="brand-mark">
+            <span className="grid size-10 place-items-center rounded-card border border-border-strong bg-[linear-gradient(135deg,color-mix(in_srgb,var(--primary)_36%,transparent),rgba(255,255,255,0.02)),var(--secondary)] text-primary shadow-[0_14px_34px_rgba(54,215,199,0.16)] [&_svg]:size-5">
               <Command aria-hidden="true" />
             </span>
-            <span className="brand-copy">
-              <span className="brand-title">Research Atlas</span>
-              <span className="brand-subtitle">OpenAlex Intelligence</span>
+            <span className={cx('min-w-0', collapsed && 'hidden')}>
+              <span className="block whitespace-nowrap font-display text-[0.98rem] leading-[1.15] font-bold">Research Atlas</span>
+              <span className="mt-[3px] block text-[0.72rem] text-muted-foreground">OpenAlex Intelligence</span>
             </span>
           </a>
           <Button variant="ghost" size="icon" onClick={() => setCollapsed((value) => !value)} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
@@ -56,14 +55,19 @@ export function AppShell({ atlas, navItems, activePath, theme, onThemeChange, pa
           </Button>
         </div>
 
-        <nav className="nav-list">
+        <nav className="grid min-h-0 gap-[5px] max-[1160px]:flex max-[1160px]:max-w-[100vw] max-[1160px]:overflow-x-auto max-[1160px]:pb-0.5 max-[760px]:grid max-[760px]:grid-cols-5 max-[760px]:gap-1.5">
           {navItems.map((item) => {
             const Icon = item.icon
             const active = isActivePath(activePath, item.path)
             return (
               <a
                 key={item.path}
-                className={`nav-link ${active ? 'is-active' : ''}`}
+                className={cx(
+                  'flex min-h-[39px] items-center gap-2.5 rounded-card px-[11px] py-2 text-[0.86rem] font-[660] text-muted-foreground transition-[background,color,transform] duration-150 hover:translate-x-0.5 hover:bg-secondary hover:text-foreground max-[1160px]:shrink-0 max-[760px]:min-h-[46px] max-[760px]:flex-col max-[760px]:justify-center max-[760px]:gap-1 max-[760px]:px-2 max-[760px]:text-center max-[760px]:text-[0.68rem]',
+                  collapsed && 'justify-center px-0 max-[1160px]:justify-start max-[1160px]:px-[11px]',
+                  active && 'bg-secondary text-foreground shadow-[inset_2px_0_0_var(--primary)]',
+                  active && collapsed && 'shadow-[inset_0_-2px_0_var(--primary)] max-[1160px]:shadow-[inset_2px_0_0_var(--primary)]',
+                )}
                 href={hrefFor(item.path)}
                 title={item.label}
                 onClick={(event) => {
@@ -71,71 +75,22 @@ export function AppShell({ atlas, navItems, activePath, theme, onThemeChange, pa
                   navigate(item.path)
                 }}
               >
-                <Icon aria-hidden="true" />
-                <span>{item.label}</span>
+                <Icon aria-hidden="true" className="size-[18px] max-[760px]:size-4" />
+                <span className={cx('max-[760px]:whitespace-nowrap', collapsed && 'hidden max-[1160px]:inline')}>{item.label}</span>
               </a>
             )
           })}
         </nav>
 
-        <div className="sidebar-bottom">
+        <div className={cx('mt-auto grid shrink-0 gap-[18px] max-[1160px]:hidden', collapsed && 'justify-items-center')}>
           <Separator />
-          <div className="sidebar-stat">
-            <span className="sidebar-stat-label">Refresh</span>
-            <strong>{formatDate(atlas.generatedAt)}</strong>
-            <span>{atlas.artifactStatus}</span>
+          <div className={cx('grid gap-1 rounded-card border border-border bg-[color-mix(in_srgb,var(--card-solid)_82%,transparent)] px-3 py-[13px]', collapsed && 'hidden')}>
+            <span className="text-[0.72rem] font-[680] text-muted-foreground">Data Refresh: {formatDate(atlas.generatedAt)}</span>
           </div>
         </div>
       </aside>
 
-      <main className="main-area">
-        <div className="topbar">
-          <div className="mobile-brand">
-            <span className="brand-title">Research Atlas</span>
-            <span className="brand-subtitle">OpenAlex Intelligence</span>
-          </div>
-          <div className="command-wrap">
-            <Search aria-hidden="true" />
-            <Input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search topics, fields, domains"
-              aria-label="Search topics, fields, domains"
-            />
-            {matches.length > 0 && (
-              <div className="command-menu">
-                {matches.map((topic) => (
-                  <button
-                    className="command-item"
-                    type="button"
-                    key={topic.slug}
-                    onClick={() => {
-                      setQuery('')
-                      navigate(`/topic/${topic.slug}`)
-                    }}
-                  >
-                    <span>{topic.label}</span>
-                    <small>
-                      {topic.domain} / {topic.field}
-                    </small>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="topbar-actions">
-            {pageActions}
-            <a className="source-chip" href={atlas.source.url} target="_blank" rel="noreferrer">
-              <Database aria-hidden="true" />
-              Go to OpenAlex
-            </a>
-            <Button variant="outline" size="icon" onClick={onThemeChange} aria-label="Toggle theme">
-              {theme === 'dark' ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}
-            </Button>
-          </div>
-        </div>
-
+      <main className="h-dvh min-w-0 max-w-[100vw] overflow-y-auto overscroll-contain px-6 pt-4 pb-9 max-[1160px]:h-auto max-[1160px]:max-w-full max-[1160px]:overflow-visible max-[1160px]:px-[18px] max-[1160px]:py-4 max-[1160px]:pb-7 max-[760px]:px-3 max-[760px]:py-3 max-[760px]:pb-6">
         {children}
       </main>
     </div>

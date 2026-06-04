@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AppShell } from '../components/AppShell'
 import { DataState } from '../components/DataState'
-import { Badge } from '../components/ui'
 import { useAtlasData } from '../data/useAtlasData'
-import { formatDate, formatNumber } from '../lib/format'
 import { routeFromPath } from '../lib/router'
 import { navItems } from './navigation'
 import { renderRoute } from './renderRoute'
@@ -24,17 +22,7 @@ export function ResearchAtlasApp() {
     }
   }, [])
 
-  const route = useMemo(() => (data ? renderRoute({ atlas: data, path }) : null), [data, path])
-  const pageActions = useMemo(() => {
-    if (!data) {
-      return null
-    }
-    return (
-      <Badge variant="outline" className="snapshot-badge">
-        Updated {formatDate(data.generatedAt)} / {formatNumber(data.topics.length)} topics
-      </Badge>
-    )
-  }, [data])
+  const route = useMemo(() => (data ? renderRoute({ atlas: data, path, theme, onThemeChange: toggleTheme }) : null), [data, path, theme, toggleTheme])
 
   return (
     <DataState loading={loading} error={error}>
@@ -43,9 +31,6 @@ export function ResearchAtlasApp() {
           atlas={data}
           navItems={navItems}
           activePath={path}
-          theme={theme}
-          onThemeChange={toggleTheme}
-          pageActions={pageActions}
         >
           {route}
         </AppShell>

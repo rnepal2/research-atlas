@@ -2,6 +2,8 @@
 
 Static OpenAlex research atlas built with React, Vite, and a Python data pipeline.
 
+**Website:**  [Website](https://rnepal2.github.io/research-atlas/)
+
 ## Run Locally
 
 ```bash
@@ -17,13 +19,13 @@ The app reads `frontend/public/data/atlas.json`, which is synced from `data/proc
 
 ```bash
 export OPENALEX_API_KEY="your-key"
-python3 scripts/refresh_data.py --max-works 600
+./src/refresh_data.sh --max-works 600
 ```
 
 For a local rebuild from existing raw files:
 
 ```bash
-python3 scripts/refresh_data.py --skip-collect
+./src/refresh_data.sh --skip-collect
 ```
 
 Only `data/processed/atlas.json` is committed. Raw OpenAlex files, API cache files, build output, and the synced frontend data copy are ignored.

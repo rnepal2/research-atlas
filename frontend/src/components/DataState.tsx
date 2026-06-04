@@ -9,10 +9,10 @@ interface DataStateProps {
 export function DataState({ loading, error, children }: DataStateProps) {
   if (loading) {
     return (
-      <div className="state-screen">
-        <div className="state-box">
-          <h1>Loading Research Atlas</h1>
-          <p>Preparing the static intelligence artifact.</p>
+      <div className="grid min-h-screen place-items-center p-6">
+        <div className="max-w-[520px] rounded-card border border-border bg-card p-6 shadow-atlas">
+          <h1 className="mt-0 mb-2 text-2xl font-bold">Loading Research Atlas</h1>
+          <p className="m-0 text-muted-foreground">Preparing the static intelligence artifact.</p>
         </div>
       </div>
     )
@@ -20,10 +20,10 @@ export function DataState({ loading, error, children }: DataStateProps) {
 
   if (error) {
     return (
-      <div className="state-screen">
-        <div className="state-box">
-          <h1>Data artifact unavailable</h1>
-          <p>{error}</p>
+      <div className="grid min-h-screen place-items-center p-6">
+        <div className="max-w-[520px] rounded-card border border-border bg-card p-6 shadow-atlas">
+          <h1 className="mt-0 mb-2 text-2xl font-bold">Data artifact unavailable</h1>
+          <p className="m-0 text-muted-foreground">{error}</p>
         </div>
       </div>
     )
