@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { AtlasData } from './types'
 
-const dataUrl = `${import.meta.env.BASE_URL}data/atlas.json`
+const indexUrl = `${import.meta.env.BASE_URL}data/atlas-index.json`
+const fallbackDataUrl = `${import.meta.env.BASE_URL}data/atlas.json`
 
 interface AtlasDataState {
   data: AtlasData | null
@@ -20,9 +21,14 @@ export function useAtlasData(): AtlasDataState {
     let cancelled = false
     async function load() {
       try {
-        const response = await fetch(dataUrl)
+        let response = await fetch(indexUrl)
+        let loadedFrom = indexUrl
         if (!response.ok) {
-          throw new Error(`Could not load ${dataUrl}: ${response.status}`)
+          response = await fetch(fallbackDataUrl)
+          loadedFrom = fallbackDataUrl
+        }
+        if (!response.ok) {
+          throw new Error(`Could not load ${loadedFrom}: ${response.status}`)
         }
         const data = (await response.json()) as AtlasData
         if (!cancelled) {
@@ -46,4 +52,3 @@ export function useAtlasData(): AtlasDataState {
 
   return state
 }
-

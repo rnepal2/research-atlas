@@ -20,7 +20,8 @@ import {
   TabsList,
   TabsTrigger,
 } from '../components/ui'
-import type { AtlasData, NetworkCommunitySummary, TopicProfile } from '../data/types'
+import { useTopicDetail } from '../data/useTopicDetail'
+import type { AtlasData, NetworkCommunitySummary, TopicSummary } from '../data/types'
 import { formatNumber } from '../lib/format'
 import { navigate } from '../lib/router'
 
@@ -31,14 +32,13 @@ interface NetworksPageProps {
 
 export function NetworksPage({ atlas, initialTopicSlug }: NetworksPageProps) {
   const initialTopic = useMemo(() => atlas.topics.find((topic) => topic.slug === initialTopicSlug) || atlas.topics[0], [atlas.topics, initialTopicSlug])
-  const [selected, setSelected] = useState<TopicProfile>(initialTopic)
+  const { topic: selected, loading: topicLoading, error: topicError } = useTopicDetail(initialTopic?.slug, initialTopic)
   const [mode, setMode] = useState('researchers')
-  const activeNetwork = mode === 'institutions' ? selected.institutionNetwork : selected.network
-  const activeCommunities = mode === 'institutions' ? selected.networkCommunities.institutions : selected.networkCommunities.authors
-  const geographicCountries = selected.countries.filter((country) => country.country !== 'Unknown')
+  const activeNetwork = selected ? (mode === 'institutions' ? selected.institutionNetwork : selected.network) : { nodes: [], edges: [] }
+  const activeCommunities = selected ? (mode === 'institutions' ? selected.networkCommunities.institutions : selected.networkCommunities.authors) : []
+  const geographicCountries = selected ? selected.countries.filter((country) => country.country !== 'Unknown') : []
 
-  function updateTopic(topic: TopicProfile) {
-    setSelected(topic)
+  function updateTopic(topic: TopicSummary) {
     navigate(`/topic/${topic.slug}/network`)
   }
 
@@ -71,7 +71,12 @@ export function NetworksPage({ atlas, initialTopicSlug }: NetworksPageProps) {
 
       <Card className="border-border-strong bg-[linear-gradient(135deg,color-mix(in_srgb,var(--primary)_9%,transparent),transparent_60%),var(--card)]">
         <CardContent>
-          <TopicSelector atlas={atlas} selected={selected} onChange={updateTopic} />
+          <TopicSelector atlas={atlas} selected={selected || initialTopic} onChange={updateTopic} />
+          {(topicLoading || topicError) && (
+            <div className="mt-3 rounded-card border border-border bg-card-soft p-3 text-[0.78rem] text-muted-foreground">
+              {topicLoading ? `Loading ${initialTopic.label} network artifact...` : topicError}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -112,13 +117,13 @@ export function NetworksPage({ atlas, initialTopicSlug }: NetworksPageProps) {
               <span>Matrix cells</span>
               <Rows3 aria-hidden="true" />
             </div>
-            <div className="my-2.5 mb-1 font-ui text-[clamp(1.38rem,2vw,1.92rem)] leading-none font-[720]">{formatNumber(selected.subtopicMatrix.rows.length * selected.subtopicMatrix.columns.length)}</div>
+            <div className="my-2.5 mb-1 font-ui text-[clamp(1.38rem,2vw,1.92rem)] leading-none font-[720]">{formatNumber(selected ? selected.subtopicMatrix.rows.length * selected.subtopicMatrix.columns.length : 0)}</div>
             <div className="text-[0.74rem] text-muted-foreground">Institution x subtopic activity</div>
           </CardContent>
         </Card>
       </section>
 
-      {mode === 'researchers' && (
+      {selected && mode === 'researchers' && (
         <section className="grid grid-cols-[minmax(0,1fr)_318px] gap-2.5 max-[1160px]:grid-cols-1">
           <Card>
             <CardHeader>
@@ -139,7 +144,7 @@ export function NetworksPage({ atlas, initialTopicSlug }: NetworksPageProps) {
         </section>
       )}
 
-      {mode === 'institutions' && (
+      {selected && mode === 'institutions' && (
         <section className="grid grid-cols-[minmax(0,1fr)_318px] gap-2.5 max-[1160px]:grid-cols-1">
           <Card>
             <CardHeader>
@@ -160,7 +165,7 @@ export function NetworksPage({ atlas, initialTopicSlug }: NetworksPageProps) {
         </section>
       )}
 
-      {mode === 'geo' && (
+      {selected && mode === 'geo' && (
         <Card>
           <CardHeader>
             <div>
@@ -175,7 +180,7 @@ export function NetworksPage({ atlas, initialTopicSlug }: NetworksPageProps) {
         </Card>
       )}
 
-      {mode === 'matrix' && (
+      {selected && mode === 'matrix' && (
         <Card>
           <CardHeader>
             <div>

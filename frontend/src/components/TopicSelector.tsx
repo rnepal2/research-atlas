@@ -1,10 +1,10 @@
-import type { AtlasData, TopicProfile } from '../data/types'
+import type { AtlasData, TopicSummary } from '../data/types'
 import { SelectField } from './ui'
 
 interface TopicSelectorProps {
   atlas: AtlasData
-  selected: TopicProfile
-  onChange: (topic: TopicProfile) => void
+  selected: TopicSummary
+  onChange: (topic: TopicSummary) => void
 }
 
 export function TopicSelector({ atlas, selected, onChange }: TopicSelectorProps) {
@@ -14,7 +14,7 @@ export function TopicSelector({ atlas, selected, onChange }: TopicSelectorProps)
     .filter((topic) => topic.domain === selected.domain && topic.field === selected.field)
     .sort((left, right) => left.label.localeCompare(right.label))
 
-  function selectFirst(match: (topic: TopicProfile) => boolean) {
+  function selectFirst(match: (topic: TopicSummary) => boolean) {
     const next = atlas.topics.find(match)
     if (next) {
       onChange(next)

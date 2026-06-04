@@ -1,6 +1,6 @@
 import type React from 'react'
 import { ChevronsLeft, ChevronsRight, Command } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { NavItem } from '../app/navigation'
 import type { AtlasData } from '../data/types'
 import { cx } from '../lib/cx'
@@ -17,6 +17,11 @@ interface AppShellProps {
 
 export function AppShell({ atlas, navItems, activePath, children }: AppShellProps) {
   const [collapsed, setCollapsed] = useState(false)
+  const mainRef = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [activePath])
 
   return (
     <div
@@ -91,7 +96,7 @@ export function AppShell({ atlas, navItems, activePath, children }: AppShellProp
         </div>
       </aside>
 
-      <main className="h-dvh min-w-0 max-w-[100vw] overflow-y-auto overscroll-contain px-6 pt-4 pb-9 max-[1160px]:h-auto max-[1160px]:max-w-full max-[1160px]:overflow-visible max-[1160px]:px-[18px] max-[1160px]:py-4 max-[1160px]:pb-7 max-[760px]:px-3 max-[760px]:py-3 max-[760px]:pb-6">
+      <main ref={mainRef} className="h-dvh min-w-0 max-w-[100vw] overflow-y-auto overscroll-contain px-6 pt-4 pb-9 max-[1160px]:h-auto max-[1160px]:max-w-full max-[1160px]:overflow-visible max-[1160px]:px-[18px] max-[1160px]:py-4 max-[1160px]:pb-7 max-[760px]:px-3 max-[760px]:py-3 max-[760px]:pb-6">
         {children}
       </main>
     </div>

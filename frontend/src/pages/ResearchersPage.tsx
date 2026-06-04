@@ -16,6 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui'
+import { useTopicDetail } from '../data/useTopicDetail'
 import type { AtlasData } from '../data/types'
 import { formatCompact, formatScore } from '../lib/format'
 
@@ -41,7 +42,12 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
   const [country, setCountry] = useState('All countries')
   const [institution, setInstitution] = useState('All institutions')
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const source = useMemo(() => (topicSlug === 'all' ? atlas.leaderboards.authors : atlas.topics.find((topic) => topic.slug === topicSlug)?.authors || []), [atlas, topicSlug])
+  const scopedTopic = useMemo(() => atlas.topics.find((topic) => topic.slug === topicSlug), [atlas.topics, topicSlug])
+  const { topic: topicDetail, loading: topicLoading, error: topicError } = useTopicDetail(topicSlug === 'all' ? undefined : topicSlug, scopedTopic)
+  const source = useMemo(
+    () => (topicSlug === 'all' ? atlas.leaderboards.authors : topicDetail?.authors || scopedTopic?.topAuthors || []),
+    [atlas.leaderboards.authors, scopedTopic?.topAuthors, topicDetail?.authors, topicSlug],
+  )
   const countries = useMemo(() => ['All countries', ...new Set(source.map((author) => author.country || 'Unknown').filter(Boolean))].slice(0, 42), [source])
   const institutions = useMemo(() => ['All institutions', ...new Set(source.map((author) => author.institution).filter((name) => name && name !== 'Institution not resolved'))].slice(0, 60), [source])
   const rows = useMemo(() => {
@@ -112,6 +118,14 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
           </span>
         </label>
       </section>
+
+      {(topicSlug !== 'all' && (topicLoading || topicError)) && (
+        <Card>
+          <CardContent>
+            <p className="m-0 text-[0.78rem] text-muted-foreground">{topicLoading ? `Loading ${scopedTopic?.label || 'topic'} researcher artifact...` : topicError}</p>
+          </CardContent>
+        </Card>
+      )}
 
       <section className="grid grid-cols-[minmax(0,1fr)_320px] gap-2.5 max-[1160px]:grid-cols-1">
         <Card>

@@ -1,4 +1,4 @@
-import type { AtlasData, TopicProfile } from '../data/types'
+import type { AtlasData, TopicSummary } from '../data/types'
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 
@@ -42,7 +42,6 @@ export function isActivePath(activePath: string, itemPath: string): boolean {
   return activePath.startsWith(itemPath)
 }
 
-export function findTopic(atlas: AtlasData, slug: string): TopicProfile | undefined {
+export function findTopic(atlas: AtlasData, slug: string): TopicSummary | undefined {
   return atlas.topics.find((topic) => topic.slug === slug)
 }
-

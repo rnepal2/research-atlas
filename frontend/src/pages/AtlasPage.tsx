@@ -7,8 +7,9 @@ import { PaperList } from '../components/PaperList'
 import { RankingTable } from '../components/RankingTable'
 import { TopicSelector } from '../components/TopicSelector'
 import { TrendChart } from '../components/TrendChart'
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui'
-import type { AtlasData, TopicProfile } from '../data/types'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui'
+import { useTopicDetail } from '../data/useTopicDetail'
+import type { AtlasData, TopicProfile, TopicSummary } from '../data/types'
 import { formatCompact, formatNumber, formatPercent, formatScore } from '../lib/format'
 import { navigate } from '../lib/router'
 
@@ -34,12 +35,42 @@ function Metric({ label, value, note, icon: Icon }: { label: string; value: stri
   )
 }
 
+function topicSkeleton(topic: TopicSummary): TopicProfile {
+  const papers = topic.topPapers || []
+  return {
+    ...topic,
+    openalexTopicIds: [],
+    keywordQueries: [],
+    insightSections: [],
+    yearlyMetrics: [],
+    subtopics: topic.topSubtopics || [],
+    subtopicSeries: [],
+    authors: topic.topAuthors || [],
+    institutions: topic.topInstitutions || [],
+    countries: topic.topCountries || [],
+    papers,
+    paperCollections: {
+      recentImpact: papers,
+      mostCited: papers,
+      newest: papers,
+      reviews: papers,
+      bridgePapers: papers,
+    },
+    network: { nodes: [], edges: [] },
+    institutionNetwork: { nodes: [], edges: [] },
+    networkCommunities: { authors: [], institutions: [] },
+    subtopicMatrix: { columns: [], rows: [] },
+    frontierCards: [],
+  }
+}
+
 export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: AtlasPageProps) {
   const initialTopic = useMemo(
     () => atlas.topics.find((topic) => topic.slug === initialTopicSlug) || atlas.trending.map((item) => atlas.topics.find((topic) => topic.slug === item.slug)).find(Boolean) || atlas.topics[0],
     [atlas, initialTopicSlug],
-  ) as TopicProfile
-  const selected = initialTopic
+  ) as TopicSummary
+  const { topic, loading: topicLoading, error: topicError } = useTopicDetail(initialTopic?.slug, initialTopic)
+  const selected = topic || topicSkeleton(initialTopic)
   const paperCollections = [
     ['recentImpact', 'Recent Impact', selected.paperCollections?.recentImpact || selected.papers],
     ['mostCited', 'Most Cited', selected.paperCollections?.mostCited || selected.papers],
@@ -48,7 +79,7 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
     ['bridgePapers', 'Bridge Papers', selected.paperCollections?.bridgePapers || selected.papers],
   ] as const
 
-  function updateTopic(topic: TopicProfile) {
+  function updateTopic(topic: TopicSummary) {
     navigate(`/topic/${topic.slug}`)
   }
 
@@ -93,6 +124,11 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
         </CardHeader>
         <CardContent>
           <TopicSelector atlas={atlas} selected={selected} onChange={updateTopic} />
+          {(topicLoading || topicError) && (
+            <div className="mt-3 rounded-card border border-border bg-card-soft p-3 text-[0.78rem] text-muted-foreground">
+              {topicLoading ? `Loading ${selected.label} detail artifact...` : topicError}
+            </div>
+          )}
           <div className="mt-3 grid grid-cols-4 gap-2.5 max-[1160px]:grid-cols-2 max-[760px]:grid-cols-1">
             <div className="grid gap-1 rounded-card border border-border bg-card-soft p-2.5">
               <span className="text-[0.66rem] font-bold uppercase text-muted-foreground">Snapshot quality</span>
@@ -206,6 +242,37 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
           <FrontierCards cards={selected.insights?.length ? selected.insights : selected.frontierCards} columns={3} />
         </CardContent>
       </Card>
+
+      {selected.insightSections?.length ? (
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>Analyst brief</CardTitle>
+              <CardDescription>Structured evidence across momentum, people, institutions, geography, papers, networks, and quality.</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Accordion type="single" collapsible defaultValue={selected.insightSections[0]?.key} className="border-t border-border">
+              {selected.insightSections.map((section) => (
+                <AccordionItem value={section.key} key={section.key} className="border-b border-border">
+                  <AccordionTrigger className="min-h-[46px] py-0 text-[0.84rem] hover:no-underline">{section.title}</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="grid grid-cols-3 gap-2.5 pt-1 max-[1160px]:grid-cols-1">
+                      {section.items.map((item) => (
+                        <div className="grid gap-1.5 rounded-card border border-border bg-card-soft p-3" key={`${section.key}-${item.label}`}>
+                          <span className="text-[0.66rem] font-bold uppercase text-muted-foreground">{item.label}</span>
+                          <strong className="line-clamp-2 text-[0.94rem] leading-tight text-foreground">{item.value}</strong>
+                          <p className="m-0 text-[0.74rem] leading-[1.45] text-muted-foreground">{item.detail}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader>

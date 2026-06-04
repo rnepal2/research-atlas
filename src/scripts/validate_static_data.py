@@ -13,6 +13,7 @@ TOPIC_KEYS = {
     "metrics",
     "quality",
     "insights",
+    "insightSections",
     "yearlyMetrics",
     "authors",
     "institutions",
@@ -45,6 +46,7 @@ def validate_topic(topic: dict[str, Any]) -> None:
     require(topic["network"].get("nodes"), f"{topic['slug']} has no researcher network nodes")
     require(topic["institutionNetwork"].get("nodes"), f"{topic['slug']} has no institution network nodes")
     require(topic.get("insights"), f"{topic['slug']} has no generated insights")
+    require(sum(len(section.get("items", [])) for section in topic.get("insightSections", [])) >= 18, f"{topic['slug']} has too few insight-section items")
     require(topic.get("paperCollections", {}).get("recentImpact"), f"{topic['slug']} has no recent-impact papers")
 
 

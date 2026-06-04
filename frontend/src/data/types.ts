@@ -7,7 +7,7 @@ export interface AtlasData {
     url: string
     notes: string
   }
-  topics: TopicProfile[]
+  topics: TopicSummary[]
   taxonomy: TaxonomyDomain[]
   leaderboards: {
     authors: GlobalAuthorProfile[]
@@ -24,7 +24,7 @@ export interface AtlasData {
   methodology: Record<string, string>
 }
 
-export interface TopicProfile {
+export interface TopicSummary {
   slug: string
   label: string
   domain: string
@@ -33,11 +33,26 @@ export interface TopicProfile {
   workArea: string
   description: string
   summary: string
-  openalexTopicIds: string[]
-  keywordQueries: string[]
   metrics: TopicMetrics
   quality: TopicQuality
   insights: TopicInsight[]
+  topSubtopics?: SubtopicMetric[]
+  topAuthors?: AuthorProfile[]
+  topInstitutions?: InstitutionProfile[]
+  topCountries?: CountryMetric[]
+  topPapers?: PaperProfile[]
+  networkCounts?: {
+    researcherNodes: number
+    researcherEdges: number
+    institutionNodes: number
+    institutionEdges: number
+  }
+}
+
+export interface TopicProfile extends TopicSummary {
+  openalexTopicIds: string[]
+  keywordQueries: string[]
+  insightSections?: InsightSection[]
   yearlyMetrics: YearlyMetric[]
   subtopics: SubtopicMetric[]
   subtopicSeries: SubtopicSeriesPoint[]
@@ -188,6 +203,16 @@ export interface TopicInsight {
   description: string
   type: string
   url?: string
+}
+
+export interface InsightSection {
+  key: string
+  title: string
+  items: {
+    label: string
+    value: string
+    detail: string
+  }[]
 }
 
 export interface AtlasCoverage {

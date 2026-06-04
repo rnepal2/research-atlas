@@ -80,6 +80,7 @@ def main() -> None:
     run([sys.executable, str(SCRIPT_DIR / "validate_static_data.py"), "--artifact", artifact, "--max-artifact-mb", str(args.max_artifact_mb)])
     run([sys.executable, str(SCRIPT_DIR / "sync_public_data.py"), "--source", artifact, "--target", args.public_artifact])
     run([sys.executable, str(SCRIPT_DIR / "generate_static_assets.py"), "--artifact", artifact, "--public-dir", args.public_dir])
+    run([sys.executable, str(SCRIPT_DIR / "measure_progress.py"), "--artifact", artifact])
 
 
 if __name__ == "__main__":

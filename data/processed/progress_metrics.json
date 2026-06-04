@@ -1,0 +1,30 @@
+{
+  "baseline": {
+    "topics": 78,
+    "worksCollected": 52089,
+    "insightItemsPerTopic": 6
+  },
+  "current": {
+    "topics": 78,
+    "worksCollected": 51802,
+    "medianInsightItemsPerTopic": 21,
+    "artifactBytes": 13614296,
+    "indexArtifactBytes": 1496628,
+    "topicArtifactCount": 78,
+    "skippedTopics": 22
+  },
+  "multipliers": {
+    "topicCoverage": 1.0,
+    "workCoverage": 0.994,
+    "analyticsDepth": 3.5
+  },
+  "targets": {
+    "topicCoverageMultiplier": 5,
+    "workCoverageMultiplier": 5,
+    "analyticsDepthMultiplier": 3
+  },
+  "status": {
+    "coverageTargetMet": false,
+    "analyticsTargetMet": true
+  }
+}
