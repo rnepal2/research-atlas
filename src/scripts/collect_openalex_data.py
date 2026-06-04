@@ -17,6 +17,7 @@ import yaml
 
 
 BASE_URL = "https://api.openalex.org"
+DEFAULT_MAX_WORKS = 3000
 WORK_FIELDS = ",".join(
     [
         "id",
@@ -68,11 +69,19 @@ class OpenAlexClient:
                 time.sleep(self.min_interval - elapsed)
             response = self.session.get(url, params=params, timeout=45)
             self.last_request_at = time.time()
+            if response.status_code == 429 and not self.api_key:
+                raise RuntimeError(
+                    "OpenAlex returned 429 without OPENALEX_API_KEY. Set OPENALEX_API_KEY for live collection, "
+                    "or rerun with --allow-unauthenticated for a small development probe."
+                )
             if response.status_code in {429, 500, 502, 503, 504}:
-                wait = min(60, 2**attempt)
+                retry_after = response.headers.get("retry-after")
+                wait = min(90, int(retry_after) if retry_after and retry_after.isdigit() else 2**attempt)
                 logging.warning("OpenAlex %s for %s; retrying in %ss", response.status_code, response.url, wait)
                 time.sleep(wait)
                 continue
+            if response.status_code in {401, 403}:
+                raise RuntimeError("OpenAlex rejected the API request. Check that OPENALEX_API_KEY is set and valid.")
             response.raise_for_status()
             payload = response.json()
             if use_cache:
@@ -90,6 +99,14 @@ def short_openalex_id(value: str) -> str:
 def load_config(path: Path) -> list[dict[str, Any]]:
     config = yaml.safe_load(path.read_text())
     return config.get("topics", [])
+
+
+def raw_work_count(output_dir: Path, slug: str) -> int:
+    path = output_dir / slug / "works.jsonl"
+    if not path.exists():
+        return 0
+    with path.open() as handle:
+        return sum(1 for line in handle if line.strip())
 
 
 def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -155,7 +172,7 @@ def collect_works(client: OpenAlexClient, topic: dict[str, Any], output_dir: Pat
     years_back = int(topic.get("collection", {}).get("years_back", 10))
     min_year = current_year - years_back
     configured_max = int(topic.get("collection", {}).get("max_works", 0))
-    max_works = int(max_works_override or max(configured_max, 900))
+    max_works = int(max_works_override if max_works_override is not None else max(configured_max, DEFAULT_MAX_WORKS))
     per_query_cap = max(50, max_works // max(1, len(topic.get("openalex_topic_ids", [])) + len(topic.get("keyword_queries", []))))
     collected: dict[str, dict[str, Any]] = {}
 
@@ -214,18 +231,33 @@ def main() -> None:
     parser.add_argument("--cache-dir", default=".cache/openalex")
     parser.add_argument("--topic", help="Optional topic slug to collect")
     parser.add_argument("--max-works", type=int, help="Override max works per topic")
+    parser.add_argument("--missing-only", action="store_true", help="Collect only configured topics with no raw works file.")
+    parser.add_argument("--stale-below", type=int, help="Collect only topics whose raw works file has fewer than this many rows.")
+    parser.add_argument("--allow-unauthenticated", action="store_true", help="Allow live collection without OPENALEX_API_KEY for small development probes.")
     parser.add_argument("--skip-metadata", action="store_true", help="Skip topic metadata search and collect works/entities only.")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     topics = load_config(Path(args.config))
+    output_dir = Path(args.output_dir)
     if args.topic:
         topics = [topic for topic in topics if topic["slug"] == args.topic]
+    if args.missing_only:
+        topics = [topic for topic in topics if raw_work_count(output_dir, topic["slug"]) == 0]
+    if args.stale_below is not None:
+        topics = [topic for topic in topics if raw_work_count(output_dir, topic["slug"]) < args.stale_below]
     if not topics:
         raise SystemExit("No matching topics found.")
 
-    client = OpenAlexClient(os.getenv("OPENALEX_API_KEY"), Path(args.cache_dir))
-    output_dir = Path(args.output_dir)
+    api_key = os.getenv("OPENALEX_API_KEY")
+    if not api_key and not args.allow_unauthenticated:
+        raise SystemExit(
+            "OPENALEX_API_KEY is required for live OpenAlex collection. "
+            "Use --fast/--skip-collect for cached processing, or --allow-unauthenticated for a small development probe."
+        )
+
+    logging.info("Collecting %s topic(s); target max works per topic is %s", len(topics), args.max_works or DEFAULT_MAX_WORKS)
+    client = OpenAlexClient(api_key, Path(args.cache_dir))
     for topic in topics:
         if not args.skip_metadata:
             collect_topic_metadata(client, topic, output_dir)

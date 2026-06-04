@@ -1,4 +1,4 @@
-import { Activity, ArrowUpRight, Filter } from 'lucide-react'
+import { Activity, ArrowUpRight, Filter, ShieldCheck } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import {
   Badge,
@@ -26,7 +26,7 @@ interface TrendingPageProps {
 }
 
 const tableClass =
-  'min-w-[760px] border-collapse [&_strong]:font-[650] [&_strong]:text-foreground'
+  'min-w-[860px] border-collapse [&_strong]:font-[650] [&_strong]:text-foreground'
 const headClass =
   'sticky top-0 z-[2] h-auto border-b border-border bg-[linear-gradient(180deg,color-mix(in_srgb,var(--card-solid)_96%,transparent),color-mix(in_srgb,var(--card-solid)_90%,transparent))] px-2 py-[9px] text-left text-[0.66rem] font-bold tracking-[0] text-muted-foreground uppercase backdrop-blur-[14px]'
 const cellClass =
@@ -60,6 +60,7 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
         .filter((topic) => workArea === 'All work areas' || topic.workArea === workArea),
     [atlas.trending, domain, field, workArea],
   )
+  const strongSnapshots = rows.filter((topic) => (topic.qualityScore || 0) >= 82).length
 
   return (
     <div className="grid min-w-0 gap-3">
@@ -120,11 +121,44 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
                   <span className="text-[0.64rem] font-bold uppercase text-muted-foreground">Trend score</span>
                   <strong className="text-[1.38rem] leading-none font-[760] text-primary">{formatScore(topic.trendScore)}</strong>
                 </div>
-                <Badge variant="secondary">{formatNumber(topic.worksLast3Years)} works</Badge>
+                <div className="grid justify-items-end gap-1">
+                  <Badge variant="secondary">{formatNumber(topic.worksLast3Years)} works</Badge>
+                  {topic.qualityLabel && <span className="text-[0.66rem] font-bold text-muted-foreground">{topic.qualityLabel}</span>}
+                </div>
               </div>
             </CardContent>
           </Card>
         ))}
+      </section>
+
+      <section className="grid grid-cols-3 gap-2.5 max-[900px]:grid-cols-1">
+        <Card className="bg-card-soft">
+          <CardContent className="flex min-h-[78px] items-center justify-between gap-3">
+            <div>
+              <span className="block text-[0.66rem] font-bold uppercase text-muted-foreground">Filtered topics</span>
+              <strong className="text-[1.45rem] leading-none">{formatNumber(rows.length)}</strong>
+            </div>
+            <Filter aria-hidden="true" className="size-[18px] text-primary" />
+          </CardContent>
+        </Card>
+        <Card className="bg-card-soft">
+          <CardContent className="flex min-h-[78px] items-center justify-between gap-3">
+            <div>
+              <span className="block text-[0.66rem] font-bold uppercase text-muted-foreground">Strong snapshots</span>
+              <strong className="text-[1.45rem] leading-none">{formatNumber(strongSnapshots)}</strong>
+            </div>
+            <ShieldCheck aria-hidden="true" className="size-[18px] text-primary" />
+          </CardContent>
+        </Card>
+        <Card className="bg-card-soft">
+          <CardContent className="flex min-h-[78px] items-center justify-between gap-3">
+            <div>
+              <span className="block text-[0.66rem] font-bold uppercase text-muted-foreground">Average quality</span>
+              <strong className="text-[1.45rem] leading-none">{formatScore(atlas.coverage.averageCompletenessScore)}</strong>
+            </div>
+            <Activity aria-hidden="true" className="size-[18px] text-primary" />
+          </CardContent>
+        </Card>
       </section>
 
       <Card>
@@ -144,6 +178,7 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
                   <TableHead className={headClass}>Topic</TableHead>
                   <TableHead className={headClass}>OpenAlex path</TableHead>
                   <TableHead className={headClass}>Why it ranks</TableHead>
+                  <TableHead className={headClass}>Signal drivers</TableHead>
                   <TableHead className={headClass}>Evidence</TableHead>
                   <TableHead className={headClass}>Recent works</TableHead>
                   <TableHead className={headClass}>Growth</TableHead>
@@ -173,11 +208,21 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
                       <span className="text-muted-foreground">{topic.whyTrending || 'Momentum is normalized against prior activity.'}</span>
                     </TableCell>
                     <TableCell className={cellClass}>
+                      <div className="flex max-w-[250px] flex-wrap gap-1.5">
+                        {(topic.signalDrivers?.length ? topic.signalDrivers : [topic.topSubtopic]).slice(0, 4).map((driver) => (
+                          <span className="rounded-full border border-border bg-card-soft px-2 py-1 text-[0.67rem] font-bold text-muted-foreground" key={`${topic.slug}-${driver}`}>
+                            {driver}
+                          </span>
+                        ))}
+                      </div>
+                    </TableCell>
+                    <TableCell className={cellClass}>
                       {topic.topInstitution || 'Institution not resolved'}
                       <br />
                       <span className="text-muted-foreground">
                         {topic.topCountry || 'Unknown'} / {formatPercent(topic.newAuthorShare || 0)} new authors
                       </span>
+                      {topic.qualityLabel && <span className="mt-1 block text-[0.68rem] font-bold text-primary">{topic.qualityLabel}</span>}
                     </TableCell>
                     <TableCell className={cellClass}>{formatNumber(topic.worksLast3Years)}</TableCell>
                     <TableCell className={cellClass}>{formatPercent(topic.growthRate)}</TableCell>

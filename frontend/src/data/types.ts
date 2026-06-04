@@ -216,11 +216,16 @@ export interface InsightSection {
 }
 
 export interface AtlasCoverage {
+  configuredTopics?: number
   topics: number
+  skippedTopics?: number
   worksCollected: number
+  averageWorksPerProfile?: number
+  profileCompletionRate?: number
   fields: number
   workAreas: number
   mappedCountries: number
+  latestPublicationYear?: number
   averageCompletenessScore: number
 }
 
@@ -294,6 +299,8 @@ export interface TrendingTopic {
   topCountry?: string
   newAuthorShare?: number
   qualityScore?: number
+  qualityLabel?: string
+  signalDrivers?: string[]
   whyTrending?: string
 }
 

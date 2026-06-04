@@ -5,11 +5,14 @@
     "insightItemsPerTopic": 6
   },
   "current": {
+    "configuredTopics": 100,
     "topics": 78,
     "worksCollected": 51802,
+    "rawTopicsWithWorks": 78,
+    "rawWorksTotal": 52089,
     "medianInsightItemsPerTopic": 21,
-    "artifactBytes": 13614296,
-    "indexArtifactBytes": 1496628,
+    "artifactBytes": 13652655,
+    "indexArtifactBytes": 1524818,
     "topicArtifactCount": 78,
     "skippedTopics": 22
   },
@@ -21,7 +24,16 @@
   "targets": {
     "topicCoverageMultiplier": 5,
     "workCoverageMultiplier": 5,
-    "analyticsDepthMultiplier": 3
+    "analyticsDepthMultiplier": 3,
+    "targetTopics": 390,
+    "targetWorksCollected": 260445
+  },
+  "deficit": {
+    "topicsToFiveX": 312,
+    "worksToFiveX": 208643,
+    "rawTopicsWithoutWorks": 22,
+    "avgWorksNeededPerConfiguredTopic": 2604,
+    "suggestedCollectionCommand": "./src/refresh_data.sh --stale-below 3000 --max-works 3000"
   },
   "status": {
     "coverageTargetMet": false,

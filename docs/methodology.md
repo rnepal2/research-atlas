@@ -4,7 +4,7 @@ Research Atlas is a static OpenAlex snapshot. Its scores are discovery signals, 
 
 ## Topic Profiles
 
-Each topic is defined in `data/config/topics.yaml` with an OpenAlex-style domain, field, subfield, work area, optional topic IDs, and keyword fallback queries. The refresh pipeline collects recent works, deduplicates them by OpenAlex ID, skips configured topics without enough raw works, and builds compact profiles for the frontend.
+Each topic is defined in `data/config/topics.yaml` with an OpenAlex-style domain, field, subfield, work area, optional topic IDs, and keyword fallback queries. The refresh pipeline collects recent works, removes future-dated records, deduplicates by OpenAlex ID, skips configured topics without enough raw works, and builds compact profiles for the frontend.
 
 ## Trend Score
 

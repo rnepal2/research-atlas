@@ -18,6 +18,66 @@ from src.analytics.network_metrics import betweenness_centrality, coauthor_edges
 from src.analytics.ranking import institution_strength_score, normalize, rising_researcher_score, topic_trend_score
 from src.analytics.topic_metrics import fragmentation_score, growth_rate, hhi, safe_divide
 
+COUNTRY_NAMES = {
+    "AE": "United Arab Emirates",
+    "AR": "Argentina",
+    "AT": "Austria",
+    "AU": "Australia",
+    "BD": "Bangladesh",
+    "BE": "Belgium",
+    "BR": "Brazil",
+    "CA": "Canada",
+    "CH": "Switzerland",
+    "CL": "Chile",
+    "CN": "China",
+    "CO": "Colombia",
+    "CZ": "Czechia",
+    "DE": "Germany",
+    "DK": "Denmark",
+    "EG": "Egypt",
+    "ES": "Spain",
+    "ET": "Ethiopia",
+    "FI": "Finland",
+    "FR": "France",
+    "GB": "United Kingdom",
+    "GH": "Ghana",
+    "GR": "Greece",
+    "HK": "Hong Kong",
+    "HU": "Hungary",
+    "ID": "Indonesia",
+    "IE": "Ireland",
+    "IL": "Israel",
+    "IN": "India",
+    "IR": "Iran",
+    "IT": "Italy",
+    "JP": "Japan",
+    "KE": "Kenya",
+    "KR": "South Korea",
+    "LB": "Lebanon",
+    "MA": "Morocco",
+    "MX": "Mexico",
+    "MY": "Malaysia",
+    "NG": "Nigeria",
+    "NL": "Netherlands",
+    "NO": "Norway",
+    "NZ": "New Zealand",
+    "PK": "Pakistan",
+    "PL": "Poland",
+    "PT": "Portugal",
+    "RO": "Romania",
+    "RU": "Russia",
+    "SA": "Saudi Arabia",
+    "SE": "Sweden",
+    "SG": "Singapore",
+    "TH": "Thailand",
+    "TR": "Turkey",
+    "TW": "Taiwan",
+    "UA": "Ukraine",
+    "US": "United States",
+    "VN": "Vietnam",
+    "ZA": "South Africa",
+}
+
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
@@ -69,6 +129,26 @@ def work_institutions(work: dict[str, Any]) -> list[dict[str, Any]]:
 def source_name(work: dict[str, Any]) -> str:
     source = (((work.get("primary_location") or {}).get("source")) or {})
     return source.get("display_name") or "Unspecified source"
+
+
+def country_name(code: str) -> str:
+    return COUNTRY_NAMES.get(code, code)
+
+
+def quality_label(score: float) -> str:
+    if score >= 82:
+        return "Strong snapshot"
+    if score >= 70:
+        return "Usable snapshot"
+    return "Needs deeper collection"
+
+
+def concentration_label(score: float) -> str:
+    if score < 0.06:
+        return "distributed"
+    if score < 0.14:
+        return "moderately concentrated"
+    return "concentrated"
 
 
 def topic_label(topic_obj: dict[str, Any] | None) -> str:
@@ -416,7 +496,7 @@ def build_country_rows(works: list[dict[str, Any]]) -> list[dict[str, Any]]:
         rows.append(
             {
                 "country": country,
-                "name": country,
+                "name": country_name(country),
                 "works": values["works"],
                 "institutions": len(values["institutions"]),
                 "citations": values["citations"],
@@ -675,41 +755,51 @@ def build_insights(
     papers: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     top_country = next((country for country in countries if country["country"] != "Unknown"), None)
+    top_subtopic = subtopics[0] if subtopics else None
+    top_author = authors[0] if authors else None
+    top_institution = institutions[0] if institutions else None
+    top_paper = papers[0] if papers else None
+    trend_detail = (
+        f"{top_subtopic['label']} is the fastest visible subtopic, and recent work volume is "
+        f"{metrics['worksLast3Years']:,} works across the latest three-year window."
+        if top_subtopic
+        else f"Recent work volume is {metrics['worksLast3Years']:,} works across the latest three-year window."
+    )
     cards = [
         {
             "label": "Why this topic is moving",
             "title": f"{round(metrics['growthRate'] * 100)}% recent growth",
             "value": f"{metrics['worksLast3Years']:,} works",
-            "description": f"Recent works are compared with the prior three-year window; trend score is {metrics['trendScore']}.",
+            "description": f"{trend_detail} Trend score is {metrics['trendScore']}.",
             "type": "trend",
         },
         {
             "label": "Where activity concentrates",
-            "title": institutions[0]["name"] if institutions else "Institution not resolved",
+            "title": top_institution["name"] if top_institution else "Institution not resolved",
             "value": f"{metrics['activeInstitutions']:,} institutions",
-            "description": f"Concentration score is {metrics['concentrationScore']}; lower values suggest a more distributed field.",
+            "description": f"Activity looks {concentration_label(metrics['concentrationScore'])}; the leading institution signal is based on works, citations, collaborators, and subtopic breadth.",
             "type": "institution",
         },
         {
             "label": "Who is entering the field",
-            "title": authors[0]["name"] if authors else "Author not resolved",
+            "title": top_author["name"] if top_author else "Author not resolved",
             "value": f"{round(metrics['newAuthorShare'] * 100)}% new-author share",
-            "description": "New-author share estimates how much recent activity comes from authors not seen in the prior window.",
+            "description": "; ".join(top_author.get("scoreDrivers", [])[:3]) if top_author and top_author.get("scoreDrivers") else "New-author share estimates how much recent activity comes from authors not seen in the prior window.",
             "type": "author",
         },
         {
             "label": "Which papers changed the signal",
-            "title": papers[0]["title"] if papers else "Paper not resolved",
-            "value": f"{papers[0]['citations']:,} citations" if papers else "No papers",
-            "description": "Recent impact papers are ranked by recency, citations, and citation velocity within the curated topic snapshot.",
+            "title": top_paper["title"] if top_paper else "Paper not resolved",
+            "value": f"{top_paper['citations']:,} citations" if top_paper else "No papers",
+            "description": f"{top_paper['year']} in {top_paper['source']}; ranked by recency, citations, and citation velocity." if top_paper else "No paper signal is available in this topic snapshot.",
             "type": "paper",
-            "url": papers[0].get("url") if papers else None,
+            "url": top_paper.get("url") if top_paper else None,
         },
         {
             "label": "Geographic footprint",
-            "title": top_country["country"] if top_country else "Country not resolved",
+            "title": top_country.get("name") or country_name(top_country["country"]) if top_country else "Country not resolved",
             "value": f"{quality['mappedCountries']} mapped countries",
-            "description": f"Country resolution is {round(quality['countryResolutionRate'] * 100)}% across resolved institution mentions.",
+            "description": f"{round((top_country or {}).get('workShare', 0) * 100)}% of mapped works are attributed to the leading country; country resolution is {round(quality['countryResolutionRate'] * 100)}%.",
             "type": "geo",
         },
     ]
@@ -815,7 +905,7 @@ def build_insight_sections(
             "items": [
                 {
                     "label": "Top country",
-                    "value": top_country.get("country", "Unknown"),
+                    "value": top_country.get("name") or country_name(top_country.get("country", "Unknown")),
                     "detail": f"{top_country.get('works', 0):,} country-attributed works and {top_country.get('institutions', 0):,} institutions.",
                 },
                 {
@@ -902,6 +992,33 @@ def narrative_summary(topic: dict[str, Any], metrics: dict[str, Any], top_subtop
         f"The current artifact tracks {metrics['worksLast5Years']:,} works in the last five years, "
         f"with {metrics['activeAuthors']:,} active authors and {metrics['activeInstitutions']:,} active institutions. "
         f"The strongest visible subtopic is {top_subtopic}, while {top_institution} appears as a leading institution in this snapshot."
+    )
+
+
+def trending_drivers(topic: dict[str, Any]) -> list[str]:
+    metrics = topic["metrics"]
+    quality = topic["quality"]
+    drivers = []
+    if metrics["growthRate"] > 0:
+        drivers.append(f"{round(metrics['growthRate'] * 100)}% recent growth")
+    if metrics["newAuthorShare"] >= 0.6:
+        drivers.append(f"{round(metrics['newAuthorShare'] * 100)}% new-author share")
+    if metrics["activeInstitutions"] >= 20:
+        drivers.append(f"{metrics['activeInstitutions']:,} active institutions")
+    if quality["mappedCountries"] >= 10:
+        drivers.append(f"{quality['mappedCountries']} mapped countries")
+    if topic.get("subtopics"):
+        drivers.append(topic["subtopics"][0]["label"])
+    return drivers[:4]
+
+
+def trending_explanation(topic: dict[str, Any]) -> str:
+    metrics = topic["metrics"]
+    subtopic = topic["subtopics"][0]["label"] if topic.get("subtopics") else "the leading subtopic"
+    institution = topic["institutions"][0]["name"] if topic.get("institutions") else "the leading institution"
+    return (
+        f"{metrics['worksLast3Years']:,} recent works, {round(metrics['growthRate'] * 100)}% growth, "
+        f"and {round(metrics['newAuthorShare'] * 100)}% new-author share; {subtopic} and {institution} anchor the visible signal."
     )
 
 
@@ -1132,19 +1249,26 @@ def build_search_index(topics: list[dict[str, Any]], leaderboards: dict[str, Any
     return sorted(rows, key=lambda row: row["score"], reverse=True)[:450]
 
 
-def build_coverage(topics: list[dict[str, Any]]) -> dict[str, Any]:
+def build_coverage(topics: list[dict[str, Any]], configured_topic_count: int = 0, skipped_topic_count: int = 0) -> dict[str, Any]:
     topic_count = len(topics)
     works = sum(topic["quality"]["worksCollected"] for topic in topics)
     countries = {country["country"] for topic in topics for country in topic["countries"] if country["country"] != "Unknown"}
     fields = {topic["field"] for topic in topics if topic.get("field")}
     work_areas = {topic["workArea"] for topic in topics if topic.get("workArea")}
     quality_scores = [topic["quality"]["dataCompletenessScore"] for topic in topics]
+    latest_years = [topic["quality"].get("latestPublicationYear", 0) for topic in topics]
+    configured = configured_topic_count or topic_count
     return {
+        "configuredTopics": configured,
         "topics": topic_count,
+        "skippedTopics": skipped_topic_count,
         "worksCollected": works,
+        "averageWorksPerProfile": round(safe_divide(works, topic_count), 1),
+        "profileCompletionRate": round(safe_divide(topic_count, configured), 3),
         "fields": len(fields),
         "workAreas": len(work_areas),
         "mappedCountries": len(countries),
+        "latestPublicationYear": max(latest_years, default=0),
         "averageCompletenessScore": round(safe_divide(sum(quality_scores), len(quality_scores)), 1),
     }
 
@@ -1229,10 +1353,12 @@ def main() -> None:
                 "worksLast3Years": topic["metrics"]["worksLast3Years"],
                 "topSubtopic": topic["subtopics"][0]["label"] if topic["subtopics"] else "Unclassified",
                 "topInstitution": topic["institutions"][0]["name"] if topic["institutions"] else "Institution not resolved",
-                "topCountry": next((country["country"] for country in topic["countries"] if country["country"] != "Unknown"), "Unknown"),
+                "topCountry": next((country.get("name") or country_name(country["country"]) for country in topic["countries"] if country["country"] != "Unknown"), "Unknown"),
                 "newAuthorShare": topic["metrics"]["newAuthorShare"],
                 "qualityScore": topic["quality"]["dataCompletenessScore"],
-                "whyTrending": topic["insights"][0]["description"] if topic.get("insights") else "",
+                "qualityLabel": quality_label(topic["quality"]["dataCompletenessScore"]),
+                "signalDrivers": trending_drivers(topic),
+                "whyTrending": trending_explanation(topic),
             }
             for topic in processed_topics
         ],
@@ -1251,7 +1377,7 @@ def main() -> None:
         },
         "taxonomy": build_taxonomy(processed_topics),
         "leaderboards": leaderboards,
-        "coverage": build_coverage(processed_topics),
+        "coverage": build_coverage(processed_topics, len(topics), len(skipped_topics)),
         "searchIndex": build_search_index(processed_topics, leaderboards),
         "skippedTopics": skipped_topics,
         "topics": processed_topics,

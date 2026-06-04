@@ -13,13 +13,13 @@ npm install
 npm run dev
 ```
 
-The app reads `frontend/public/data/atlas.json`, which is synced from `data/processed/atlas.json` before dev and build commands.
+The app reads `frontend/public/data/atlas-index.json` plus per-topic files synced from `data/processed`.
 
 ## Refresh Data
 
 ```bash
 export OPENALEX_API_KEY="your-key"
-./src/refresh_data.sh --max-works 600
+./src/refresh_data.sh --stale-below 3000 --max-works 3000
 ```
 
 For a local rebuild from existing raw files:
@@ -28,7 +28,7 @@ For a local rebuild from existing raw files:
 ./src/refresh_data.sh --fast
 ```
 
-Only `data/processed/atlas.json` is committed. Raw OpenAlex files, API cache files, build output, and local caches are ignored.
+Only processed static artifacts are committed. Raw OpenAlex files, API cache files, build output, and local caches are ignored.
 
 ## Build
 

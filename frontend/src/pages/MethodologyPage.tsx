@@ -1,5 +1,5 @@
 import type { AtlasData } from '../data/types'
-import { formatNumber } from '../lib/format'
+import { formatNumber, formatPercent } from '../lib/format'
 import { Activity, Compass, Database, Layers3, RefreshCw, ShieldCheck, ExternalLink } from 'lucide-react'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui'
 
@@ -41,10 +41,14 @@ export function MethodologyPage({ atlas }: MethodologyPageProps) {
               The site is designed for discovery: which topics are moving, where activity concentrates, which researchers
               are becoming more visible, and how collaboration networks are structured.
             </p>
-            <div className="grid grid-cols-3 gap-2 max-[760px]:grid-cols-1">
+            <div className="grid grid-cols-4 gap-2 max-[760px]:grid-cols-1">
+              <span className="grid min-h-[72px] content-end gap-0.5 rounded-card border border-border bg-card-soft p-2.5 text-[0.72rem] font-bold text-muted-foreground">
+                <strong className="text-[1.55rem] leading-none font-[720] text-foreground">{formatNumber(atlas.coverage?.configuredTopics || atlas.coverage?.topics || atlas.topics.length)}</strong>
+                configured topics
+              </span>
               <span className="grid min-h-[72px] content-end gap-0.5 rounded-card border border-border bg-card-soft p-2.5 text-[0.72rem] font-bold text-muted-foreground">
                 <strong className="text-[1.55rem] leading-none font-[720] text-foreground">{formatNumber(atlas.coverage?.topics || atlas.topics.length)}</strong>
-                curated topics
+                collected profiles
               </span>
               <span className="grid min-h-[72px] content-end gap-0.5 rounded-card border border-border bg-card-soft p-2.5 text-[0.72rem] font-bold text-muted-foreground">
                 <strong className="text-[1.55rem] leading-none font-[720] text-foreground">{formatNumber(atlas.coverage?.worksCollected || 0)}</strong>
@@ -93,6 +97,19 @@ export function MethodologyPage({ atlas }: MethodologyPageProps) {
             <div className="mt-3 rounded-card border border-border bg-card-soft p-2.5">
               <span className="block text-[0.68rem] font-bold uppercase text-muted-foreground">Average snapshot completeness</span>
               <strong className="text-[1.45rem] leading-none text-foreground">{formatNumber(atlas.coverage?.averageCompletenessScore || 0)}</strong>
+              <span className="mt-1 block text-[0.72rem] text-muted-foreground">
+                {formatNumber(atlas.coverage?.skippedTopics || 0)} configured topics are waiting on raw OpenAlex collection.
+              </span>
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <span className="rounded-card border border-border bg-card-soft p-2 text-[0.72rem] text-muted-foreground">
+                <strong className="block text-[1.08rem] text-foreground">{formatPercent(atlas.coverage?.profileCompletionRate || 0)}</strong>
+                profile completion
+              </span>
+              <span className="rounded-card border border-border bg-card-soft p-2 text-[0.72rem] text-muted-foreground">
+                <strong className="block text-[1.08rem] text-foreground">{atlas.coverage?.latestPublicationYear || 'n/a'}</strong>
+                latest represented year
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -134,7 +151,9 @@ export function MethodologyPage({ atlas }: MethodologyPageProps) {
               <AccordionItem value="coverage" className="border-b border-border">
                 <AccordionTrigger className="min-h-[46px] py-0 text-[0.83rem] hover:no-underline">Coverage is curated</AccordionTrigger>
                 <AccordionContent>
-                  <p className="m-0 text-[0.78rem] leading-[1.5] text-muted-foreground">The MVP covers a selected set of OpenAlex-aligned domains and topics, not the full research graph.</p>
+                  <p className="m-0 text-[0.78rem] leading-[1.5] text-muted-foreground">
+                    The current snapshot includes {formatNumber(atlas.coverage?.topics || atlas.topics.length)} of {formatNumber(atlas.coverage?.configuredTopics || atlas.coverage?.topics || atlas.topics.length)} configured topic profiles, averaging {formatNumber(atlas.coverage?.averageWorksPerProfile || 0)} collected works per profile.
+                  </p>
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="taxonomy" className="border-b border-border">

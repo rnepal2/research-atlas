@@ -13,7 +13,10 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 
 def run(command: list[str]) -> None:
     print("+ " + " ".join(command), flush=True)
-    subprocess.run(command, cwd=ROOT, check=True)
+    try:
+        subprocess.run(command, cwd=ROOT, check=True)
+    except subprocess.CalledProcessError as exc:
+        raise SystemExit(exc.returncode) from None
 
 
 def main() -> None:
@@ -26,6 +29,9 @@ def main() -> None:
     parser.add_argument("--public-dir", default="frontend/public")
     parser.add_argument("--topic")
     parser.add_argument("--max-works", type=int)
+    parser.add_argument("--missing-only", action="store_true", help="Collect only configured topics with no raw works.")
+    parser.add_argument("--stale-below", type=int, help="Collect only topics with fewer than this many raw works.")
+    parser.add_argument("--allow-unauthenticated-openalex", action="store_true", help="Allow unauthenticated OpenAlex collection for small development probes.")
     parser.add_argument("--fast", action="store_true", help="Use cached/raw data only; equivalent to --skip-collect.")
     parser.add_argument("--skip-collect", action="store_true")
     parser.add_argument("--include-metadata", action="store_true", help="Also refresh OpenAlex topic metadata discovery files.")
@@ -58,6 +64,12 @@ def main() -> None:
             collect.extend(["--topic", args.topic])
         if args.max_works:
             collect.extend(["--max-works", str(args.max_works)])
+        if args.missing_only:
+            collect.append("--missing-only")
+        if args.stale_below is not None:
+            collect.extend(["--stale-below", str(args.stale_below)])
+        if args.allow_unauthenticated_openalex:
+            collect.append("--allow-unauthenticated")
         if not args.include_metadata:
             collect.append("--skip-metadata")
         run(collect)

@@ -301,8 +301,8 @@ export function DensityMap({ rows }: DensityMapProps) {
     setViewState({ key: viewKey, k: 1, x: 0, y: 0 })
   }
 
-  function countryName(code: string, featureName = '') {
-    return countryNames[code] || (code.length === 2 ? regionNames.of(code) : undefined) || featureName || code
+  function countryName(code: string, featureName = '', metricName = '') {
+    return metricName || countryNames[code] || (code.length === 2 ? regionNames.of(code) : undefined) || featureName || code
   }
 
   function setCountryHover(event: PointerEvent<SVGPathElement>, metric: CountryMetric, featureName: string) {
@@ -312,7 +312,7 @@ export function DensityMap({ rows }: DensityMapProps) {
     setHover({
       x,
       y,
-      name: countryName(metric.country, featureName),
+      name: countryName(metric.country, featureName, metric.name),
       metric,
       share: metric.workShare ?? metric.works / mappedWorkTotal,
     })
@@ -408,7 +408,7 @@ export function DensityMap({ rows }: DensityMapProps) {
                 onPointerMove={metric ? (event) => setCountryHover(event, metric, name) : undefined}
                 onPointerLeave={metric ? () => setHover(null) : undefined}
               >
-                <title>{metric ? `${countryName(metric.country, name)}: ${metric.works} works` : name}</title>
+                <title>{metric ? `${countryName(metric.country, name, metric.name)}: ${metric.works} works` : name}</title>
               </path>
             )
           })}
@@ -443,7 +443,7 @@ export function DensityMap({ rows }: DensityMapProps) {
         {ranked.map((row, index) => (
           <li className="grid grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-[7px] text-[0.72rem] text-muted-foreground" key={row.country}>
             <span>{index + 1}</span>
-            <strong className="min-w-0 truncate font-semibold text-foreground">{countryName(row.country)}</strong>
+            <strong className="min-w-0 truncate font-semibold text-foreground">{countryName(row.country, '', row.name)}</strong>
             <em className="not-italic font-bold text-primary">{formatCompact(row.works)}</em>
           </li>
         ))}

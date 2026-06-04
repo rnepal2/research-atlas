@@ -41,6 +41,8 @@ def validate_topic(topic: dict[str, Any]) -> None:
     require(len(topic["authors"]) >= 8, f"{topic['slug']} has too few authors")
     require(len(topic["institutions"]) >= 8, f"{topic['slug']} has too few institutions")
     require(len(topic["countries"]) >= 4, f"{topic['slug']} has too few country rows")
+    require(all(country.get("name") for country in topic["countries"]), f"{topic['slug']} has country rows without display names")
+    require(all("workShare" in country for country in topic["countries"]), f"{topic['slug']} has country rows without work share")
     require(topic["quality"].get("worksCollected", 0) >= 40, f"{topic['slug']} has too few collected works")
     require(topic["quality"].get("latestPublicationYear", 0) >= 2020, f"{topic['slug']} has stale publication coverage")
     require(topic["network"].get("nodes"), f"{topic['slug']} has no researcher network nodes")
@@ -68,7 +70,15 @@ def main() -> None:
     require(artifact.get("taxonomy"), "Artifact taxonomy is empty")
     require(artifact.get("trending"), "Artifact trending list is empty")
     require(artifact.get("coverage"), "Artifact coverage summary is empty")
+    coverage = artifact["coverage"]
+    require(coverage.get("configuredTopics", 0) >= len(topics), "Coverage is missing configured topic count")
+    require(coverage.get("profileCompletionRate", 0) > 0, "Coverage profile completion rate is missing")
+    require(coverage.get("averageWorksPerProfile", 0) > 0, "Coverage average works per profile is missing")
+    require(coverage.get("latestPublicationYear", 0) >= 2020, "Coverage latest publication year is stale or missing")
     require(artifact.get("searchIndex"), "Artifact search index is empty")
+    for row in artifact["trending"]:
+        require(row.get("signalDrivers"), f"{row.get('slug', 'trending row')} has no signal drivers")
+        require(row.get("qualityLabel"), f"{row.get('slug', 'trending row')} has no quality label")
     for topic in topics:
         validate_topic(topic)
 
