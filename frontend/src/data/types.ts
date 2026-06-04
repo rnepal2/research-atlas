@@ -13,6 +13,13 @@ export interface AtlasData {
     authors: GlobalAuthorProfile[]
     institutions: GlobalInstitutionProfile[]
   }
+  coverage: AtlasCoverage
+  searchIndex: SearchIndexEntry[]
+  skippedTopics?: {
+    slug: string
+    label: string
+    worksCollected: number
+  }[]
   trending: TrendingTopic[]
   methodology: Record<string, string>
 }
@@ -29,6 +36,8 @@ export interface TopicProfile {
   openalexTopicIds: string[]
   keywordQueries: string[]
   metrics: TopicMetrics
+  quality: TopicQuality
+  insights: TopicInsight[]
   yearlyMetrics: YearlyMetric[]
   subtopics: SubtopicMetric[]
   subtopicSeries: SubtopicSeriesPoint[]
@@ -36,6 +45,7 @@ export interface TopicProfile {
   institutions: InstitutionProfile[]
   countries: CountryMetric[]
   papers: PaperProfile[]
+  paperCollections: PaperCollections
   network: NetworkData
   institutionNetwork: NetworkData
   networkCommunities: {
@@ -99,6 +109,9 @@ export interface AuthorProfile {
   risingScore: number
   focus: number
   bridgeScore: number
+  collaborationBreadth: number
+  countryBreadth: number
+  scoreDrivers: string[]
   topics: string[]
   recentWork: string
   url?: string
@@ -116,14 +129,20 @@ export interface InstitutionProfile {
   activeAuthors: number
   strengthScore: number
   subtopics: string[]
+  partnerCount: number
+  topicBreadth: number
+  scoreDrivers: string[]
   url?: string
 }
 
 export interface CountryMetric {
   country: string
+  name?: string
   works: number
   institutions: number
   citations: number
+  workShare?: number
+  rank?: number
 }
 
 export interface PaperProfile {
@@ -138,7 +157,55 @@ export interface PaperProfile {
   source: string
   authors: string[]
   topic: string
+  topics?: string[]
   url?: string
+}
+
+export interface PaperCollections {
+  recentImpact: PaperProfile[]
+  mostCited: PaperProfile[]
+  newest: PaperProfile[]
+  reviews: PaperProfile[]
+  bridgePapers: PaperProfile[]
+}
+
+export interface TopicQuality {
+  worksCollected: number
+  topicIdMatchShare: number
+  keywordFallbackShare: number
+  authorResolutionRate: number
+  institutionResolutionRate: number
+  countryResolutionRate: number
+  latestPublicationYear: number
+  mappedCountries: number
+  dataCompletenessScore: number
+}
+
+export interface TopicInsight {
+  label: string
+  title: string
+  value: string
+  description: string
+  type: string
+  url?: string
+}
+
+export interface AtlasCoverage {
+  topics: number
+  worksCollected: number
+  fields: number
+  workAreas: number
+  mappedCountries: number
+  averageCompletenessScore: number
+}
+
+export interface SearchIndexEntry {
+  type: 'topic' | 'paper' | 'author' | 'institution'
+  label: string
+  description: string
+  meta: string
+  path: string
+  score: number
 }
 
 export interface NetworkData {
@@ -198,6 +265,11 @@ export interface TrendingTopic {
   growthRate: number
   worksLast3Years: number
   topSubtopic: string
+  topInstitution?: string
+  topCountry?: string
+  newAuthorShare?: number
+  qualityScore?: number
+  whyTrending?: string
 }
 
 export interface TaxonomyDomain {

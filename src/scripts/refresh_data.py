@@ -23,11 +23,25 @@ def main() -> None:
     parser.add_argument("--processed-dir", default="data/processed")
     parser.add_argument("--cache-dir", default=".cache/openalex")
     parser.add_argument("--public-artifact", default="frontend/public/data/atlas.json")
+    parser.add_argument("--public-dir", default="frontend/public")
     parser.add_argument("--topic")
     parser.add_argument("--max-works", type=int)
+    parser.add_argument("--fast", action="store_true", help="Use cached/raw data only; equivalent to --skip-collect.")
     parser.add_argument("--skip-collect", action="store_true")
+    parser.add_argument("--include-metadata", action="store_true", help="Also refresh OpenAlex topic metadata discovery files.")
+    parser.add_argument("--validate-only", action="store_true")
+    parser.add_argument("--max-artifact-mb", type=float, default=14.0)
     parser.add_argument("--topic-artifacts", action="store_true")
     args = parser.parse_args()
+
+    artifact = str(Path(args.processed_dir) / "atlas.json")
+
+    if args.validate_only:
+        run([sys.executable, str(SCRIPT_DIR / "validate_static_data.py"), "--artifact", artifact, "--max-artifact-mb", str(args.max_artifact_mb)])
+        return
+
+    if args.fast:
+        args.skip_collect = True
 
     if not args.skip_collect:
         collect = [
@@ -44,6 +58,8 @@ def main() -> None:
             collect.extend(["--topic", args.topic])
         if args.max_works:
             collect.extend(["--max-works", str(args.max_works)])
+        if not args.include_metadata:
+            collect.append("--skip-metadata")
         run(collect)
 
     process = [
@@ -55,14 +71,15 @@ def main() -> None:
         args.raw_dir,
         "--output-dir",
         args.processed_dir,
+        "--skip-empty",
     ]
     if args.topic_artifacts:
         process.append("--topic-artifacts")
     run(process)
 
-    artifact = str(Path(args.processed_dir) / "atlas.json")
-    run([sys.executable, str(SCRIPT_DIR / "validate_static_data.py"), "--artifact", artifact])
+    run([sys.executable, str(SCRIPT_DIR / "validate_static_data.py"), "--artifact", artifact, "--max-artifact-mb", str(args.max_artifact_mb)])
     run([sys.executable, str(SCRIPT_DIR / "sync_public_data.py"), "--source", artifact, "--target", args.public_artifact])
+    run([sys.executable, str(SCRIPT_DIR / "generate_static_assets.py"), "--artifact", artifact, "--public-dir", args.public_dir])
 
 
 if __name__ == "__main__":

@@ -82,10 +82,11 @@ export function AppShell({ atlas, navItems, activePath, children }: AppShellProp
           })}
         </nav>
 
-        <div className={cx('mt-auto grid shrink-0 gap-[18px] max-[1160px]:hidden', collapsed && 'justify-items-center')}>
+        <div className={cx('mt-auto grid shrink-0 gap-3 max-[1160px]:hidden', collapsed ? '-mx-2.5' : '-mx-3.5')}>
           <Separator />
-          <div className={cx('grid gap-1 rounded-card border border-border bg-[color-mix(in_srgb,var(--card-solid)_82%,transparent)] px-3 py-[13px]', collapsed && 'hidden')}>
-            <span className="text-[0.72rem] font-[680] text-muted-foreground">Data Refresh: {formatDate(atlas.generatedAt)}</span>
+          <div className={cx('grid gap-0.5 px-5 py-1', collapsed && 'hidden')}>
+            <span className="text-[0.67rem] font-bold uppercase tracking-[0] text-muted-foreground">Data Refresh</span>
+            <span className="text-[0.78rem] font-[680] text-foreground">{formatDate(atlas.generatedAt)}</span>
           </div>
         </div>
       </aside>

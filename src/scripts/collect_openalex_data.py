@@ -43,10 +43,11 @@ TOPIC_FIELDS = "id,display_name,description,works_count,cited_by_count,domain,fi
 
 
 class OpenAlexClient:
-    def __init__(self, api_key: str | None, cache_dir: Path, min_interval: float = 0.12) -> None:
+    def __init__(self, api_key: str | None, cache_dir: Path, min_interval: float = 0.28, max_attempts: int = 4) -> None:
         self.api_key = api_key
         self.cache_dir = cache_dir
         self.min_interval = min_interval
+        self.max_attempts = max_attempts
         self.session = requests.Session()
         self.last_request_at = 0.0
         self.cache_dir.mkdir(parents=True, exist_ok=True)
@@ -61,7 +62,7 @@ class OpenAlexClient:
         if use_cache and cache_path.exists():
             return json.loads(cache_path.read_text())
 
-        for attempt in range(6):
+        for attempt in range(self.max_attempts):
             elapsed = time.time() - self.last_request_at
             if elapsed < self.min_interval:
                 time.sleep(self.min_interval - elapsed)
@@ -102,12 +103,18 @@ def collect_topic_metadata(client: OpenAlexClient, topic: dict[str, Any], output
     metadata = []
     for topic_id in topic.get("openalex_topic_ids", []):
         entity_id = short_openalex_id(topic_id)
-        payload = client.get(f"topics/{entity_id}", {"select": TOPIC_FIELDS})
-        metadata.append(payload)
+        try:
+            payload = client.get(f"topics/{entity_id}", {"select": TOPIC_FIELDS})
+            metadata.append(payload)
+        except requests.HTTPError as exc:
+            logging.warning("Skipping OpenAlex topic metadata after retries for %s: %s", topic["slug"], exc)
 
     for query in topic.get("keyword_queries", [])[:2]:
-        payload = client.get("topics", {"search": query, "per-page": 5, "select": TOPIC_FIELDS})
-        metadata.extend(payload.get("results", []))
+        try:
+            payload = client.get("topics", {"search": query, "per-page": 5, "select": TOPIC_FIELDS})
+            metadata.extend(payload.get("results", []))
+        except requests.HTTPError as exc:
+            logging.warning("Skipping OpenAlex topic search after retries for %s: %s", topic["slug"], exc)
 
     seen = {}
     for item in metadata:
@@ -131,7 +138,11 @@ def fetch_works_for_params(
         page_params["cursor"] = cursor
         page_params["per-page"] = min(200, max_works - len(rows))
         page_params["select"] = WORK_FIELDS
-        payload = client.get("works", page_params)
+        try:
+            payload = client.get("works", page_params)
+        except requests.HTTPError as exc:
+            logging.warning("Skipping OpenAlex works page after retries: %s", exc)
+            break
         rows.extend(payload.get("results", []))
         cursor = payload.get("meta", {}).get("next_cursor")
         if not payload.get("results"):
@@ -143,7 +154,8 @@ def collect_works(client: OpenAlexClient, topic: dict[str, Any], output_dir: Pat
     current_year = date.today().year
     years_back = int(topic.get("collection", {}).get("years_back", 10))
     min_year = current_year - years_back
-    max_works = int(max_works_override or topic.get("collection", {}).get("max_works", 900))
+    configured_max = int(topic.get("collection", {}).get("max_works", 0))
+    max_works = int(max_works_override or max(configured_max, 900))
     per_query_cap = max(50, max_works // max(1, len(topic.get("openalex_topic_ids", [])) + len(topic.get("keyword_queries", []))))
     collected: dict[str, dict[str, Any]] = {}
 
@@ -202,6 +214,7 @@ def main() -> None:
     parser.add_argument("--cache-dir", default=".cache/openalex")
     parser.add_argument("--topic", help="Optional topic slug to collect")
     parser.add_argument("--max-works", type=int, help="Override max works per topic")
+    parser.add_argument("--skip-metadata", action="store_true", help="Skip topic metadata search and collect works/entities only.")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -214,7 +227,8 @@ def main() -> None:
     client = OpenAlexClient(os.getenv("OPENALEX_API_KEY"), Path(args.cache_dir))
     output_dir = Path(args.output_dir)
     for topic in topics:
-        collect_topic_metadata(client, topic, output_dir)
+        if not args.skip_metadata:
+            collect_topic_metadata(client, topic, output_dir)
         works = collect_works(client, topic, output_dir, args.max_works)
         collect_entity_extracts(topic, works, output_dir)
 

@@ -750,3 +750,738 @@ topics:
       - cosmic microwave background cosmology
       - large scale structure cosmology
     collection: { years_back: 10, max_works: 160 }
+
+  - slug: llm-evaluation
+    label: LLM Evaluation
+    domain: Physical Sciences
+    field: Computer Science
+    subfield: Artificial Intelligence
+    work_area: Generative AI / LLM
+    description: Evaluation benchmarks, hallucination measurement, robustness, factuality, and reliability for large language models.
+    openalex_topic_ids: []
+    keyword_queries:
+      - large language model evaluation
+      - hallucination benchmark language models
+      - factuality evaluation LLM
+      - robustness evaluation large language models
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: ai-safety-alignment
+    label: AI Safety and Alignment
+    domain: Physical Sciences
+    field: Computer Science
+    subfield: Artificial Intelligence
+    work_area: Generative AI / LLM
+    description: AI alignment, safety evaluation, value learning, interpretability, guardrails, and trustworthy model behavior.
+    openalex_topic_ids: []
+    keyword_queries:
+      - AI safety alignment
+      - large language model alignment
+      - mechanistic interpretability AI safety
+      - safe artificial intelligence evaluation
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: synthetic-data
+    label: Synthetic Data
+    domain: Physical Sciences
+    field: Computer Science
+    subfield: Artificial Intelligence
+    work_area: Generative AI / LLM
+    description: Synthetic data generation, privacy-preserving data, simulation, data augmentation, and model training data quality.
+    openalex_topic_ids: []
+    keyword_queries:
+      - synthetic data generation machine learning
+      - synthetic data privacy
+      - data augmentation generative models
+      - synthetic training data large language models
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: ai-for-science
+    label: AI for Science
+    domain: Physical Sciences
+    field: Computer Science
+    subfield: Artificial Intelligence
+    work_area: AI Methods
+    description: Artificial intelligence for scientific discovery, simulation, laboratory automation, molecular design, and scientific reasoning.
+    openalex_topic_ids: []
+    keyword_queries:
+      - AI for science discovery
+      - machine learning scientific discovery
+      - artificial intelligence scientific reasoning
+      - autonomous scientific discovery AI
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: generative-video
+    label: Generative Video
+    domain: Physical Sciences
+    field: Computer Science
+    subfield: Artificial Intelligence
+    work_area: Generative AI / LLM
+    description: Text-to-video generation, video diffusion models, temporal consistency, controllable video synthesis, and evaluation.
+    openalex_topic_ids: []
+    keyword_queries:
+      - text to video generation diffusion
+      - generative video model
+      - video diffusion model
+      - controllable video synthesis
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: code-generation-ai
+    label: AI Code Generation
+    domain: Physical Sciences
+    field: Computer Science
+    subfield: Software
+    work_area: Generative AI / LLM
+    description: Code language models, program synthesis, software agents, code completion, and automated repair.
+    openalex_topic_ids: []
+    keyword_queries:
+      - code generation large language models
+      - program synthesis deep learning
+      - software engineering language models
+      - automated program repair AI
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: model-compression
+    label: Model Compression
+    domain: Physical Sciences
+    field: Computer Science
+    subfield: Artificial Intelligence
+    work_area: AI Methods
+    description: Model pruning, quantization, distillation, efficient inference, and compact neural networks.
+    openalex_topic_ids: []
+    keyword_queries:
+      - neural network model compression
+      - model quantization deep learning
+      - knowledge distillation neural networks
+      - efficient inference transformer models
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: trustworthy-ai
+    label: Trustworthy AI
+    domain: Physical Sciences
+    field: Computer Science
+    subfield: Artificial Intelligence
+    work_area: AI Methods
+    description: Fairness, robustness, explainability, accountability, privacy, and governance for AI systems.
+    openalex_topic_ids: []
+    keyword_queries:
+      - trustworthy artificial intelligence
+      - explainable AI fairness robustness
+      - responsible AI governance
+      - AI accountability transparency
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: federated-learning
+    label: Federated Learning
+    domain: Physical Sciences
+    field: Computer Science
+    subfield: Artificial Intelligence
+    work_area: AI Methods
+    description: Federated optimization, privacy-preserving machine learning, distributed learning, and secure aggregation.
+    openalex_topic_ids: []
+    keyword_queries:
+      - federated learning privacy preserving
+      - federated optimization machine learning
+      - secure aggregation federated learning
+      - distributed machine learning privacy
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: knowledge-graphs
+    label: Knowledge Graphs
+    domain: Physical Sciences
+    field: Computer Science
+    subfield: Information Systems
+    work_area: AI Methods
+    description: Knowledge graph construction, representation learning, graph reasoning, entity linking, and semantic retrieval.
+    openalex_topic_ids: []
+    keyword_queries:
+      - knowledge graph representation learning
+      - knowledge graph reasoning
+      - entity linking knowledge graph
+      - semantic retrieval knowledge graphs
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: medical-ai
+    label: Medical AI
+    domain: Health Sciences
+    field: Medicine
+    subfield: Health Informatics
+    work_area: Digital Health
+    description: Machine learning for diagnosis, clinical prediction, medical imaging, electronic health records, and clinical decision support.
+    openalex_topic_ids: []
+    keyword_queries:
+      - medical artificial intelligence clinical prediction
+      - machine learning electronic health records
+      - AI clinical decision support
+      - medical imaging deep learning diagnosis
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: precision-oncology
+    label: Precision Oncology
+    domain: Health Sciences
+    field: Medicine
+    subfield: Oncology
+    work_area: Oncology
+    description: Genomic-guided cancer treatment, molecular tumor boards, targeted therapy selection, and precision medicine in oncology.
+    openalex_topic_ids: []
+    keyword_queries:
+      - precision oncology genomic guided therapy
+      - molecular tumor board precision oncology
+      - targeted therapy cancer genomics
+      - precision medicine oncology biomarkers
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: liquid-biopsy
+    label: Liquid Biopsy
+    domain: Health Sciences
+    field: Medicine
+    subfield: Oncology
+    work_area: Oncology
+    description: Circulating tumor DNA, cell-free DNA, early detection, minimal residual disease, and cancer monitoring.
+    openalex_topic_ids: []
+    keyword_queries:
+      - liquid biopsy circulating tumor DNA
+      - cell free DNA cancer monitoring
+      - ctDNA minimal residual disease
+      - liquid biopsy early cancer detection
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: minimal-residual-disease
+    label: Minimal Residual Disease
+    domain: Health Sciences
+    field: Medicine
+    subfield: Oncology
+    work_area: Oncology
+    description: MRD detection, response monitoring, sequencing assays, flow cytometry, and relapse prediction in cancer.
+    openalex_topic_ids: []
+    keyword_queries:
+      - minimal residual disease cancer
+      - MRD detection sequencing
+      - minimal residual disease leukemia myeloma
+      - MRD monitoring cancer therapy
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: glioblastoma
+    label: Glioblastoma
+    domain: Health Sciences
+    field: Medicine
+    subfield: Oncology
+    work_area: Oncology
+    description: Glioblastoma biology, tumor microenvironment, immunotherapy, targeted therapy, imaging, and clinical trials.
+    openalex_topic_ids: []
+    keyword_queries:
+      - glioblastoma treatment tumor microenvironment
+      - glioblastoma immunotherapy
+      - glioblastoma targeted therapy
+      - glioblastoma clinical trial
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: lymphoma
+    label: Lymphoma
+    domain: Health Sciences
+    field: Medicine
+    subfield: Hematology
+    work_area: Oncology
+    description: Hodgkin and non-Hodgkin lymphoma, immunotherapy, CAR-T therapy, biomarkers, and treatment outcomes.
+    openalex_topic_ids: []
+    keyword_queries:
+      - lymphoma immunotherapy biomarkers
+      - non Hodgkin lymphoma treatment
+      - diffuse large B cell lymphoma therapy
+      - lymphoma CAR T cell therapy
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: renal-cell-carcinoma
+    label: Renal Cell Carcinoma
+    domain: Health Sciences
+    field: Medicine
+    subfield: Oncology
+    work_area: Oncology
+    description: Renal cell carcinoma, immune checkpoint inhibitors, targeted therapy, biomarkers, and metastatic disease.
+    openalex_topic_ids: []
+    keyword_queries:
+      - renal cell carcinoma immunotherapy
+      - kidney cancer checkpoint inhibitor
+      - metastatic renal cell carcinoma targeted therapy
+      - renal cell carcinoma biomarkers
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: hepatocellular-carcinoma
+    label: Hepatocellular Carcinoma
+    domain: Health Sciences
+    field: Medicine
+    subfield: Oncology
+    work_area: Oncology
+    description: Liver cancer biology, immunotherapy, locoregional therapy, biomarkers, and clinical outcomes.
+    openalex_topic_ids: []
+    keyword_queries:
+      - hepatocellular carcinoma immunotherapy
+      - liver cancer biomarkers
+      - hepatocellular carcinoma targeted therapy
+      - liver cancer clinical outcomes
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: autoimmune-disease
+    label: Autoimmune Disease
+    domain: Health Sciences
+    field: Medicine
+    subfield: Immunology
+    work_area: Immunology
+    description: Autoimmune mechanisms, immune tolerance, biomarkers, biologic therapies, and disease activity monitoring.
+    openalex_topic_ids: []
+    keyword_queries:
+      - autoimmune disease biomarkers therapy
+      - immune tolerance autoimmune disease
+      - biologic therapy autoimmune disease
+      - autoimmune disease pathogenesis
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: rheumatoid-arthritis
+    label: Rheumatoid Arthritis
+    domain: Health Sciences
+    field: Medicine
+    subfield: Rheumatology
+    work_area: Immunology
+    description: Rheumatoid arthritis pathogenesis, biologics, JAK inhibitors, biomarkers, and treatment response.
+    openalex_topic_ids: []
+    keyword_queries:
+      - rheumatoid arthritis biologic therapy
+      - rheumatoid arthritis JAK inhibitor
+      - rheumatoid arthritis biomarkers
+      - rheumatoid arthritis treatment response
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: inflammatory-bowel-disease
+    label: Inflammatory Bowel Disease
+    domain: Health Sciences
+    field: Medicine
+    subfield: Gastroenterology
+    work_area: Immunology
+    description: Crohn's disease, ulcerative colitis, microbiome, biologic therapy, biomarkers, and treatment response.
+    openalex_topic_ids: []
+    keyword_queries:
+      - inflammatory bowel disease biologic therapy
+      - Crohn disease microbiome biomarkers
+      - ulcerative colitis treatment response
+      - IBD immunology therapy
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: systemic-lupus-erythematosus
+    label: Systemic Lupus Erythematosus
+    domain: Health Sciences
+    field: Medicine
+    subfield: Rheumatology
+    work_area: Immunology
+    description: Lupus pathogenesis, interferon signaling, nephritis, biologics, biomarkers, and disease activity.
+    openalex_topic_ids: []
+    keyword_queries:
+      - systemic lupus erythematosus biomarkers
+      - lupus nephritis biologic therapy
+      - interferon signaling lupus
+      - SLE disease activity biomarkers
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: pulmonary-arterial-hypertension
+    label: Pulmonary Arterial Hypertension
+    domain: Health Sciences
+    field: Medicine
+    subfield: Pulmonary and Respiratory Medicine
+    work_area: Cardiopulmonary
+    description: PAH vascular remodeling, right heart failure, therapies, risk stratification, and clinical outcomes.
+    openalex_topic_ids: []
+    keyword_queries:
+      - pulmonary arterial hypertension therapy
+      - PAH vascular remodeling
+      - pulmonary arterial hypertension risk stratification
+      - right heart failure pulmonary arterial hypertension
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: asthma
+    label: Asthma
+    domain: Health Sciences
+    field: Medicine
+    subfield: Pulmonary and Respiratory Medicine
+    work_area: Immunology
+    description: Asthma phenotypes, biologic therapy, airway inflammation, severe asthma, and treatment response.
+    openalex_topic_ids: []
+    keyword_queries:
+      - severe asthma biologic therapy
+      - asthma phenotypes biomarkers
+      - airway inflammation asthma
+      - asthma treatment response
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: copd
+    label: COPD
+    domain: Health Sciences
+    field: Medicine
+    subfield: Pulmonary and Respiratory Medicine
+    work_area: Cardiopulmonary
+    description: Chronic obstructive pulmonary disease, exacerbations, inflammation, imaging, biomarkers, and outcomes.
+    openalex_topic_ids: []
+    keyword_queries:
+      - COPD exacerbation biomarkers
+      - chronic obstructive pulmonary disease inflammation
+      - COPD clinical outcomes
+      - COPD imaging machine learning
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: atrial-fibrillation
+    label: Atrial Fibrillation
+    domain: Health Sciences
+    field: Medicine
+    subfield: Cardiology
+    work_area: Cardiometabolic
+    description: Atrial fibrillation mechanisms, ablation, anticoagulation, digital monitoring, risk prediction, and outcomes.
+    openalex_topic_ids: []
+    keyword_queries:
+      - atrial fibrillation ablation outcomes
+      - atrial fibrillation anticoagulation risk
+      - atrial fibrillation digital monitoring
+      - atrial fibrillation machine learning prediction
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: thrombosis
+    label: Thrombosis
+    domain: Health Sciences
+    field: Medicine
+    subfield: Hematology
+    work_area: Cardiometabolic
+    description: Venous and arterial thrombosis, anticoagulation, inflammation, biomarkers, and clinical risk prediction.
+    openalex_topic_ids: []
+    keyword_queries:
+      - thrombosis anticoagulation biomarkers
+      - venous thromboembolism risk prediction
+      - arterial thrombosis inflammation
+      - thrombosis clinical outcomes
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: diabetes
+    label: Diabetes
+    domain: Health Sciences
+    field: Medicine
+    subfield: Endocrinology
+    work_area: Cardiometabolic
+    description: Type 1 and type 2 diabetes, glucose control, complications, therapeutics, digital monitoring, and outcomes.
+    openalex_topic_ids: []
+    keyword_queries:
+      - type 2 diabetes therapeutics outcomes
+      - diabetes complications biomarkers
+      - diabetes glucose monitoring digital health
+      - diabetes cardiovascular outcomes
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: nafld-nash
+    label: NAFLD and NASH
+    domain: Health Sciences
+    field: Medicine
+    subfield: Gastroenterology
+    work_area: Cardiometabolic
+    description: Metabolic liver disease, steatohepatitis, fibrosis, biomarkers, therapeutics, and clinical outcomes.
+    openalex_topic_ids: []
+    keyword_queries:
+      - NAFLD NASH therapeutics fibrosis
+      - nonalcoholic steatohepatitis biomarkers
+      - metabolic dysfunction associated steatotic liver disease
+      - NASH clinical trial fibrosis
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: antimicrobial-resistance
+    label: Antimicrobial Resistance
+    domain: Life Sciences
+    field: Immunology and Microbiology
+    subfield: Microbiology
+    work_area: Infectious Disease
+    description: Antimicrobial resistance, surveillance, mechanisms, stewardship, diagnostics, and emerging resistant pathogens.
+    openalex_topic_ids: []
+    keyword_queries:
+      - antimicrobial resistance surveillance
+      - antibiotic resistance mechanisms diagnostics
+      - antimicrobial stewardship outcomes
+      - multidrug resistant pathogens
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: long-covid
+    label: Long COVID
+    domain: Health Sciences
+    field: Medicine
+    subfield: Infectious Diseases
+    work_area: Infectious Disease
+    description: Post-acute sequelae of SARS-CoV-2, immune mechanisms, symptoms, biomarkers, and clinical outcomes.
+    openalex_topic_ids: []
+    keyword_queries:
+      - long COVID biomarkers
+      - post acute sequelae SARS-CoV-2
+      - long COVID immune mechanisms
+      - long COVID clinical outcomes
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: vaccine-immunology
+    label: Vaccine Immunology
+    domain: Life Sciences
+    field: Immunology and Microbiology
+    subfield: Immunology
+    work_area: Immunology
+    description: Vaccine responses, immune memory, adjuvants, correlates of protection, and next-generation vaccine platforms.
+    openalex_topic_ids: []
+    keyword_queries:
+      - vaccine immunology immune response
+      - correlates of protection vaccine
+      - vaccine adjuvant immune memory
+      - next generation vaccine platform
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: neuroinflammation
+    label: Neuroinflammation
+    domain: Life Sciences
+    field: Neuroscience
+    subfield: Cellular and Molecular Neuroscience
+    work_area: Neuroscience
+    description: Neuroimmune signaling, microglia, inflammation in neurodegeneration, biomarkers, and therapeutic targeting.
+    openalex_topic_ids: []
+    keyword_queries:
+      - neuroinflammation microglia neurodegeneration
+      - neuroimmune signaling biomarkers
+      - neuroinflammation therapeutic target
+      - microglia inflammation Alzheimer Parkinson
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: parkinsons-disease
+    label: Parkinson's Disease
+    domain: Health Sciences
+    field: Medicine
+    subfield: Neurology
+    work_area: Neuroscience
+    description: Parkinson's disease mechanisms, alpha-synuclein, biomarkers, disease progression, and therapeutic trials.
+    openalex_topic_ids: []
+    keyword_queries:
+      - Parkinson disease biomarkers alpha synuclein
+      - Parkinson disease progression therapy
+      - Parkinson disease neuroinflammation
+      - Parkinson disease clinical trial
+    collection: { years_back: 10, max_works: 240 }
+
+  - slug: carbon-capture
+    label: Carbon Capture
+    domain: Physical Sciences
+    field: Engineering
+    subfield: Environmental Engineering
+    work_area: Energy
+    description: Carbon capture materials, solvents, membranes, direct air capture, storage, and techno-economic assessment.
+    openalex_topic_ids: []
+    keyword_queries:
+      - carbon capture materials direct air capture
+      - CO2 capture membranes solvents
+      - carbon capture storage techno economic
+      - direct air capture sorbents
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: hydrogen-energy
+    label: Hydrogen Energy
+    domain: Physical Sciences
+    field: Energy
+    subfield: Renewable Energy, Sustainability and the Environment
+    work_area: Energy
+    description: Green hydrogen, electrolysis, fuel cells, storage, catalysts, and energy systems integration.
+    openalex_topic_ids: []
+    keyword_queries:
+      - green hydrogen electrolysis
+      - hydrogen energy fuel cells storage
+      - water electrolysis catalyst hydrogen
+      - hydrogen storage materials
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: catalysis
+    label: Catalysis
+    domain: Physical Sciences
+    field: Chemistry
+    subfield: Catalysis
+    work_area: Materials
+    description: Heterogeneous and homogeneous catalysis, electrocatalysis, photocatalysis, catalyst design, and reaction mechanisms.
+    openalex_topic_ids: []
+    keyword_queries:
+      - catalysis catalyst design reaction mechanism
+      - heterogeneous catalysis machine learning
+      - electrocatalysis catalyst materials
+      - photocatalysis energy conversion
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: solid-state-batteries
+    label: Solid-State Batteries
+    domain: Physical Sciences
+    field: Materials Science
+    subfield: Energy Materials
+    work_area: Materials
+    description: Solid electrolytes, lithium metal interfaces, dendrites, ion transport, and solid-state battery manufacturing.
+    openalex_topic_ids: []
+    keyword_queries:
+      - solid state batteries solid electrolyte
+      - lithium metal solid state battery interface
+      - solid electrolyte ion transport
+      - solid state battery dendrite
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: sodium-ion-batteries
+    label: Sodium-Ion Batteries
+    domain: Physical Sciences
+    field: Materials Science
+    subfield: Energy Materials
+    work_area: Materials
+    description: Sodium-ion battery cathodes, anodes, electrolytes, cycling stability, and grid storage applications.
+    openalex_topic_ids: []
+    keyword_queries:
+      - sodium ion batteries cathode anode
+      - sodium ion battery electrolyte
+      - sodium ion battery grid storage
+      - sodium ion battery cycling stability
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: lithium-metal-batteries
+    label: Lithium Metal Batteries
+    domain: Physical Sciences
+    field: Materials Science
+    subfield: Energy Materials
+    work_area: Materials
+    description: Lithium metal anodes, dendrite suppression, electrolytes, interfaces, and high-energy-density batteries.
+    openalex_topic_ids: []
+    keyword_queries:
+      - lithium metal battery dendrite
+      - lithium metal anode electrolyte interface
+      - high energy density lithium metal batteries
+      - lithium metal battery solid electrolyte interphase
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: photonic-quantum-computing
+    label: Photonic Quantum Computing
+    domain: Physical Sciences
+    field: Physics and Astronomy
+    subfield: Atomic and Molecular Physics, and Optics
+    work_area: Physics
+    description: Photonic qubits, integrated quantum photonics, linear optical quantum computing, sources, and detectors.
+    openalex_topic_ids: []
+    keyword_queries:
+      - photonic quantum computing integrated photonics
+      - linear optical quantum computing
+      - quantum photonics qubits
+      - single photon source quantum computing
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: topological-materials
+    label: Topological Materials
+    domain: Physical Sciences
+    field: Physics and Astronomy
+    subfield: Condensed Matter Physics
+    work_area: Physics
+    description: Topological insulators, Weyl semimetals, topological superconductors, band topology, and quantum transport.
+    openalex_topic_ids: []
+    keyword_queries:
+      - topological materials Weyl semimetal
+      - topological insulator quantum transport
+      - topological superconductor materials
+      - band topology condensed matter
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: spintronics
+    label: Spintronics
+    domain: Physical Sciences
+    field: Physics and Astronomy
+    subfield: Condensed Matter Physics
+    work_area: Physics
+    description: Spin transport, magnetic devices, spin-orbit torque, skyrmions, and spintronic materials.
+    openalex_topic_ids: []
+    keyword_queries:
+      - spintronics spin transport materials
+      - spin orbit torque device
+      - magnetic skyrmion spintronics
+      - spintronic memory materials
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: quantum-sensing
+    label: Quantum Sensing
+    domain: Physical Sciences
+    field: Physics and Astronomy
+    subfield: Atomic and Molecular Physics, and Optics
+    work_area: Physics
+    description: Quantum sensors, NV centers, atomic clocks, magnetometry, interferometry, and precision measurement.
+    openalex_topic_ids: []
+    keyword_queries:
+      - quantum sensing NV centers
+      - quantum magnetometry precision measurement
+      - atomic clock quantum sensor
+      - quantum interferometry sensing
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: neutrino-physics
+    label: Neutrino Physics
+    domain: Physical Sciences
+    field: Physics and Astronomy
+    subfield: Nuclear and High Energy Physics
+    work_area: Physics
+    description: Neutrino oscillations, detector experiments, mass hierarchy, sterile neutrinos, and astrophysical neutrinos.
+    openalex_topic_ids: []
+    keyword_queries:
+      - neutrino oscillation experiment
+      - neutrino detector mass hierarchy
+      - sterile neutrino physics
+      - astrophysical neutrino detection
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: dark-matter-detection
+    label: Dark Matter Detection
+    domain: Physical Sciences
+    field: Physics and Astronomy
+    subfield: Astronomy and Astrophysics
+    work_area: Physics
+    description: Direct and indirect dark matter detection, detector materials, particle candidates, and astrophysical constraints.
+    openalex_topic_ids: []
+    keyword_queries:
+      - dark matter direct detection
+      - dark matter detector experiment
+      - indirect dark matter detection
+      - dark matter particle candidates
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: exoplanets
+    label: Exoplanets
+    domain: Physical Sciences
+    field: Physics and Astronomy
+    subfield: Astronomy and Astrophysics
+    work_area: Physics
+    description: Exoplanet detection, atmospheres, habitability, transit spectroscopy, and planetary system formation.
+    openalex_topic_ids: []
+    keyword_queries:
+      - exoplanet atmosphere transit spectroscopy
+      - exoplanet detection habitability
+      - exoplanet characterization JWST
+      - planetary system formation exoplanets
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: two-dimensional-materials
+    label: Two-Dimensional Materials
+    domain: Physical Sciences
+    field: Materials Science
+    subfield: Electronic, Optical and Magnetic Materials
+    work_area: Materials
+    description: Graphene, transition metal dichalcogenides, van der Waals heterostructures, devices, and quantum materials.
+    openalex_topic_ids: []
+    keyword_queries:
+      - two dimensional materials graphene MoS2
+      - van der Waals heterostructures
+      - 2D materials electronic devices
+      - transition metal dichalcogenides materials
+    collection: { years_back: 10, max_works: 220 }
+
+  - slug: semiconductor-devices
+    label: Semiconductor Devices
+    domain: Physical Sciences
+    field: Engineering
+    subfield: Electrical and Electronic Engineering
+    work_area: Materials
+    description: Semiconductor device physics, power electronics, wide-bandgap materials, transistors, and integrated devices.
+    openalex_topic_ids: []
+    keyword_queries:
+      - semiconductor devices wide bandgap
+      - power electronics semiconductor materials
+      - transistor device physics
+      - integrated semiconductor device
+    collection: { years_back: 10, max_works: 220 }

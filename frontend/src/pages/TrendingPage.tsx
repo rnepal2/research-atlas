@@ -38,10 +38,27 @@ const scorePillClass =
 
 export function TrendingPage({ atlas }: TrendingPageProps) {
   const [domain, setDomain] = useState('All domains')
+  const [field, setField] = useState('All fields')
+  const [workArea, setWorkArea] = useState('All work areas')
   const domains = ['All domains', ...new Set(atlas.trending.map((topic) => topic.domain))]
+  const fields = ['All fields', ...new Set(atlas.trending.filter((topic) => domain === 'All domains' || topic.domain === domain).map((topic) => topic.field).filter(Boolean))]
+  const workAreas = [
+    'All work areas',
+    ...new Set(
+      atlas.trending
+        .filter((topic) => domain === 'All domains' || topic.domain === domain)
+        .filter((topic) => field === 'All fields' || topic.field === field)
+        .map((topic) => topic.workArea)
+        .filter(Boolean),
+    ),
+  ]
   const rows = useMemo(
-    () => atlas.trending.filter((topic) => domain === 'All domains' || topic.domain === domain),
-    [atlas.trending, domain],
+    () =>
+      atlas.trending
+        .filter((topic) => domain === 'All domains' || topic.domain === domain)
+        .filter((topic) => field === 'All fields' || topic.field === field)
+        .filter((topic) => workArea === 'All work areas' || topic.workArea === workArea),
+    [atlas.trending, domain, field, workArea],
   )
 
   return (
@@ -53,13 +70,33 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
             Topic momentum normalized away from raw field size, with filters by OpenAlex domain and direct paths into the Atlas view.
           </p>
         </div>
-        <SelectField
-          className="w-[min(260px,100%)] shrink-0 max-[760px]:w-full"
-          label="Filter"
-          value={domain}
-          onValueChange={setDomain}
-          options={domains.map((item) => ({ value: item, label: item }))}
-        />
+        <div className="grid min-w-[min(620px,52vw)] grid-cols-3 gap-2 max-[1160px]:min-w-0 max-[1160px]:grid-cols-1 max-[760px]:w-full">
+          <SelectField
+            label="Domain"
+            value={domain}
+            onValueChange={(value) => {
+              setDomain(value)
+              setField('All fields')
+              setWorkArea('All work areas')
+            }}
+            options={domains.map((item) => ({ value: item, label: item }))}
+          />
+          <SelectField
+            label="Field"
+            value={field}
+            onValueChange={(value) => {
+              setField(value)
+              setWorkArea('All work areas')
+            }}
+            options={fields.map((item) => ({ value: item, label: item }))}
+          />
+          <SelectField
+            label="Work area"
+            value={workArea}
+            onValueChange={setWorkArea}
+            options={workAreas.map((item) => ({ value: item, label: item }))}
+          />
+        </div>
       </section>
 
       <section className="grid grid-cols-4 gap-2.5 max-[1160px]:grid-cols-2 max-[760px]:grid-cols-1">
@@ -106,7 +143,8 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
                   <TableHead className={headClass}>Rank</TableHead>
                   <TableHead className={headClass}>Topic</TableHead>
                   <TableHead className={headClass}>OpenAlex path</TableHead>
-                  <TableHead className={headClass}>Top subtopic</TableHead>
+                  <TableHead className={headClass}>Why it ranks</TableHead>
+                  <TableHead className={headClass}>Evidence</TableHead>
                   <TableHead className={headClass}>Recent works</TableHead>
                   <TableHead className={headClass}>Growth</TableHead>
                   <TableHead className={headClass}>Trend</TableHead>
@@ -129,7 +167,18 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
                       <br />
                       <span className="text-muted-foreground">{topic.field}</span>
                     </TableCell>
-                    <TableCell className={cellClass}>{topic.topSubtopic}</TableCell>
+                    <TableCell className={cellClass}>
+                      <strong>{topic.topSubtopic}</strong>
+                      <br />
+                      <span className="text-muted-foreground">{topic.whyTrending || 'Momentum is normalized against prior activity.'}</span>
+                    </TableCell>
+                    <TableCell className={cellClass}>
+                      {topic.topInstitution || 'Institution not resolved'}
+                      <br />
+                      <span className="text-muted-foreground">
+                        {topic.topCountry || 'Unknown'} / {formatPercent(topic.newAuthorShare || 0)} new authors
+                      </span>
+                    </TableCell>
                     <TableCell className={cellClass}>{formatNumber(topic.worksLast3Years)}</TableCell>
                     <TableCell className={cellClass}>{formatPercent(topic.growthRate)}</TableCell>
                     <TableCell className={cellClass}>

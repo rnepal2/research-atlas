@@ -1,4 +1,4 @@
-import { Activity, BookOpen, Building2, Database, Moon, Sun, Users } from 'lucide-react'
+import { Activity, BookOpen, Building2, Database, Moon, ShieldCheck, Sun, Users } from 'lucide-react'
 import { useMemo } from 'react'
 import { DensityMap } from '../components/DensityMap'
 import { FrontierCards } from '../components/FrontierCards'
@@ -7,7 +7,7 @@ import { PaperList } from '../components/PaperList'
 import { RankingTable } from '../components/RankingTable'
 import { TopicSelector } from '../components/TopicSelector'
 import { TrendChart } from '../components/TrendChart'
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui'
+import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui'
 import type { AtlasData, TopicProfile } from '../data/types'
 import { formatCompact, formatNumber, formatPercent, formatScore } from '../lib/format'
 import { navigate } from '../lib/router'
@@ -40,6 +40,13 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
     [atlas, initialTopicSlug],
   ) as TopicProfile
   const selected = initialTopic
+  const paperCollections = [
+    ['recentImpact', 'Recent Impact', selected.paperCollections?.recentImpact || selected.papers],
+    ['mostCited', 'Most Cited', selected.paperCollections?.mostCited || selected.papers],
+    ['newest', 'Newest', selected.paperCollections?.newest || selected.papers],
+    ['reviews', 'Reviews', selected.paperCollections?.reviews || selected.papers],
+    ['bridgePapers', 'Bridge Papers', selected.paperCollections?.bridgePapers || selected.papers],
+  ] as const
 
   function updateTopic(topic: TopicProfile) {
     navigate(`/topic/${topic.slug}`)
@@ -77,7 +84,7 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
       <Card className="border-border-strong bg-[linear-gradient(135deg,color-mix(in_srgb,var(--primary)_9%,transparent),transparent_60%),var(--card)]">
         <CardHeader>
           <div>
-            <CardTitle>OpenAlex topic navigator</CardTitle>
+            <CardTitle>Topics navigator</CardTitle>
             <CardDescription>
               Select by domain, field, and topic profile. New topics can be added by extending the YAML config.
             </CardDescription>
@@ -86,6 +93,24 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
         </CardHeader>
         <CardContent>
           <TopicSelector atlas={atlas} selected={selected} onChange={updateTopic} />
+          <div className="mt-3 grid grid-cols-4 gap-2.5 max-[1160px]:grid-cols-2 max-[760px]:grid-cols-1">
+            <div className="grid gap-1 rounded-card border border-border bg-card-soft p-2.5">
+              <span className="text-[0.66rem] font-bold uppercase text-muted-foreground">Snapshot quality</span>
+              <strong className="text-[1.25rem] leading-none text-foreground">{formatScore(selected.quality?.dataCompletenessScore ?? 0)}</strong>
+            </div>
+            <div className="grid gap-1 rounded-card border border-border bg-card-soft p-2.5">
+              <span className="text-[0.66rem] font-bold uppercase text-muted-foreground">Works collected</span>
+              <strong className="text-[1.25rem] leading-none text-foreground">{formatNumber(selected.quality?.worksCollected ?? selected.metrics.worksLast5Years)}</strong>
+            </div>
+            <div className="grid gap-1 rounded-card border border-border bg-card-soft p-2.5">
+              <span className="text-[0.66rem] font-bold uppercase text-muted-foreground">Country resolution</span>
+              <strong className="text-[1.25rem] leading-none text-foreground">{formatPercent(selected.quality?.countryResolutionRate ?? 0)}</strong>
+            </div>
+            <div className="grid gap-1 rounded-card border border-border bg-card-soft p-2.5">
+              <span className="text-[0.66rem] font-bold uppercase text-muted-foreground">Latest year</span>
+              <strong className="text-[1.25rem] leading-none text-foreground">{selected.quality?.latestPublicationYear || 'n/a'}</strong>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -169,17 +194,41 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
         </Card>
       </section>
 
-      <FrontierCards cards={selected.frontierCards} />
+      <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Topic intelligence signals</CardTitle>
+            <CardDescription>Rule-based explanations generated from the OpenAlex snapshot.</CardDescription>
+          </div>
+          <ShieldCheck aria-hidden="true" />
+        </CardHeader>
+        <CardContent>
+          <FrontierCards cards={selected.insights?.length ? selected.insights : selected.frontierCards} columns={3} />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
           <div>
             <CardTitle>Paper Lens</CardTitle>
-            <CardDescription>Recent and high-impact works from the selected static artifact.</CardDescription>
+            <CardDescription>Recent impact, most cited, newest, review, and bridge-paper collections.</CardDescription>
           </div>
         </CardHeader>
         <CardContent>
-          <PaperList papers={selected.papers} limit={8} />
+          <Tabs defaultValue="recentImpact">
+            <TabsList className="mb-3 flex-wrap">
+              {paperCollections.map(([key, label]) => (
+                <TabsTrigger className="text-[0.76rem]" value={key} key={key}>
+                  {label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            {paperCollections.map(([key, , papers]) => (
+              <TabsContent value={key} key={key}>
+                <PaperList papers={papers} limit={8} />
+              </TabsContent>
+            ))}
+          </Tabs>
         </CardContent>
       </Card>
     </div>

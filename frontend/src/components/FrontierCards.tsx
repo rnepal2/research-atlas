@@ -1,13 +1,14 @@
 import { ExternalLink } from 'lucide-react'
-import type { FrontierCard } from '../data/types'
+import type { FrontierCard, TopicInsight } from '../data/types'
 
 interface FrontierCardsProps {
-  cards: FrontierCard[]
+  cards: Array<FrontierCard | TopicInsight>
+  columns?: 3 | 4
 }
 
-export function FrontierCards({ cards }: FrontierCardsProps) {
+export function FrontierCards({ cards, columns = 4 }: FrontierCardsProps) {
   return (
-    <div className="grid grid-cols-4 gap-2.5 max-[1160px]:grid-cols-2 max-[760px]:grid-cols-1">
+    <div className={columns === 3 ? 'grid grid-cols-3 gap-2.5 max-[1160px]:grid-cols-2 max-[760px]:grid-cols-1' : 'grid grid-cols-4 gap-2.5 max-[1160px]:grid-cols-2 max-[760px]:grid-cols-1'}>
       {cards.map((card) => (
         <article
           className="relative flex min-h-[148px] flex-col gap-[9px] overflow-hidden rounded-card border border-border bg-[linear-gradient(145deg,color-mix(in_srgb,var(--primary)_6%,transparent),transparent_58%),var(--card)] p-3.5 shadow-atlas transition-colors duration-150 hover:border-[color-mix(in_srgb,var(--primary)_32%,var(--border))]"

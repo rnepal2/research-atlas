@@ -43,16 +43,16 @@ export function MethodologyPage({ atlas }: MethodologyPageProps) {
             </p>
             <div className="grid grid-cols-3 gap-2 max-[760px]:grid-cols-1">
               <span className="grid min-h-[72px] content-end gap-0.5 rounded-card border border-border bg-card-soft p-2.5 text-[0.72rem] font-bold text-muted-foreground">
-                <strong className="text-[1.55rem] leading-none font-[720] text-foreground">{formatNumber(atlas.topics.length)}</strong>
+                <strong className="text-[1.55rem] leading-none font-[720] text-foreground">{formatNumber(atlas.coverage?.topics || atlas.topics.length)}</strong>
                 curated topics
               </span>
               <span className="grid min-h-[72px] content-end gap-0.5 rounded-card border border-border bg-card-soft p-2.5 text-[0.72rem] font-bold text-muted-foreground">
-                <strong className="text-[1.55rem] leading-none font-[720] text-foreground">{formatNumber(atlas.taxonomy.length)}</strong>
-                domains
+                <strong className="text-[1.55rem] leading-none font-[720] text-foreground">{formatNumber(atlas.coverage?.worksCollected || 0)}</strong>
+                works collected
               </span>
               <span className="grid min-h-[72px] content-end gap-0.5 rounded-card border border-border bg-card-soft p-2.5 text-[0.72rem] font-bold text-muted-foreground">
-                <strong className="text-[1.55rem] leading-none font-[720] text-foreground">{formatNumber(atlas.trending.length)}</strong>
-                trend signals
+                <strong className="text-[1.55rem] leading-none font-[720] text-foreground">{formatNumber(atlas.coverage?.mappedCountries || 0)}</strong>
+                mapped countries
               </span>
             </div>
           </CardContent>
@@ -90,6 +90,10 @@ export function MethodologyPage({ atlas }: MethodologyPageProps) {
               The app says "rising visibility" and "strength signal" because OpenAlex artifacts are useful evidence,
               not final judgments about quality, prestige, or impact.
             </p>
+            <div className="mt-3 rounded-card border border-border bg-card-soft p-2.5">
+              <span className="block text-[0.68rem] font-bold uppercase text-muted-foreground">Average snapshot completeness</span>
+              <strong className="text-[1.45rem] leading-none text-foreground">{formatNumber(atlas.coverage?.averageCompletenessScore || 0)}</strong>
+            </div>
           </CardContent>
         </Card>
       </section>

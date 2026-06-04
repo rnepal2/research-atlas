@@ -70,6 +70,17 @@ def topic_label(topic_obj: dict[str, Any] | None) -> str:
     return topic_obj.get("display_name") or "Unclassified"
 
 
+def work_topic_ids(work: dict[str, Any]) -> set[str]:
+    ids = set()
+    primary = work.get("primary_topic") or {}
+    if primary.get("id"):
+        ids.add(short_id(primary["id"]))
+    for topic in work.get("topics", []):
+        if topic.get("id"):
+            ids.add(short_id(topic["id"]))
+    return ids
+
+
 def year_window(current_year: int) -> list[int]:
     return list(range(current_year - 9, current_year + 1))
 
@@ -169,30 +180,54 @@ def build_subtopic_series(works: list[dict[str, Any]], subtopics: list[dict[str,
     return rows
 
 
+def paper_profile(work: dict[str, Any], current_year: int) -> dict[str, Any]:
+    authors = [entry["author"].get("display_name") for entry in author_entries(work)[:4]]
+    citations = int(work.get("cited_by_count") or 0)
+    year = int(work.get("publication_year") or current_year)
+    topics = [topic_label(topic) for topic in work.get("topics", [])[:5]]
+    return {
+        "id": short_id(work.get("id")),
+        "openalexId": work.get("id"),
+        "title": work.get("title") or work.get("display_name") or "Untitled work",
+        "year": year,
+        "date": work.get("publication_date"),
+        "type": work.get("type") or "work",
+        "citations": citations,
+        "citationVelocity": round(safe_divide(citations, max(1, current_year - year + 1)), 2),
+        "source": source_name(work),
+        "authors": [author for author in authors if author],
+        "topic": topic_label(work.get("primary_topic")),
+        "topics": topics,
+        "url": work.get("doi") or work.get("id"),
+    }
+
+
 def build_papers(works: list[dict[str, Any]], current_year: int) -> list[dict[str, Any]]:
-    papers = []
-    for work in works:
-        authors = [entry["author"].get("display_name") for entry in author_entries(work)[:4]]
-        citations = int(work.get("cited_by_count") or 0)
-        year = int(work.get("publication_year") or current_year)
-        papers.append(
-            {
-                "id": short_id(work.get("id")),
-                "openalexId": work.get("id"),
-                "title": work.get("title") or work.get("display_name") or "Untitled work",
-                "year": year,
-                "date": work.get("publication_date"),
-                "type": work.get("type") or "work",
-                "citations": citations,
-                "citationVelocity": round(safe_divide(citations, max(1, current_year - year + 1)), 2),
-                "source": source_name(work),
-                "authors": [author for author in authors if author],
-                "topic": topic_label(work.get("primary_topic")),
-                "url": work.get("doi") or work.get("id"),
-            }
-        )
+    papers = [paper_profile(work, current_year) for work in works]
     papers.sort(key=lambda row: (row["year"] >= current_year - 4, row["citations"], row["citationVelocity"]), reverse=True)
-    return papers[:30]
+    return papers[:36]
+
+
+def build_paper_collections(works: list[dict[str, Any]], current_year: int) -> dict[str, list[dict[str, Any]]]:
+    papers = [paper_profile(work, current_year) for work in works]
+    by_recent_impact = sorted(papers, key=lambda row: (row["year"] >= current_year - 4, row["citationVelocity"], row["citations"]), reverse=True)
+    by_cited = sorted(papers, key=lambda row: (row["citations"], row["citationVelocity"]), reverse=True)
+    by_newest = sorted(papers, key=lambda row: (row.get("date") or "", row["year"], row["citations"]), reverse=True)
+    reviews = [paper for paper in by_cited if "review" in paper["type"].lower() or "review" in paper["title"].lower()]
+    bridge = sorted(
+        [paper for paper in papers if len({topic for topic in paper.get("topics", []) if topic != "Unclassified"}) >= 3],
+        key=lambda row: (len(set(row.get("topics", []))), row["citationVelocity"], row["citations"]),
+        reverse=True,
+    )
+    fallback_reviews = reviews if reviews else by_cited[:8]
+    fallback_bridge = bridge if bridge else by_recent_impact[:8]
+    return {
+        "recentImpact": by_recent_impact[:10],
+        "mostCited": by_cited[:10],
+        "newest": by_newest[:10],
+        "reviews": fallback_reviews[:10],
+        "bridgePapers": fallback_bridge[:10],
+    }
 
 
 def build_authors(works: list[dict[str, Any]], current_year: int, centrality: dict[str, float], bridge: dict[str, float]) -> list[dict[str, Any]]:
@@ -243,6 +278,15 @@ def build_authors(works: list[dict[str, Any]], current_year: int, centrality: di
         bridge_component = normalize((centrality.get(author_id, 0.0) + bridge.get(author_id, 0.0)) / 2.0, 1.0)
         focus_component = normalize(row["recentWorks"] / max(1, row["works"]), 1.0)
         score = rising_researcher_score(publication_component, normalize(citation_velocity, 250), growth_component, bridge_component, focus_component)
+        drivers = []
+        if row["recentWorks"] >= 3:
+            drivers.append(f"{row['recentWorks']} recent works")
+        if citation_velocity >= 50:
+            drivers.append("high citation velocity")
+        if bridge_component >= 25:
+            drivers.append("bridge position")
+        if focus_component >= 60:
+            drivers.append("topic focus")
         rows.append(
             {
                 "id": short_id(author_id),
@@ -257,6 +301,9 @@ def build_authors(works: list[dict[str, Any]], current_year: int, centrality: di
                 "risingScore": round(score, 1),
                 "focus": round(row["recentWorks"] / max(1, row["works"]), 2),
                 "bridgeScore": round(100 * bridge.get(author_id, 0.0), 1),
+                "collaborationBreadth": len(row["institutions"]),
+                "countryBreadth": len(row["countries"]),
+                "scoreDrivers": drivers[:4],
                 "topics": [name for name, _ in row["topics"].most_common(4)],
                 "recentWork": row["recentWork"],
                 "url": entity_url(author_id),
@@ -313,6 +360,15 @@ def build_institutions(works: list[dict[str, Any]], authors: list[dict[str, Any]
         centrality_component = min(1.0, len(row["partners"]) / 20)
         breadth_component = min(1.0, len(row["topics"]) / 8)
         score = institution_strength_score(publication_share, citation_share, rising_component, centrality_component, breadth_component)
+        drivers = []
+        if row["works"] >= 8:
+            drivers.append(f"{row['works']} topic works")
+        if citation_share >= 0.08:
+            drivers.append("large citation share")
+        if len(row["partners"]) >= 8:
+            drivers.append("broad collaboration")
+        if len(row["topics"]) >= 4:
+            drivers.append("subtopic breadth")
         output.append(
             {
                 "id": short_id(institution_id),
@@ -326,6 +382,9 @@ def build_institutions(works: list[dict[str, Any]], authors: list[dict[str, Any]
                 "activeAuthors": len(row["authors"]),
                 "strengthScore": round(score, 1),
                 "subtopics": [name for name, _ in row["topics"].most_common(5)],
+                "partnerCount": len(row["partners"]),
+                "topicBreadth": len(row["topics"]),
+                "scoreDrivers": drivers[:4],
                 "url": entity_url(institution_id),
             }
         )
@@ -344,15 +403,21 @@ def build_country_rows(works: list[dict[str, Any]]) -> list[dict[str, Any]]:
         for country in seen_countries:
             countries[country]["works"] += 1
             countries[country]["citations"] += citations
-    return [
-        {
-            "country": country,
-            "works": values["works"],
-            "institutions": len(values["institutions"]),
-            "citations": values["citations"],
-        }
-        for country, values in sorted(countries.items(), key=lambda item: item[1]["works"], reverse=True)[:18]
-    ]
+    total = max(1, sum(values["works"] for values in countries.values() if values["works"]))
+    rows = []
+    for country, values in sorted(countries.items(), key=lambda item: item[1]["works"], reverse=True)[:32]:
+        rows.append(
+            {
+                "country": country,
+                "name": country,
+                "works": values["works"],
+                "institutions": len(values["institutions"]),
+                "citations": values["citations"],
+                "workShare": round(safe_divide(values["works"], total), 3),
+                "rank": len(rows) + 1,
+            }
+        )
+    return rows
 
 
 def build_author_network(works: list[dict[str, Any]], authors: list[dict[str, Any]], edges_counter: Counter) -> dict[str, Any]:
@@ -554,6 +619,107 @@ def frontier_cards(topic: dict[str, Any], subtopics: list[dict[str, Any]], autho
     return cards
 
 
+def build_quality(topic: dict[str, Any], works: list[dict[str, Any]], countries: list[dict[str, Any]]) -> dict[str, Any]:
+    seed_topic_ids = {short_id(value) for value in topic.get("openalex_topic_ids", [])}
+    matched_by_topic = sum(1 for work in works if seed_topic_ids and seed_topic_ids.intersection(work_topic_ids(work)))
+    authorships = [authorship for work in works for authorship in work.get("authorships", [])]
+    author_slots = len(authorships)
+    institution_mentions = [
+        institution
+        for authorship in authorships
+        for institution in authorship.get("institutions", [])
+    ]
+    resolved_institutions = [institution for institution in institution_mentions if institution.get("id")]
+    resolved_countries = [institution for institution in resolved_institutions if institution.get("country_code")]
+    latest_year = max((int(work.get("publication_year") or 0) for work in works), default=0)
+    country_rows = [country for country in countries if country["country"] != "Unknown"]
+    topic_id_share = safe_divide(matched_by_topic, len(works)) if seed_topic_ids else 0.0
+    author_rate = safe_divide(sum(1 for authorship in authorships if (authorship.get("author") or {}).get("id")), author_slots)
+    institution_rate = safe_divide(len(resolved_institutions), len(institution_mentions))
+    country_rate = safe_divide(len(resolved_countries), len(resolved_institutions))
+    completeness = (
+        0.25 * min(1.0, len(works) / 900)
+        + 0.2 * (topic_id_share if seed_topic_ids else 0.55)
+        + 0.2 * author_rate
+        + 0.2 * institution_rate
+        + 0.15 * country_rate
+    )
+    return {
+        "worksCollected": len(works),
+        "topicIdMatchShare": round(topic_id_share, 3),
+        "keywordFallbackShare": round(1.0 - topic_id_share, 3) if seed_topic_ids else 1.0,
+        "authorResolutionRate": round(author_rate, 3),
+        "institutionResolutionRate": round(institution_rate, 3),
+        "countryResolutionRate": round(country_rate, 3),
+        "latestPublicationYear": latest_year,
+        "mappedCountries": len(country_rows),
+        "dataCompletenessScore": round(100 * completeness, 1),
+    }
+
+
+def build_insights(
+    topic: dict[str, Any],
+    metrics: dict[str, Any],
+    quality: dict[str, Any],
+    subtopics: list[dict[str, Any]],
+    authors: list[dict[str, Any]],
+    institutions: list[dict[str, Any]],
+    countries: list[dict[str, Any]],
+    papers: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    top_country = next((country for country in countries if country["country"] != "Unknown"), None)
+    cards = [
+        {
+            "label": "Why this topic is moving",
+            "title": f"{round(metrics['growthRate'] * 100)}% recent growth",
+            "value": f"{metrics['worksLast3Years']:,} works",
+            "description": f"Recent works are compared with the prior three-year window; trend score is {metrics['trendScore']}.",
+            "type": "trend",
+        },
+        {
+            "label": "Where activity concentrates",
+            "title": institutions[0]["name"] if institutions else "Institution not resolved",
+            "value": f"{metrics['activeInstitutions']:,} institutions",
+            "description": f"Concentration score is {metrics['concentrationScore']}; lower values suggest a more distributed field.",
+            "type": "institution",
+        },
+        {
+            "label": "Who is entering the field",
+            "title": authors[0]["name"] if authors else "Author not resolved",
+            "value": f"{round(metrics['newAuthorShare'] * 100)}% new-author share",
+            "description": "New-author share estimates how much recent activity comes from authors not seen in the prior window.",
+            "type": "author",
+        },
+        {
+            "label": "Which papers changed the signal",
+            "title": papers[0]["title"] if papers else "Paper not resolved",
+            "value": f"{papers[0]['citations']:,} citations" if papers else "No papers",
+            "description": "Recent impact papers are ranked by recency, citations, and citation velocity within the curated topic snapshot.",
+            "type": "paper",
+            "url": papers[0].get("url") if papers else None,
+        },
+        {
+            "label": "Geographic footprint",
+            "title": top_country["country"] if top_country else "Country not resolved",
+            "value": f"{quality['mappedCountries']} mapped countries",
+            "description": f"Country resolution is {round(quality['countryResolutionRate'] * 100)}% across resolved institution mentions.",
+            "type": "geo",
+        },
+    ]
+    if subtopics:
+        cards.insert(
+            1,
+            {
+                "label": "Fastest visible subtopic",
+                "title": subtopics[0]["label"],
+                "value": f"{round(subtopics[0]['growth'] * 100)}% growth",
+                "description": "Subtopic growth uses recent versus prior three-year work counts among OpenAlex-assigned topics.",
+                "type": "subtopic",
+            },
+        )
+    return cards[:6]
+
+
 def narrative_summary(topic: dict[str, Any], metrics: dict[str, Any], top_subtopic: str, top_institution: str) -> str:
     return (
         f"{topic['label']} is represented as a curated static OpenAlex topic profile. "
@@ -576,7 +742,9 @@ def process_topic(topic: dict[str, Any], raw_dir: Path, current_year: int) -> di
     authors = build_authors(works, current_year, centrality, bridge)
     institutions = build_institutions(works, authors, current_year)
     papers = build_papers(works, current_year)
+    paper_collections = build_paper_collections(works, current_year)
     countries = build_country_rows(works)
+    quality = build_quality(topic, works, countries)
     network = build_author_network(works, authors, edges_counter)
     institution_network = build_institution_network(works, institutions)
     subtopic_matrix = build_subtopic_matrix(institutions, subtopics)
@@ -645,6 +813,8 @@ def process_topic(topic: dict[str, Any], raw_dir: Path, current_year: int) -> di
         "openalexTopicIds": topic.get("openalex_topic_ids", []),
         "keywordQueries": topic.get("keyword_queries", []),
         "metrics": metrics,
+        "quality": quality,
+        "insights": build_insights(topic, metrics, quality, subtopics, authors, institutions, countries, papers),
         "yearlyMetrics": yearly,
         "subtopics": subtopics,
         "subtopicSeries": subtopic_series,
@@ -652,6 +822,7 @@ def process_topic(topic: dict[str, Any], raw_dir: Path, current_year: int) -> di
         "institutions": institutions,
         "countries": countries,
         "papers": papers,
+        "paperCollections": paper_collections,
         "network": network,
         "institutionNetwork": institution_network,
         "networkCommunities": {
@@ -728,17 +899,94 @@ def build_global_leaderboards(topics: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def build_search_index(topics: list[dict[str, Any]], leaderboards: dict[str, Any]) -> list[dict[str, Any]]:
+    rows = []
+    for topic in topics:
+        rows.append(
+            {
+                "type": "topic",
+                "label": topic["label"],
+                "description": topic["description"],
+                "meta": f"{topic['domain']} / {topic['field']}",
+                "path": f"/topic/{topic['slug']}",
+                "score": topic["metrics"]["trendScore"],
+            }
+        )
+        for paper in topic["papers"][:3]:
+            rows.append(
+                {
+                    "type": "paper",
+                    "label": paper["title"],
+                    "description": ", ".join(paper.get("authors", [])[:2]) or paper["source"],
+                    "meta": f"{topic['label']} / {paper['year']}",
+                    "path": f"/topic/{topic['slug']}",
+                    "score": paper["citationVelocity"],
+                }
+            )
+    for author in leaderboards["authors"][:80]:
+        rows.append(
+            {
+                "type": "author",
+                "label": author["name"],
+                "description": author["institution"],
+                "meta": ", ".join(author.get("topicsSeen", [])[:2]),
+                "path": "/researchers",
+                "score": author["aggregateScore"],
+            }
+        )
+    for institution in leaderboards["institutions"][:80]:
+        rows.append(
+            {
+                "type": "institution",
+                "label": institution["name"],
+                "description": institution.get("country") or "Country not resolved",
+                "meta": ", ".join(institution.get("topicsSeen", [])[:2]),
+                "path": "/researchers",
+                "score": institution["aggregateScore"],
+            }
+        )
+    return sorted(rows, key=lambda row: row["score"], reverse=True)[:450]
+
+
+def build_coverage(topics: list[dict[str, Any]]) -> dict[str, Any]:
+    topic_count = len(topics)
+    works = sum(topic["quality"]["worksCollected"] for topic in topics)
+    countries = {country["country"] for topic in topics for country in topic["countries"] if country["country"] != "Unknown"}
+    fields = {topic["field"] for topic in topics if topic.get("field")}
+    work_areas = {topic["workArea"] for topic in topics if topic.get("workArea")}
+    quality_scores = [topic["quality"]["dataCompletenessScore"] for topic in topics]
+    return {
+        "topics": topic_count,
+        "worksCollected": works,
+        "fields": len(fields),
+        "workAreas": len(work_areas),
+        "mappedCountries": len(countries),
+        "averageCompletenessScore": round(safe_divide(sum(quality_scores), len(quality_scores)), 1),
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Process raw OpenAlex JSONL into Research Atlas static artifacts.")
     parser.add_argument("--config", default="data/config/topics.yaml")
     parser.add_argument("--raw-dir", default="data/raw")
     parser.add_argument("--output-dir", default="data/processed")
     parser.add_argument("--topic-artifacts", action="store_true")
+    parser.add_argument("--skip-empty", action="store_true")
+    parser.add_argument("--min-raw-works", type=int, default=40)
     args = parser.parse_args()
 
     topics = yaml.safe_load(Path(args.config).read_text()).get("topics", [])
     current_year = date.today().year
-    processed_topics = [process_topic(topic, Path(args.raw_dir), current_year) for topic in topics]
+    skipped_topics = []
+    raw_dir = Path(args.raw_dir)
+    processed_topics = []
+    for topic in topics:
+        works_path = raw_dir / topic["slug"] / "works.jsonl"
+        works_count = sum(1 for _ in works_path.open()) if works_path.exists() else 0
+        if args.skip_empty and works_count < args.min_raw_works:
+            skipped_topics.append({"slug": topic["slug"], "label": topic["label"], "worksCollected": works_count})
+            continue
+        processed_topics.append(process_topic(topic, raw_dir, current_year))
     trending = sorted(
         [
             {
@@ -752,12 +1000,18 @@ def main() -> None:
                 "growthRate": topic["metrics"]["growthRate"],
                 "worksLast3Years": topic["metrics"]["worksLast3Years"],
                 "topSubtopic": topic["subtopics"][0]["label"] if topic["subtopics"] else "Unclassified",
+                "topInstitution": topic["institutions"][0]["name"] if topic["institutions"] else "Institution not resolved",
+                "topCountry": next((country["country"] for country in topic["countries"] if country["country"] != "Unknown"), "Unknown"),
+                "newAuthorShare": topic["metrics"]["newAuthorShare"],
+                "qualityScore": topic["quality"]["dataCompletenessScore"],
+                "whyTrending": topic["insights"][0]["description"] if topic.get("insights") else "",
             }
             for topic in processed_topics
         ],
         key=lambda row: row["trendScore"],
         reverse=True,
     )
+    leaderboards = build_global_leaderboards(processed_topics)
     artifact = {
         "version": 1,
         "generatedAt": datetime.now(timezone.utc).isoformat(),
@@ -768,7 +1022,10 @@ def main() -> None:
             "notes": "Generated from OpenAlex works, topics, authorships, and institutions.",
         },
         "taxonomy": build_taxonomy(processed_topics),
-        "leaderboards": build_global_leaderboards(processed_topics),
+        "leaderboards": leaderboards,
+        "coverage": build_coverage(processed_topics),
+        "searchIndex": build_search_index(processed_topics, leaderboards),
+        "skippedTopics": skipped_topics,
         "topics": processed_topics,
         "trending": trending,
         "methodology": {
