@@ -261,6 +261,8 @@ def main() -> None:
     parser.add_argument("--max-works", type=int, help="Override max works per topic")
     parser.add_argument("--missing-only", action="store_true", help="Collect only configured topics with no raw works file.")
     parser.add_argument("--stale-below", type=int, help="Collect only topics whose raw works file has fewer than this many rows.")
+    parser.add_argument("--sort-by-raw-depth", action="store_true", help="Collect shallower raw topic files first.")
+    parser.add_argument("--limit-topics", type=int, help="Limit the number of matching topics collected in this run.")
     parser.add_argument("--allow-unauthenticated", action="store_true", help="Allow live collection without OPENALEX_API_KEY for small development probes.")
     parser.add_argument("--min-interval", type=float, help="Minimum seconds between OpenAlex requests.")
     parser.add_argument("--max-attempts", type=int, help="Maximum attempts for each OpenAlex request.")
@@ -277,6 +279,10 @@ def main() -> None:
         topics = [topic for topic in topics if raw_work_count(output_dir, topic["slug"]) == 0]
     if args.stale_below is not None:
         topics = [topic for topic in topics if raw_work_count(output_dir, topic["slug"]) < args.stale_below]
+    if args.sort_by_raw_depth:
+        topics = sorted(topics, key=lambda topic: raw_work_count(output_dir, topic["slug"]))
+    if args.limit_topics is not None:
+        topics = topics[: max(0, args.limit_topics)]
     if not topics:
         raise SystemExit("No matching topics found.")
 

@@ -1340,18 +1340,39 @@ def build_search_index(topics: list[dict[str, Any]], leaderboards: dict[str, Any
 def build_coverage(topics: list[dict[str, Any]], configured_topic_count: int = 0, skipped_topic_count: int = 0) -> dict[str, Any]:
     topic_count = len(topics)
     works = sum(topic["quality"]["worksCollected"] for topic in topics)
+    work_counts = sorted(topic["quality"]["worksCollected"] for topic in topics)
     countries = {country["country"] for topic in topics for country in topic["countries"] if country["country"] != "Unknown"}
     fields = {topic["field"] for topic in topics if topic.get("field")}
     work_areas = {topic["workArea"] for topic in topics if topic.get("workArea")}
     quality_scores = [topic["quality"]["dataCompletenessScore"] for topic in topics]
     latest_years = [topic["quality"].get("latestPublicationYear", 0) for topic in topics]
     configured = configured_topic_count or topic_count
+    target_depth = round(52089 * 5 / max(1, configured))
+    shallowest_topics = sorted(
+        [
+            {
+                "slug": topic["slug"],
+                "label": topic["label"],
+                "worksCollected": topic["quality"]["worksCollected"],
+                "field": topic.get("field", ""),
+                "workArea": topic.get("workArea", ""),
+            }
+            for topic in topics
+        ],
+        key=lambda row: row["worksCollected"],
+    )[:8]
     return {
         "configuredTopics": configured,
         "topics": topic_count,
         "skippedTopics": skipped_topic_count,
         "worksCollected": works,
         "averageWorksPerProfile": round(safe_divide(works, topic_count), 1),
+        "minimumWorksPerProfile": work_counts[0] if work_counts else 0,
+        "medianWorksPerProfile": work_counts[len(work_counts) // 2] if work_counts else 0,
+        "coverageDepthTarget": target_depth,
+        "topicsAtOrAboveTargetDepth": sum(1 for count in work_counts if count >= target_depth),
+        "topicsBelowTargetDepth": sum(1 for count in work_counts if count < target_depth),
+        "shallowestTopics": shallowest_topics,
         "profileCompletionRate": round(safe_divide(topic_count, configured), 3),
         "fields": len(fields),
         "workAreas": len(work_areas),

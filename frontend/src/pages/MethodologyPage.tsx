@@ -156,6 +156,28 @@ export function MethodologyPage({ atlas }: MethodologyPageProps) {
                   </p>
                 </AccordionContent>
               </AccordionItem>
+              <AccordionItem value="depth" className="border-b border-border">
+                <AccordionTrigger className="min-h-[46px] py-0 text-[0.83rem] hover:no-underline">Coverage depth is uneven</AccordionTrigger>
+                <AccordionContent>
+                  <p className="m-0 text-[0.78rem] leading-[1.5] text-muted-foreground">
+                    Median topic depth is {formatNumber(atlas.coverage?.medianWorksPerProfile || 0)} works, with {formatNumber(atlas.coverage?.topicsBelowTargetDepth || 0)} topics below the current 5x depth target of {formatNumber(atlas.coverage?.coverageDepthTarget || 0)} works.
+                  </p>
+                  {atlas.coverage?.shallowestTopics?.length ? (
+                    <div className="mt-3 grid gap-1.5">
+                      {atlas.coverage.shallowestTopics.slice(0, 5).map((topic) => (
+                        <a
+                          className="flex items-center justify-between gap-3 rounded-card border border-border bg-card-soft px-2.5 py-2 text-[0.74rem] font-bold text-foreground hover:border-[color-mix(in_srgb,var(--primary)_48%,var(--border))]"
+                          href={`/topic/${topic.slug}`}
+                          key={topic.slug}
+                        >
+                          <span className="min-w-0 truncate">{topic.label}</span>
+                          <span className="shrink-0 text-muted-foreground">{formatNumber(topic.worksCollected)} works</span>
+                        </a>
+                      ))}
+                    </div>
+                  ) : null}
+                </AccordionContent>
+              </AccordionItem>
               <AccordionItem value="taxonomy" className="border-b border-border">
                 <AccordionTrigger className="min-h-[46px] py-0 text-[0.83rem] hover:no-underline">Taxonomy follows OpenAlex</AccordionTrigger>
                 <AccordionContent>

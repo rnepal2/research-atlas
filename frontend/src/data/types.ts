@@ -243,6 +243,18 @@ export interface AtlasCoverage {
   skippedTopics?: number
   worksCollected: number
   averageWorksPerProfile?: number
+  minimumWorksPerProfile?: number
+  medianWorksPerProfile?: number
+  coverageDepthTarget?: number
+  topicsAtOrAboveTargetDepth?: number
+  topicsBelowTargetDepth?: number
+  shallowestTopics?: {
+    slug: string
+    label: string
+    worksCollected: number
+    field: string
+    workArea: string
+  }[]
   profileCompletionRate?: number
   fields: number
   workAreas: number

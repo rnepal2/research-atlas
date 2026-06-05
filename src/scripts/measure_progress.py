@@ -44,6 +44,19 @@ def main() -> None:
     topics = artifact.get("topics", [])
     configured_topics = yaml.safe_load(Path(args.config).read_text()).get("topics", [])
     raw_counts = [count_jsonl(Path(args.raw_dir) / topic["slug"] / "works.jsonl") for topic in configured_topics]
+    shallow_topics = sorted(
+        [
+            {
+                "slug": topic["slug"],
+                "label": topic.get("label", topic["slug"]),
+                "rawWorks": raw_count,
+                "field": topic.get("field", ""),
+                "workArea": topic.get("work_area", ""),
+            }
+            for topic, raw_count in zip(configured_topics, raw_counts)
+        ],
+        key=lambda row: row["rawWorks"],
+    )
     insight_counts = [
         sum(len(section.get("items", [])) for section in topic.get("insightSections", [])) or len(topic.get("insights", []))
         for topic in topics
@@ -75,6 +88,7 @@ def main() -> None:
             "indexArtifactBytes": index_path.stat().st_size if index_path.exists() else 0,
             "topicArtifactCount": len(list(topics_dir.glob("*.json"))) if topics_dir.exists() else 0,
             "skippedTopics": len(artifact.get("skippedTopics", [])),
+            "shallowestTopics": shallow_topics[:10],
         },
         "multipliers": {
             "topicCoverage": ratio(topic_count, BASELINE["topics"]),
@@ -99,6 +113,7 @@ def main() -> None:
             "openAlexApiKeyPresentAtMeasurement": bool(os.getenv("OPENALEX_API_KEY")),
             "authenticatedDeepRefreshRecommended": max(0, target_works - works_collected) > 0,
             "authenticatedCommand": "OPENALEX_API_KEY=... ./src/refresh_data.sh --stale-below 3000 --max-works 3000",
+            "incrementalCommand": "./src/refresh_data.sh --stale-below 2604 --max-works 3000 --sort-by-raw-depth --limit-topics 10",
             "probeCommand": "./src/refresh_data.sh --topic <slug> --max-works 900 --allow-unauthenticated-openalex --min-interval 1.5 --max-attempts 1 --max-retry-wait 3",
             "note": "Unauthenticated OpenAlex refreshes are useful for probes but rate-limit before a reliable 5x corpus refresh.",
         },

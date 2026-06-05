@@ -44,6 +44,12 @@ For a local rebuild from already collected raw files:
 ./src/refresh_data.sh --fast
 ```
 
+For incremental refreshes, work from the thinnest topic files first:
+
+```bash
+./src/refresh_data.sh --stale-below 2604 --max-works 3000 --sort-by-raw-depth --limit-topics 10
+```
+
 ## Future Enrichment
 
 Good next sources are Crossref for DOI checks, PubMed for biomedical indexing, NIH RePORTER for grant context, ROR for institution metadata, and OpenCitations for citation graph enrichment.

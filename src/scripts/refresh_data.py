@@ -31,6 +31,8 @@ def main() -> None:
     parser.add_argument("--max-works", type=int)
     parser.add_argument("--missing-only", action="store_true", help="Collect only configured topics with no raw works.")
     parser.add_argument("--stale-below", type=int, help="Collect only topics with fewer than this many raw works.")
+    parser.add_argument("--sort-by-raw-depth", action="store_true", help="Collect shallower raw topic files first.")
+    parser.add_argument("--limit-topics", type=int, help="Limit the number of matching topics collected in this run.")
     parser.add_argument("--allow-unauthenticated-openalex", action="store_true", help="Allow unauthenticated OpenAlex collection for small development probes.")
     parser.add_argument("--min-interval", type=float, help="Minimum seconds between OpenAlex requests.")
     parser.add_argument("--max-attempts", type=int, help="Maximum attempts for each OpenAlex request.")
@@ -86,6 +88,10 @@ def main() -> None:
             collect.append("--missing-only")
         if args.stale_below is not None:
             collect.extend(["--stale-below", str(args.stale_below)])
+        if args.sort_by_raw_depth:
+            collect.append("--sort-by-raw-depth")
+        if args.limit_topics is not None:
+            collect.extend(["--limit-topics", str(args.limit_topics)])
         if args.allow_unauthenticated_openalex:
             collect.append("--allow-unauthenticated")
         if args.min_interval is not None:
