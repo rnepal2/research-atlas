@@ -27,6 +27,7 @@ The pipeline collects and derives product data from:
 - Sources through primary work locations
 
 The collector supports `OPENALEX_API_KEY`, cursor pagination, retries, rate limiting, local caching, topic-id filters, and keyword fallback queries for newer or fuzzier areas. The normal refresh skips topic metadata searches because the frontend artifact is derived from works/authorships; use `src/scripts/discover_openalex_topics.py` when curating OpenAlex topic IDs.
+Refreshes merge newly fetched works into existing raw topic files, so interrupted or rate-limited runs preserve prior depth instead of replacing a topic with a thinner partial result.
 
 ## Refresh
 
@@ -35,7 +36,7 @@ export OPENALEX_API_KEY="your-key"
 ./src/refresh_data.sh --stale-below 3000 --max-works 3000
 ```
 
-Live OpenAlex collection requires `OPENALEX_API_KEY` for deep refreshes. Unauthenticated collection is supported for probes and can retry through short rate-limit windows, but it is not reliable for full-corpus refreshes. Use `--stale-below` to collect only topics whose raw files are below the target depth, `--missing-only` to collect only configured topics with no raw works yet, and `--min-interval` / `--max-attempts` to tune rate-limit behavior.
+Live OpenAlex collection requires `OPENALEX_API_KEY` for deep refreshes. Unauthenticated collection is supported for probes and can retry through short rate-limit windows, but it is not reliable for full-corpus refreshes. Use `--stale-below` to collect only topics whose raw files are below the target depth, `--missing-only` to collect only configured topics with no raw works yet, and `--min-interval` / `--max-attempts` / `--max-retry-wait` to tune rate-limit behavior.
 
 For a local rebuild from already collected raw files:
 

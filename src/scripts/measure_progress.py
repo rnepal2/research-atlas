@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -53,6 +54,8 @@ def main() -> None:
     median_insights = sorted(insight_counts)[len(insight_counts) // 2] if insight_counts else 0
     target_works = BASELINE["worksCollected"] * 5
     target_topics = BASELINE["topics"] * 5
+    target_depth = round(target_works / max(1, len(configured_topics)))
+    sorted_raw_counts = sorted(raw_counts)
     metrics = {
         "baseline": BASELINE,
         "current": {
@@ -61,6 +64,10 @@ def main() -> None:
             "worksCollected": works_collected,
             "rawTopicsWithWorks": sum(1 for count in raw_counts if count > 0),
             "rawWorksTotal": sum(raw_counts),
+            "minimumRawWorksPerTopic": sorted_raw_counts[0] if sorted_raw_counts else 0,
+            "medianRawWorksPerTopic": sorted_raw_counts[len(sorted_raw_counts) // 2] if sorted_raw_counts else 0,
+            "topicsAtOrAboveTargetDepth": sum(1 for count in raw_counts if count >= target_depth),
+            "topicsBelowTargetDepth": sum(1 for count in raw_counts if count < target_depth),
             "medianInsightItemsPerTopic": median_insights,
             "topicsWithBenchmarks": topics_with_benchmarks,
             "benchmarkCoverage": round(topics_with_benchmarks / max(1, topic_count), 3),
@@ -85,8 +92,15 @@ def main() -> None:
             "topicsToFiveX": max(0, target_topics - topic_count),
             "worksToFiveX": max(0, target_works - works_collected),
             "rawTopicsWithoutWorks": sum(1 for count in raw_counts if count == 0),
-            "avgWorksNeededPerConfiguredTopic": round(target_works / max(1, len(configured_topics))),
+            "avgWorksNeededPerConfiguredTopic": target_depth,
             "suggestedCollectionCommand": "./src/refresh_data.sh --stale-below 3000 --max-works 3000",
+        },
+        "refreshStrategy": {
+            "openAlexApiKeyPresentAtMeasurement": bool(os.getenv("OPENALEX_API_KEY")),
+            "authenticatedDeepRefreshRecommended": max(0, target_works - works_collected) > 0,
+            "authenticatedCommand": "OPENALEX_API_KEY=... ./src/refresh_data.sh --stale-below 3000 --max-works 3000",
+            "probeCommand": "./src/refresh_data.sh --topic <slug> --max-works 900 --allow-unauthenticated-openalex --min-interval 1.5 --max-attempts 1 --max-retry-wait 3",
+            "note": "Unauthenticated OpenAlex refreshes are useful for probes but rate-limit before a reliable 5x corpus refresh.",
         },
     }
     metrics["status"] = {

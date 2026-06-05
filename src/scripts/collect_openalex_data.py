@@ -50,12 +50,14 @@ class OpenAlexClient:
         cache_dir: Path,
         min_interval: float = 0.28,
         max_attempts: int = 4,
+        max_retry_wait: int = 90,
         allow_unauthenticated: bool = False,
     ) -> None:
         self.api_key = api_key
         self.cache_dir = cache_dir
         self.min_interval = min_interval
         self.max_attempts = max_attempts
+        self.max_retry_wait = max_retry_wait
         self.allow_unauthenticated = allow_unauthenticated
         self.session = requests.Session()
         self.last_request_at = 0.0
@@ -84,7 +86,7 @@ class OpenAlexClient:
                 )
             if response.status_code in {429, 500, 502, 503, 504}:
                 retry_after = response.headers.get("retry-after")
-                wait = min(90, int(retry_after) if retry_after and retry_after.isdigit() else 2**attempt)
+                wait = min(self.max_retry_wait, int(retry_after) if retry_after and retry_after.isdigit() else 2**attempt)
                 logging.warning("OpenAlex %s for %s; retrying in %ss", response.status_code, response.url, wait)
                 time.sleep(wait)
                 continue
@@ -115,6 +117,17 @@ def raw_work_count(output_dir: Path, slug: str) -> int:
         return 0
     with path.open() as handle:
         return sum(1 for line in handle if line.strip())
+
+
+def read_jsonl(path: Path) -> list[dict[str, Any]]:
+    if not path.exists():
+        return []
+    rows = []
+    with path.open() as handle:
+        for line in handle:
+            if line.strip():
+                rows.append(json.loads(line))
+    return rows
 
 
 def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -181,8 +194,15 @@ def collect_works(client: OpenAlexClient, topic: dict[str, Any], output_dir: Pat
     min_year = current_year - years_back
     configured_max = int(topic.get("collection", {}).get("max_works", 0))
     max_works = int(max_works_override if max_works_override is not None else max(configured_max, DEFAULT_MAX_WORKS))
-    per_query_cap = max(50, max_works // max(1, len(topic.get("openalex_topic_ids", [])) + len(topic.get("keyword_queries", []))))
     collected: dict[str, dict[str, Any]] = {}
+    works_path = output_dir / topic["slug"] / "works.jsonl"
+
+    for work in read_jsonl(works_path):
+        if work.get("id"):
+            collected[work["id"]] = work
+    existing_count = len(collected)
+    max_works = max(max_works, existing_count)
+    per_query_cap = max(50, max_works // max(1, len(topic.get("openalex_topic_ids", [])) + len(topic.get("keyword_queries", []))))
 
     for topic_id in topic.get("openalex_topic_ids", []):
         filter_value = f"publication_year:>{min_year},topics.id:{short_openalex_id(topic_id)}"
@@ -204,8 +224,8 @@ def collect_works(client: OpenAlexClient, topic: dict[str, Any], output_dir: Pat
                     collected[work["id"]] = work
 
     works = list(collected.values())[:max_works]
-    write_jsonl(output_dir / topic["slug"] / "works.jsonl", works)
-    logging.info("Collected %s works for %s", len(works), topic["slug"])
+    write_jsonl(works_path, works)
+    logging.info("Collected %s works for %s (%+d)", len(works), topic["slug"], len(works) - existing_count)
     return works
 
 
@@ -244,6 +264,7 @@ def main() -> None:
     parser.add_argument("--allow-unauthenticated", action="store_true", help="Allow live collection without OPENALEX_API_KEY for small development probes.")
     parser.add_argument("--min-interval", type=float, help="Minimum seconds between OpenAlex requests.")
     parser.add_argument("--max-attempts", type=int, help="Maximum attempts for each OpenAlex request.")
+    parser.add_argument("--max-retry-wait", type=int, help="Maximum seconds to wait between OpenAlex retries.")
     parser.add_argument("--skip-metadata", action="store_true", help="Skip topic metadata search and collect works/entities only.")
     args = parser.parse_args()
 
@@ -269,11 +290,13 @@ def main() -> None:
     logging.info("Collecting %s topic(s); target max works per topic is %s", len(topics), args.max_works or DEFAULT_MAX_WORKS)
     min_interval = args.min_interval if args.min_interval is not None else (1.1 if not api_key else 0.28)
     max_attempts = args.max_attempts if args.max_attempts is not None else (2 if not api_key and args.allow_unauthenticated else 4)
+    max_retry_wait = args.max_retry_wait if args.max_retry_wait is not None else (12 if not api_key and args.allow_unauthenticated else 90)
     client = OpenAlexClient(
         api_key,
         Path(args.cache_dir),
         min_interval=min_interval,
         max_attempts=max_attempts,
+        max_retry_wait=max_retry_wait,
         allow_unauthenticated=args.allow_unauthenticated,
     )
     for topic in topics:

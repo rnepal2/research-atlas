@@ -34,6 +34,7 @@ def main() -> None:
     parser.add_argument("--allow-unauthenticated-openalex", action="store_true", help="Allow unauthenticated OpenAlex collection for small development probes.")
     parser.add_argument("--min-interval", type=float, help="Minimum seconds between OpenAlex requests.")
     parser.add_argument("--max-attempts", type=int, help="Maximum attempts for each OpenAlex request.")
+    parser.add_argument("--max-retry-wait", type=int, help="Maximum seconds to wait between OpenAlex retries.")
     parser.add_argument("--fast", action="store_true", help="Use cached/raw data only; equivalent to --skip-collect.")
     parser.add_argument("--skip-collect", action="store_true")
     parser.add_argument("--include-metadata", action="store_true", help="Also refresh OpenAlex topic metadata discovery files.")
@@ -91,6 +92,8 @@ def main() -> None:
             collect.extend(["--min-interval", str(args.min_interval)])
         if args.max_attempts is not None:
             collect.extend(["--max-attempts", str(args.max_attempts)])
+        if args.max_retry_wait is not None:
+            collect.extend(["--max-retry-wait", str(args.max_retry_wait)])
         if not args.include_metadata:
             collect.append("--skip-metadata")
         run(collect)
