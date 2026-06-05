@@ -12,9 +12,7 @@ TOPIC_KEYS = {
     "label",
     "metrics",
     "quality",
-    "benchmarks",
     "insights",
-    "insightSections",
     "yearlyMetrics",
     "authors",
     "institutions",
@@ -45,14 +43,10 @@ def validate_topic(topic: dict[str, Any]) -> None:
     require(all(country.get("name") for country in topic["countries"]), f"{topic['slug']} has country rows without display names")
     require(all("workShare" in country for country in topic["countries"]), f"{topic['slug']} has country rows without work share")
     require(topic["quality"].get("worksCollected", 0) >= 40, f"{topic['slug']} has too few collected works")
-    require(topic["benchmarks"].get("fieldTrendRank"), f"{topic['slug']} has no field benchmark rank")
-    require(topic["benchmarks"].get("globalTrendPercentile") is not None, f"{topic['slug']} has no global benchmark percentile")
-    require(topic["benchmarks"].get("takeaway"), f"{topic['slug']} has no benchmark takeaway")
     require(topic["quality"].get("latestPublicationYear", 0) >= 2020, f"{topic['slug']} has stale publication coverage")
     require(topic["network"].get("nodes"), f"{topic['slug']} has no researcher network nodes")
     require(topic["institutionNetwork"].get("nodes"), f"{topic['slug']} has no institution network nodes")
-    require(topic.get("insights"), f"{topic['slug']} has no generated insights")
-    require(sum(len(section.get("items", [])) for section in topic.get("insightSections", [])) >= 18, f"{topic['slug']} has too few insight-section items")
+    require(len(topic.get("insights", [])) >= 4, f"{topic['slug']} has too few generated insights")
     require(topic.get("paperCollections", {}).get("recentImpact"), f"{topic['slug']} has no recent-impact papers")
 
 
@@ -100,8 +94,6 @@ def main() -> None:
     for row in artifact["trending"]:
         require(row.get("signalDrivers"), f"{row.get('slug', 'trending row')} has no signal drivers")
         require(row.get("qualityLabel"), f"{row.get('slug', 'trending row')} has no quality label")
-        require(row.get("benchmarkLabel"), f"{row.get('slug', 'trending row')} has no benchmark label")
-        require(row.get("fieldTrendRank"), f"{row.get('slug', 'trending row')} has no field benchmark rank")
     for topic in topics:
         validate_topic(topic)
 

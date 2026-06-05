@@ -14,11 +14,9 @@
     "medianRawWorksPerTopic": 764,
     "topicsAtOrAboveTargetDepth": 1,
     "topicsBelowTargetDepth": 99,
-    "medianInsightItemsPerTopic": 21,
-    "topicsWithBenchmarks": 100,
-    "benchmarkCoverage": 1.0,
-    "artifactBytes": 17537288,
-    "indexArtifactBytes": 1970258,
+    "medianInsightItemsPerTopic": 6,
+    "artifactBytes": 17130543,
+    "indexArtifactBytes": 1901654,
     "topicArtifactCount": 100,
     "skippedTopics": 0,
     "shallowestTopics": [
@@ -97,7 +95,7 @@
   "multipliers": {
     "topicCoverage": 1.282,
     "workCoverage": 1.599,
-    "analyticsDepth": 3.5
+    "analyticsDepth": 1.0
   },
   "targets": {
     "topicCoverageMultiplier": 5,
@@ -123,6 +121,6 @@
   },
   "status": {
     "coverageTargetMet": false,
-    "analyticsTargetMet": true
+    "analyticsTargetMet": false
   }
 }

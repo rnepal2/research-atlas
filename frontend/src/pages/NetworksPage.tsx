@@ -236,7 +236,7 @@ function NetworkInspector({ title, rows, communities }: { title: string; rows: s
         )}
         <Accordion type="single" collapsible className="mt-0.5 border-t border-border">
           <AccordionItem value="read" className="border-b border-border">
-            <AccordionTrigger className="min-h-[42px] py-0 text-[0.82rem] hover:no-underline">How to read this view</AccordionTrigger>
+            <AccordionTrigger className="text-[0.82rem] hover:no-underline">How to read this view</AccordionTrigger>
             <AccordionContent>
               <p className="m-0 text-[0.78rem] leading-[1.5] text-muted-foreground">
                 Nodes are sized by activity or score, colors group topic communities, and edges represent repeated collaboration.
@@ -244,7 +244,7 @@ function NetworkInspector({ title, rows, communities }: { title: string; rows: s
             </AccordionContent>
           </AccordionItem>
           <AccordionItem value="caveat" className="border-b border-border">
-            <AccordionTrigger className="min-h-[42px] py-0 text-[0.82rem] hover:no-underline">Interpretation caveat</AccordionTrigger>
+            <AccordionTrigger className="text-[0.82rem] hover:no-underline">Interpretation caveat</AccordionTrigger>
             <AccordionContent>
               <p className="m-0 text-[0.78rem] leading-[1.5] text-muted-foreground">
                 This is a compact top-node sketch, not a full graph of every OpenAlex author or institution.

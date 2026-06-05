@@ -7,7 +7,7 @@ import { PaperList } from '../components/PaperList'
 import { RankingTable } from '../components/RankingTable'
 import { TopicSelector } from '../components/TopicSelector'
 import { TrendChart } from '../components/TrendChart'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui'
+import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui'
 import { useTopicDetail } from '../data/useTopicDetail'
 import type { AtlasData, TopicProfile, TopicSummary } from '../data/types'
 import { formatCompact, formatNumber, formatPercent, formatScore } from '../lib/format'
@@ -35,83 +35,12 @@ function Metric({ label, value, note, icon: Icon }: { label: string; value: stri
   )
 }
 
-function formatPercentileLabel(value: number) {
-  const suffix = value % 100 >= 11 && value % 100 <= 13 ? 'th' : value % 10 === 1 ? 'st' : value % 10 === 2 ? 'nd' : value % 10 === 3 ? 'rd' : 'th'
-  return `${value}${suffix} pct.`
-}
-
-function BenchmarkStrip({ topic }: { topic: TopicProfile }) {
-  const benchmark = topic.benchmarks
-  if (!benchmark) {
-    return null
-  }
-  const items = [
-    {
-      label: 'Field rank',
-      value: `#${benchmark.fieldTrendRank} / ${benchmark.fieldTopicCount}`,
-      note: `${topic.field} momentum`,
-      percent: benchmark.fieldTrendPercentile,
-    },
-    {
-      label: 'Domain rank',
-      value: `#${benchmark.domainTrendRank} / ${benchmark.domainTopicCount}`,
-      note: `${topic.domain} momentum`,
-      percent: benchmark.domainTrendPercentile,
-    },
-    {
-      label: 'Global momentum',
-      value: formatPercentileLabel(benchmark.globalTrendPercentile),
-      note: `${benchmark.label}`,
-      percent: benchmark.globalTrendPercentile,
-    },
-    {
-      label: 'Snapshot quality',
-      value: formatPercentileLabel(benchmark.qualityPercentile),
-      note: `Field median ${formatScore(benchmark.fieldMedianQualityScore)}`,
-      percent: benchmark.qualityPercentile,
-    },
-  ]
-  return (
-    <Card className="border-[color-mix(in_srgb,var(--primary)_24%,var(--border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--primary)_7%,transparent),transparent_58%),var(--card)]">
-      <CardHeader>
-        <div>
-          <CardTitle>Peer benchmark</CardTitle>
-          <CardDescription>{benchmark.takeaway}</CardDescription>
-        </div>
-        <Badge variant="secondary">{benchmark.label}</Badge>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-4 gap-2.5 max-[1160px]:grid-cols-2 max-[760px]:grid-cols-1">
-          {items.map((item) => (
-            <div className="grid gap-2 rounded-card border border-border bg-card-soft p-3" key={item.label}>
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <span className="block text-[0.66rem] font-bold uppercase text-muted-foreground">{item.label}</span>
-                  <strong className="mt-1 block text-[1.08rem] leading-none text-foreground">{item.value}</strong>
-                </div>
-                <span className="rounded-full bg-[color-mix(in_srgb,var(--primary)_14%,transparent)] px-2 py-1 text-[0.68rem] font-bold text-primary">
-                  {item.percent}%
-                </span>
-              </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--foreground)_9%,transparent)]">
-                <span className="block h-full rounded-full bg-primary" style={{ width: `${Math.max(4, Math.min(100, item.percent))}%` }} />
-              </div>
-              <span className="text-[0.72rem] text-muted-foreground">{item.note}</span>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
 function topicSkeleton(topic: TopicSummary): TopicProfile {
   const papers = topic.topPapers || []
   return {
     ...topic,
     openalexTopicIds: [],
     keywordQueries: [],
-    insightSections: [],
     yearlyMetrics: [],
     subtopics: topic.topSubtopics || [],
     subtopicSeries: [],
@@ -247,8 +176,6 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
         />
       </section>
 
-      <BenchmarkStrip topic={selected} />
-
       <section className="grid grid-cols-[minmax(0,1.34fr)_minmax(400px,0.86fr)] gap-2.5 max-[1160px]:grid-cols-1">
         <Card>
           <CardHeader>
@@ -314,37 +241,6 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
           <FrontierCards cards={selected.insights?.length ? selected.insights : selected.frontierCards} columns={3} />
         </CardContent>
       </Card>
-
-      {selected.insightSections?.length ? (
-        <Card>
-          <CardHeader>
-            <div>
-              <CardTitle>Analyst brief</CardTitle>
-              <CardDescription>Structured evidence across momentum, people, institutions, geography, papers, networks, and quality.</CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Accordion type="single" collapsible defaultValue={selected.insightSections[0]?.key} className="border-t border-border">
-              {selected.insightSections.map((section) => (
-                <AccordionItem value={section.key} key={section.key} className="border-b border-border">
-                  <AccordionTrigger className="min-h-[46px] py-0 text-[0.84rem] hover:no-underline">{section.title}</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="grid grid-cols-3 gap-2.5 pt-1 max-[1160px]:grid-cols-1">
-                      {section.items.map((item) => (
-                        <div className="grid gap-1.5 rounded-card border border-border bg-card-soft p-3" key={`${section.key}-${item.label}`}>
-                          <span className="text-[0.66rem] font-bold uppercase text-muted-foreground">{item.label}</span>
-                          <strong className="line-clamp-2 text-[0.94rem] leading-tight text-foreground">{item.value}</strong>
-                          <p className="m-0 text-[0.74rem] leading-[1.45] text-muted-foreground">{item.detail}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </CardContent>
-        </Card>
-      ) : null}
 
       <Card>
         <CardHeader>

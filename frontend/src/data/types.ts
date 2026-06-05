@@ -35,7 +35,6 @@ export interface TopicSummary {
   summary: string
   metrics: TopicMetrics
   quality: TopicQuality
-  benchmarks?: TopicBenchmark
   insights: TopicInsight[]
   topSubtopics?: SubtopicMetric[]
   topAuthors?: AuthorProfile[]
@@ -53,7 +52,6 @@ export interface TopicSummary {
 export interface TopicProfile extends TopicSummary {
   openalexTopicIds: string[]
   keywordQueries: string[]
-  insightSections?: InsightSection[]
   yearlyMetrics: YearlyMetric[]
   subtopics: SubtopicMetric[]
   subtopicSeries: SubtopicSeriesPoint[]
@@ -197,27 +195,6 @@ export interface TopicQuality {
   dataCompletenessScore: number
 }
 
-export interface TopicBenchmark {
-  label: string
-  globalTrendRank: number
-  globalTopicCount: number
-  globalTrendPercentile: number
-  domainTrendRank: number
-  domainTopicCount: number
-  domainTrendPercentile: number
-  fieldTrendRank: number
-  fieldTopicCount: number
-  fieldTrendPercentile: number
-  qualityRank: number
-  qualityPercentile: number
-  volumeRank: number
-  volumePercentile: number
-  fieldMedianTrendScore: number
-  fieldMedianWorksLast3Years: number
-  fieldMedianQualityScore: number
-  takeaway: string
-}
-
 export interface TopicInsight {
   label: string
   title: string
@@ -225,16 +202,6 @@ export interface TopicInsight {
   description: string
   type: string
   url?: string
-}
-
-export interface InsightSection {
-  key: string
-  title: string
-  items: {
-    label: string
-    value: string
-    detail: string
-  }[]
 }
 
 export interface AtlasCoverage {
@@ -334,10 +301,6 @@ export interface TrendingTopic {
   newAuthorShare?: number
   qualityScore?: number
   qualityLabel?: string
-  benchmarkLabel?: string
-  fieldTrendRank?: number
-  fieldTopicCount?: number
-  fieldTrendPercentile?: number
   signalDrivers?: string[]
   whyTrending?: string
 }

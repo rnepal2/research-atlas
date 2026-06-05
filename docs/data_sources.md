@@ -10,7 +10,6 @@ Research Atlas currently uses OpenAlex only.
 - 83,568 raw OpenAlex works retained locally before processing filters
 - 3 OpenAlex-aligned domains: Physical Sciences, Health Sciences, Life Sciences
 - 11 OpenAlex-aligned fields and 17 curated work areas
-- 100 topic profiles with peer benchmark context
 - Compact published index: `data/processed/atlas-index.json`
 - Per-topic detail artifacts: `data/processed/topics/*.json`
 - Raw OpenAlex JSONL and API cache files stay local and are not committed

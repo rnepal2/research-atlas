@@ -151,32 +151,6 @@ def concentration_label(score: float) -> str:
     return "concentrated"
 
 
-def percentile_from_rank(rank: int, count: int) -> int:
-    if count <= 1:
-        return 100
-    return round(100 * (count - rank) / (count - 1))
-
-
-def median(values: list[float]) -> float:
-    if not values:
-        return 0.0
-    ordered = sorted(values)
-    middle = len(ordered) // 2
-    if len(ordered) % 2:
-        return ordered[middle]
-    return (ordered[middle - 1] + ordered[middle]) / 2
-
-
-def benchmark_label(percentile: int) -> str:
-    if percentile >= 90:
-        return "Top-decile momentum"
-    if percentile >= 75:
-        return "Top-quartile momentum"
-    if percentile >= 50:
-        return "Above-median momentum"
-    return "Developing signal"
-
-
 def topic_label(topic_obj: dict[str, Any] | None) -> str:
     if not topic_obj:
         return "Unclassified"
@@ -843,175 +817,6 @@ def build_insights(
     return cards[:6]
 
 
-def build_insight_sections(
-    metrics: dict[str, Any],
-    quality: dict[str, Any],
-    subtopics: list[dict[str, Any]],
-    authors: list[dict[str, Any]],
-    institutions: list[dict[str, Any]],
-    countries: list[dict[str, Any]],
-    papers: list[dict[str, Any]],
-    communities: dict[str, list[dict[str, Any]]],
-) -> list[dict[str, Any]]:
-    top_subtopic = subtopics[0] if subtopics else {}
-    top_author = authors[0] if authors else {}
-    top_institution = institutions[0] if institutions else {}
-    top_country = next((country for country in countries if country["country"] != "Unknown"), {})
-    top_paper = papers[0] if papers else {}
-    author_community = communities.get("authors", [{}])[0] if communities.get("authors") else {}
-    institution_community = communities.get("institutions", [{}])[0] if communities.get("institutions") else {}
-
-    return [
-        {
-            "key": "momentum",
-            "title": "Momentum",
-            "items": [
-                {
-                    "label": "Recent volume",
-                    "value": f"{metrics['worksLast3Years']:,}",
-                    "detail": f"{metrics['worksLast5Years']:,} works in five years; {round(metrics['growthRate'] * 100)}% growth versus the prior window.",
-                },
-                {
-                    "label": "Citation velocity",
-                    "value": f"{metrics['citationVelocity']:,.0f}",
-                    "detail": "Citation velocity discounts older papers by publication age so recent signals are easier to compare.",
-                },
-                {
-                    "label": "Fastest subtopic",
-                    "value": top_subtopic.get("label", "Unclassified"),
-                    "detail": f"{round(float(top_subtopic.get('growth', 0)) * 100)}% recent growth across OpenAlex topic assignments.",
-                },
-            ],
-        },
-        {
-            "key": "people",
-            "title": "Researchers",
-            "items": [
-                {
-                    "label": "Rising visibility",
-                    "value": top_author.get("name", "Author not resolved"),
-                    "detail": "; ".join(top_author.get("scoreDrivers", [])[:3]) or "Recent works, citation velocity, focus, and bridge signal drive the score.",
-                },
-                {
-                    "label": "New-author share",
-                    "value": f"{round(metrics['newAuthorShare'] * 100)}%",
-                    "detail": "Higher values suggest new entrants are contributing meaningfully to recent activity.",
-                },
-                {
-                    "label": "Bridge signal",
-                    "value": f"{top_author.get('bridgeScore', 0):.1f}",
-                    "detail": "Bridge score highlights researchers connecting otherwise separate coauthorship clusters.",
-                },
-            ],
-        },
-        {
-            "key": "institutions",
-            "title": "Institutions",
-            "items": [
-                {
-                    "label": "Leading institution",
-                    "value": top_institution.get("name", "Institution not resolved"),
-                    "detail": "; ".join(top_institution.get("scoreDrivers", [])[:3]) or "Strength combines work share, citations, rising authors, partners, and subtopic breadth.",
-                },
-                {
-                    "label": "Concentration",
-                    "value": f"{metrics['concentrationScore']:.2f}",
-                    "detail": "Lower concentration suggests expertise is distributed; higher concentration suggests a smaller set of institutions dominates.",
-                },
-                {
-                    "label": "Subtopic breadth",
-                    "value": str(top_institution.get("topicBreadth", 0)),
-                    "detail": "Breadth counts visible OpenAlex topic labels across the institution's works in this snapshot.",
-                },
-            ],
-        },
-        {
-            "key": "geography",
-            "title": "Geography",
-            "items": [
-                {
-                    "label": "Top country",
-                    "value": top_country.get("name") or country_name(top_country.get("country", "Unknown")),
-                    "detail": f"{top_country.get('works', 0):,} country-attributed works and {top_country.get('institutions', 0):,} institutions.",
-                },
-                {
-                    "label": "Mapped countries",
-                    "value": str(quality["mappedCountries"]),
-                    "detail": f"Country resolution is {round(quality['countryResolutionRate'] * 100)}% across resolved institution mentions.",
-                },
-                {
-                    "label": "Global spread",
-                    "value": str(min(100, int(quality["mappedCountries"] * 3))),
-                    "detail": "A directional spread score derived from the number of mapped countries represented in the topic.",
-                },
-            ],
-        },
-        {
-            "key": "papers",
-            "title": "Papers",
-            "items": [
-                {
-                    "label": "Recent impact",
-                    "value": top_paper.get("title", "Paper not resolved"),
-                    "detail": f"{top_paper.get('year', 'n/a')} / {top_paper.get('citations', 0):,} citations / {top_paper.get('source', 'source not resolved')}.",
-                },
-                {
-                    "label": "Paper collections",
-                    "value": "5",
-                    "detail": "Recent impact, most cited, newest, review-oriented, and bridge-paper views are generated for each topic.",
-                },
-                {
-                    "label": "Bridge-paper signal",
-                    "value": str(len([paper for paper in papers if len(set(paper.get("topics", []))) >= 3])),
-                    "detail": "Bridge papers carry multiple OpenAlex topic labels and can help readers connect adjacent subfields.",
-                },
-            ],
-        },
-        {
-            "key": "network",
-            "title": "Network",
-            "items": [
-                {
-                    "label": "Researcher community",
-                    "value": author_community.get("label", "Mixed"),
-                    "detail": f"{author_community.get('nodeCount', 0)} nodes and {author_community.get('edgeCount', 0)} internal edges in the dominant researcher community.",
-                },
-                {
-                    "label": "Institution community",
-                    "value": institution_community.get("label", "Mixed"),
-                    "detail": f"{institution_community.get('nodeCount', 0)} nodes and {institution_community.get('edgeCount', 0)} internal edges in the dominant institution community.",
-                },
-                {
-                    "label": "Fragmentation",
-                    "value": f"{metrics['fragmentationScore']:.2f}",
-                    "detail": "Fragmentation estimates how scattered the visible coauthorship graph is after top-node filtering.",
-                },
-            ],
-        },
-        {
-            "key": "quality",
-            "title": "Quality",
-            "items": [
-                {
-                    "label": "Completeness",
-                    "value": f"{quality['dataCompletenessScore']:.1f}",
-                    "detail": "Completeness blends works collected, topic-ID coverage, author/institution/country resolution, and publication recency.",
-                },
-                {
-                    "label": "Topic-ID share",
-                    "value": f"{round(quality['topicIdMatchShare'] * 100)}%",
-                    "detail": "A high value means more works matched configured OpenAlex topic IDs rather than keyword fallback.",
-                },
-                {
-                    "label": "Latest year",
-                    "value": str(quality["latestPublicationYear"]),
-                    "detail": "The latest publication year represented in the collected OpenAlex work slice.",
-                },
-            ],
-        },
-    ]
-
-
 def narrative_summary(topic: dict[str, Any], metrics: dict[str, Any], top_subtopic: str, top_institution: str) -> str:
     return (
         f"{topic['label']} is represented as a curated static OpenAlex topic profile. "
@@ -1026,13 +831,13 @@ def trending_drivers(topic: dict[str, Any]) -> list[str]:
     quality = topic["quality"]
     drivers = []
     if metrics["growthRate"] > 0:
-        drivers.append(f"{round(metrics['growthRate'] * 100)}% recent growth")
+        drivers.append(f"{round(metrics['growthRate'] * 100)}% growth")
     if metrics["newAuthorShare"] >= 0.6:
-        drivers.append(f"{round(metrics['newAuthorShare'] * 100)}% new-author share")
+        drivers.append(f"{round(metrics['newAuthorShare'] * 100)}% new authors")
     if metrics["activeInstitutions"] >= 20:
-        drivers.append(f"{metrics['activeInstitutions']:,} active institutions")
+        drivers.append(f"{metrics['activeInstitutions']:,} institutions")
     if quality["mappedCountries"] >= 10:
-        drivers.append(f"{quality['mappedCountries']} mapped countries")
+        drivers.append(f"{quality['mappedCountries']} countries")
     if topic.get("subtopics"):
         drivers.append(topic["subtopics"][0]["label"])
     return drivers[:4]
@@ -1042,72 +847,10 @@ def trending_explanation(topic: dict[str, Any]) -> str:
     metrics = topic["metrics"]
     subtopic = topic["subtopics"][0]["label"] if topic.get("subtopics") else "the leading subtopic"
     institution = topic["institutions"][0]["name"] if topic.get("institutions") else "the leading institution"
-    benchmark = topic.get("benchmarks", {})
-    benchmark_text = (
-        f" It ranks #{benchmark['fieldTrendRank']} of {benchmark['fieldTopicCount']} in {topic.get('field', 'its field')}."
-        if benchmark.get("fieldTopicCount", 0) > 1
-        else ""
-    )
     return (
         f"{metrics['worksLast3Years']:,} recent works, {round(metrics['growthRate'] * 100)}% growth, "
         f"and {round(metrics['newAuthorShare'] * 100)}% new-author share; {subtopic} and {institution} anchor the visible signal."
-        f"{benchmark_text}"
     )
-
-
-def enrich_topic_benchmarks(topics: list[dict[str, Any]]) -> None:
-    def rank_group(group: list[dict[str, Any]], key: str) -> dict[str, int]:
-        ranked = sorted(group, key=lambda row: row["metrics"].get(key, 0), reverse=True)
-        return {topic["slug"]: index + 1 for index, topic in enumerate(ranked)}
-
-    domains: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
-    fields: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
-    all_trend_ranks = rank_group(topics, "trendScore")
-    quality_ranks = {
-        topic["slug"]: index + 1
-        for index, topic in enumerate(sorted(topics, key=lambda row: row["quality"].get("dataCompletenessScore", 0), reverse=True))
-    }
-    volume_ranks = rank_group(topics, "worksLast3Years")
-
-    for topic in topics:
-        domains[topic.get("domain") or "Unspecified domain"].append(topic)
-        fields[topic.get("field") or "Unspecified field"].append(topic)
-
-    domain_ranks = {domain: rank_group(group, "trendScore") for domain, group in domains.items()}
-    field_ranks = {field: rank_group(group, "trendScore") for field, group in fields.items()}
-
-    for topic in topics:
-        domain = topic.get("domain") or "Unspecified domain"
-        field = topic.get("field") or "Unspecified field"
-        domain_group = domains[domain]
-        field_group = fields[field]
-        domain_rank = domain_ranks[domain][topic["slug"]]
-        field_rank = field_ranks[field][topic["slug"]]
-        global_rank = all_trend_ranks[topic["slug"]]
-        quality_rank = quality_ranks[topic["slug"]]
-        volume_rank = volume_ranks[topic["slug"]]
-        field_percentile = percentile_from_rank(field_rank, len(field_group))
-        global_percentile = percentile_from_rank(global_rank, len(topics))
-        topic["benchmarks"] = {
-            "label": benchmark_label(field_percentile),
-            "globalTrendRank": global_rank,
-            "globalTopicCount": len(topics),
-            "globalTrendPercentile": global_percentile,
-            "domainTrendRank": domain_rank,
-            "domainTopicCount": len(domain_group),
-            "domainTrendPercentile": percentile_from_rank(domain_rank, len(domain_group)),
-            "fieldTrendRank": field_rank,
-            "fieldTopicCount": len(field_group),
-            "fieldTrendPercentile": field_percentile,
-            "qualityRank": quality_rank,
-            "qualityPercentile": percentile_from_rank(quality_rank, len(topics)),
-            "volumeRank": volume_rank,
-            "volumePercentile": percentile_from_rank(volume_rank, len(topics)),
-            "fieldMedianTrendScore": round(median([row["metrics"].get("trendScore", 0) for row in field_group]), 1),
-            "fieldMedianWorksLast3Years": round(median([row["metrics"].get("worksLast3Years", 0) for row in field_group])),
-            "fieldMedianQualityScore": round(median([row["quality"].get("dataCompletenessScore", 0) for row in field_group]), 1),
-            "takeaway": f"Ranks #{field_rank} of {len(field_group)} in {field} by momentum and #{domain_rank} of {len(domain_group)} in {domain}.",
-        }
 
 
 def process_topic(topic: dict[str, Any], raw_dir: Path, current_year: int) -> dict[str, Any]:
@@ -1206,7 +949,6 @@ def process_topic(topic: dict[str, Any], raw_dir: Path, current_year: int) -> di
         "metrics": metrics,
         "quality": quality,
         "insights": build_insights(topic, metrics, quality, subtopics, authors, institutions, countries, papers),
-        "insightSections": build_insight_sections(metrics, quality, subtopics, authors, institutions, countries, papers, network_communities),
         "yearlyMetrics": yearly,
         "subtopics": subtopics,
         "subtopicSeries": subtopic_series,
@@ -1394,7 +1136,6 @@ def topic_summary(topic: dict[str, Any]) -> dict[str, Any]:
         "summary": topic.get("summary", ""),
         "metrics": topic.get("metrics", {}),
         "quality": topic.get("quality", {}),
-        "benchmarks": topic.get("benchmarks", {}),
         "insights": topic.get("insights", [])[:6],
         "topSubtopics": topic.get("subtopics", [])[:6],
         "topAuthors": topic.get("authors", [])[:6],
@@ -1449,7 +1190,6 @@ def main() -> None:
             skipped_topics.append({"slug": topic["slug"], "label": topic["label"], "worksCollected": works_count})
             continue
         processed_topics.append(process_topic(topic, raw_dir, current_year))
-    enrich_topic_benchmarks(processed_topics)
     trending = sorted(
         [
             {
@@ -1468,10 +1208,6 @@ def main() -> None:
                 "newAuthorShare": topic["metrics"]["newAuthorShare"],
                 "qualityScore": topic["quality"]["dataCompletenessScore"],
                 "qualityLabel": quality_label(topic["quality"]["dataCompletenessScore"]),
-                "benchmarkLabel": topic.get("benchmarks", {}).get("label", ""),
-                "fieldTrendRank": topic.get("benchmarks", {}).get("fieldTrendRank"),
-                "fieldTopicCount": topic.get("benchmarks", {}).get("fieldTopicCount"),
-                "fieldTrendPercentile": topic.get("benchmarks", {}).get("fieldTrendPercentile"),
                 "signalDrivers": trending_drivers(topic),
                 "whyTrending": trending_explanation(topic),
             }
