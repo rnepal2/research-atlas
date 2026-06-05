@@ -281,8 +281,8 @@ def main() -> None:
         topics = [topic for topic in topics if raw_work_count(output_dir, topic["slug"]) < args.stale_below]
     if args.sort_by_raw_depth:
         topics = sorted(topics, key=lambda topic: raw_work_count(output_dir, topic["slug"]))
-    if args.limit_topics is not None:
-        topics = topics[: max(0, args.limit_topics)]
+    if args.limit_topics is not None and args.limit_topics > 0:
+        topics = topics[: args.limit_topics]
     if not topics:
         raise SystemExit("No matching topics found.")
 

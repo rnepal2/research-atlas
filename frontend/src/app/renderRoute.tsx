@@ -1,11 +1,7 @@
+import { Suspense } from 'react'
 import type { AtlasData } from '../data/types'
 import { findTopic } from '../lib/router'
-import { AtlasPage } from '../pages/AtlasPage'
-import { MethodologyPage } from '../pages/MethodologyPage'
-import { NetworksPage } from '../pages/NetworksPage'
-import { NotFoundPage } from '../pages/NotFoundPage'
-import { ResearchersPage } from '../pages/ResearchersPage'
-import { TrendingPage } from '../pages/TrendingPage'
+import { AtlasPage, MethodologyPage, NetworksPage, NotFoundPage, ResearchersPage, TrendingPage } from './lazyPages'
 
 interface RenderRouteParams {
   atlas: AtlasData
@@ -17,21 +13,25 @@ interface RenderRouteParams {
 export function renderRoute({ atlas, path, theme, onThemeChange }: RenderRouteParams) {
   const topicMatch = path.match(/^\/topic\/([^/]+)(?:\/([^/]+))?$/)
   const matchedTopic = topicMatch ? findTopic(atlas, topicMatch[1]) : undefined
+  const fallback = (
+    <div className="min-h-[320px] rounded-card border border-border bg-card p-4 text-[0.82rem] font-bold text-muted-foreground">
+      Loading research view...
+    </div>
+  )
+  let page
 
   if (path === '/' || (topicMatch && matchedTopic && !topicMatch[2])) {
-    return <AtlasPage atlas={atlas} initialTopicSlug={matchedTopic?.slug} theme={theme} onThemeChange={onThemeChange} />
+    page = <AtlasPage atlas={atlas} initialTopicSlug={matchedTopic?.slug} theme={theme} onThemeChange={onThemeChange} />
+  } else if (path === '/trending') {
+    page = <TrendingPage atlas={atlas} />
+  } else if (path === '/researchers' || (topicMatch && matchedTopic && topicMatch[2] === 'rising-researchers')) {
+    page = <ResearchersPage atlas={atlas} initialTopicSlug={matchedTopic?.slug} />
+  } else if (path === '/networks' || (topicMatch && matchedTopic && topicMatch[2] === 'network')) {
+    page = <NetworksPage atlas={atlas} initialTopicSlug={matchedTopic?.slug} />
+  } else if (path === '/about' || path === '/methodology') {
+    page = <MethodologyPage atlas={atlas} />
+  } else {
+    page = <NotFoundPage atlas={atlas} />
   }
-  if (path === '/trending') {
-    return <TrendingPage atlas={atlas} />
-  }
-  if (path === '/researchers' || (topicMatch && matchedTopic && topicMatch[2] === 'rising-researchers')) {
-    return <ResearchersPage atlas={atlas} initialTopicSlug={matchedTopic?.slug} />
-  }
-  if (path === '/networks' || (topicMatch && matchedTopic && topicMatch[2] === 'network')) {
-    return <NetworksPage atlas={atlas} initialTopicSlug={matchedTopic?.slug} />
-  }
-  if (path === '/about' || path === '/methodology') {
-    return <MethodologyPage atlas={atlas} />
-  }
-  return <NotFoundPage atlas={atlas} />
+  return <Suspense fallback={fallback}>{page}</Suspense>
 }

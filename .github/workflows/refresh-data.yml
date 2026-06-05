@@ -6,7 +6,15 @@ on:
       max_works:
         description: Max works per topic
         required: false
-        default: "600"
+        default: "3000"
+      stale_below:
+        description: Refresh topics with fewer raw works than this
+        required: false
+        default: "2604"
+      limit_topics:
+        description: Optional number of shallowest topics to refresh; use 0 for all
+        required: false
+        default: "10"
 
 permissions:
   contents: write
@@ -29,10 +37,21 @@ jobs:
       - name: Refresh static artifact
         env:
           OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
-        run: ./src/refresh_data.sh --max-works "${{ inputs.max_works }}"
+        run: >
+          ./src/refresh_data.sh
+          --max-works "${{ inputs.max_works }}"
+          --stale-below "${{ inputs.stale_below }}"
+          --sort-by-raw-depth
+          --limit-topics "${{ inputs.limit_topics }}"
 
       - name: Commit refreshed artifact
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: Refresh OpenAlex static data
-          file_pattern: data/processed/atlas.json
+          file_pattern: |
+            data/processed/atlas.json
+            data/processed/atlas-index.json
+            data/processed/progress_metrics.json
+            data/processed/topics/*.json
+            frontend/public/route-metadata.json
+            frontend/public/sitemap.xml
