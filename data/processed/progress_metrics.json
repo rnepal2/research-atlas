@@ -6,19 +6,21 @@
   },
   "current": {
     "configuredTopics": 100,
-    "topics": 78,
-    "worksCollected": 51802,
-    "rawTopicsWithWorks": 78,
-    "rawWorksTotal": 52089,
+    "topics": 100,
+    "worksCollected": 83270,
+    "rawTopicsWithWorks": 100,
+    "rawWorksTotal": 83568,
     "medianInsightItemsPerTopic": 21,
-    "artifactBytes": 13652655,
-    "indexArtifactBytes": 1524818,
-    "topicArtifactCount": 78,
-    "skippedTopics": 22
+    "topicsWithBenchmarks": 100,
+    "benchmarkCoverage": 1.0,
+    "artifactBytes": 17536382,
+    "indexArtifactBytes": 1969103,
+    "topicArtifactCount": 100,
+    "skippedTopics": 0
   },
   "multipliers": {
-    "topicCoverage": 1.0,
-    "workCoverage": 0.994,
+    "topicCoverage": 1.282,
+    "workCoverage": 1.599,
     "analyticsDepth": 3.5
   },
   "targets": {
@@ -29,9 +31,9 @@
     "targetWorksCollected": 260445
   },
   "deficit": {
-    "topicsToFiveX": 312,
-    "worksToFiveX": 208643,
-    "rawTopicsWithoutWorks": 22,
+    "topicsToFiveX": 290,
+    "worksToFiveX": 177175,
+    "rawTopicsWithoutWorks": 0,
     "avgWorksNeededPerConfiguredTopic": 2604,
     "suggestedCollectionCommand": "./src/refresh_data.sh --stale-below 3000 --max-works 3000"
   },

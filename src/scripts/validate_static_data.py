@@ -12,6 +12,7 @@ TOPIC_KEYS = {
     "label",
     "metrics",
     "quality",
+    "benchmarks",
     "insights",
     "insightSections",
     "yearlyMetrics",
@@ -44,6 +45,9 @@ def validate_topic(topic: dict[str, Any]) -> None:
     require(all(country.get("name") for country in topic["countries"]), f"{topic['slug']} has country rows without display names")
     require(all("workShare" in country for country in topic["countries"]), f"{topic['slug']} has country rows without work share")
     require(topic["quality"].get("worksCollected", 0) >= 40, f"{topic['slug']} has too few collected works")
+    require(topic["benchmarks"].get("fieldTrendRank"), f"{topic['slug']} has no field benchmark rank")
+    require(topic["benchmarks"].get("globalTrendPercentile") is not None, f"{topic['slug']} has no global benchmark percentile")
+    require(topic["benchmarks"].get("takeaway"), f"{topic['slug']} has no benchmark takeaway")
     require(topic["quality"].get("latestPublicationYear", 0) >= 2020, f"{topic['slug']} has stale publication coverage")
     require(topic["network"].get("nodes"), f"{topic['slug']} has no researcher network nodes")
     require(topic["institutionNetwork"].get("nodes"), f"{topic['slug']} has no institution network nodes")
@@ -55,8 +59,12 @@ def validate_topic(topic: dict[str, Any]) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Validate the static Research Atlas artifact.")
     parser.add_argument("--artifact", default="data/processed/atlas.json")
+    parser.add_argument("--index-artifact", default="data/processed/atlas-index.json")
+    parser.add_argument("--topics-dir", default="data/processed/topics")
     parser.add_argument("--min-topics", type=int, default=3)
-    parser.add_argument("--max-artifact-mb", type=float, default=14.0)
+    parser.add_argument("--max-artifact-mb", type=float, default=24.0)
+    parser.add_argument("--max-index-mb", type=float, default=3.0)
+    parser.add_argument("--max-topic-file-mb", type=float, default=0.5)
     args = parser.parse_args()
 
     artifact_path = Path(args.artifact)
@@ -76,9 +84,19 @@ def main() -> None:
     require(coverage.get("averageWorksPerProfile", 0) > 0, "Coverage average works per profile is missing")
     require(coverage.get("latestPublicationYear", 0) >= 2020, "Coverage latest publication year is stale or missing")
     require(artifact.get("searchIndex"), "Artifact search index is empty")
+    index_path = Path(args.index_artifact)
+    require(index_path.exists(), f"Missing index artifact: {index_path}")
+    require(index_path.stat().st_size <= args.max_index_mb * 1024 * 1024, f"Index artifact exceeds {args.max_index_mb:g} MB")
+    topics_dir = Path(args.topics_dir)
+    topic_files = list(topics_dir.glob("*.json")) if topics_dir.exists() else []
+    require(len(topic_files) == len(topics), f"Expected {len(topics)} topic files, found {len(topic_files)}")
+    oversized_topic = next((path for path in topic_files if path.stat().st_size > args.max_topic_file_mb * 1024 * 1024), None)
+    require(oversized_topic is None, f"Topic artifact exceeds {args.max_topic_file_mb:g} MB: {oversized_topic}")
     for row in artifact["trending"]:
         require(row.get("signalDrivers"), f"{row.get('slug', 'trending row')} has no signal drivers")
         require(row.get("qualityLabel"), f"{row.get('slug', 'trending row')} has no quality label")
+        require(row.get("benchmarkLabel"), f"{row.get('slug', 'trending row')} has no benchmark label")
+        require(row.get("fieldTrendRank"), f"{row.get('slug', 'trending row')} has no field benchmark rank")
     for topic in topics:
         validate_topic(topic)
 

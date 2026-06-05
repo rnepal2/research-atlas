@@ -26,7 +26,7 @@ interface TrendingPageProps {
 }
 
 const tableClass =
-  'min-w-[860px] border-collapse [&_strong]:font-[650] [&_strong]:text-foreground'
+  'min-w-[900px] border-collapse [&_strong]:font-[650] [&_strong]:text-foreground'
 const headClass =
   'sticky top-0 z-[2] h-auto border-b border-border bg-[linear-gradient(180deg,color-mix(in_srgb,var(--card-solid)_96%,transparent),color-mix(in_srgb,var(--card-solid)_90%,transparent))] px-2 py-[9px] text-left text-[0.66rem] font-bold tracking-[0] text-muted-foreground uppercase backdrop-blur-[14px]'
 const cellClass =
@@ -123,7 +123,7 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
                 </div>
                 <div className="grid justify-items-end gap-1">
                   <Badge variant="secondary">{formatNumber(topic.worksLast3Years)} works</Badge>
-                  {topic.qualityLabel && <span className="text-[0.66rem] font-bold text-muted-foreground">{topic.qualityLabel}</span>}
+                  <span className="text-[0.66rem] font-bold text-muted-foreground">{topic.benchmarkLabel || topic.qualityLabel}</span>
                 </div>
               </div>
             </CardContent>
@@ -222,6 +222,11 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
                       <span className="text-muted-foreground">
                         {topic.topCountry || 'Unknown'} / {formatPercent(topic.newAuthorShare || 0)} new authors
                       </span>
+                      {topic.fieldTrendRank && topic.fieldTopicCount && (
+                        <span className="mt-1 block text-[0.68rem] font-bold text-primary">
+                          Field rank #{topic.fieldTrendRank} of {topic.fieldTopicCount}
+                        </span>
+                      )}
                       {topic.qualityLabel && <span className="mt-1 block text-[0.68rem] font-bold text-primary">{topic.qualityLabel}</span>}
                     </TableCell>
                     <TableCell className={cellClass}>{formatNumber(topic.worksLast3Years)}</TableCell>

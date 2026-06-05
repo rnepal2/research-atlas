@@ -35,6 +35,76 @@ function Metric({ label, value, note, icon: Icon }: { label: string; value: stri
   )
 }
 
+function formatPercentileLabel(value: number) {
+  const suffix = value % 100 >= 11 && value % 100 <= 13 ? 'th' : value % 10 === 1 ? 'st' : value % 10 === 2 ? 'nd' : value % 10 === 3 ? 'rd' : 'th'
+  return `${value}${suffix} pct.`
+}
+
+function BenchmarkStrip({ topic }: { topic: TopicProfile }) {
+  const benchmark = topic.benchmarks
+  if (!benchmark) {
+    return null
+  }
+  const items = [
+    {
+      label: 'Field rank',
+      value: `#${benchmark.fieldTrendRank} / ${benchmark.fieldTopicCount}`,
+      note: `${topic.field} momentum`,
+      percent: benchmark.fieldTrendPercentile,
+    },
+    {
+      label: 'Domain rank',
+      value: `#${benchmark.domainTrendRank} / ${benchmark.domainTopicCount}`,
+      note: `${topic.domain} momentum`,
+      percent: benchmark.domainTrendPercentile,
+    },
+    {
+      label: 'Global momentum',
+      value: formatPercentileLabel(benchmark.globalTrendPercentile),
+      note: `${benchmark.label}`,
+      percent: benchmark.globalTrendPercentile,
+    },
+    {
+      label: 'Snapshot quality',
+      value: formatPercentileLabel(benchmark.qualityPercentile),
+      note: `Field median ${formatScore(benchmark.fieldMedianQualityScore)}`,
+      percent: benchmark.qualityPercentile,
+    },
+  ]
+  return (
+    <Card className="border-[color-mix(in_srgb,var(--primary)_24%,var(--border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--primary)_7%,transparent),transparent_58%),var(--card)]">
+      <CardHeader>
+        <div>
+          <CardTitle>Peer benchmark</CardTitle>
+          <CardDescription>{benchmark.takeaway}</CardDescription>
+        </div>
+        <Badge variant="secondary">{benchmark.label}</Badge>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-4 gap-2.5 max-[1160px]:grid-cols-2 max-[760px]:grid-cols-1">
+          {items.map((item) => (
+            <div className="grid gap-2 rounded-card border border-border bg-card-soft p-3" key={item.label}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <span className="block text-[0.66rem] font-bold uppercase text-muted-foreground">{item.label}</span>
+                  <strong className="mt-1 block text-[1.08rem] leading-none text-foreground">{item.value}</strong>
+                </div>
+                <span className="rounded-full bg-[color-mix(in_srgb,var(--primary)_14%,transparent)] px-2 py-1 text-[0.68rem] font-bold text-primary">
+                  {item.percent}%
+                </span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--foreground)_9%,transparent)]">
+                <span className="block h-full rounded-full bg-primary" style={{ width: `${Math.max(4, Math.min(100, item.percent))}%` }} />
+              </div>
+              <span className="text-[0.72rem] text-muted-foreground">{item.note}</span>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 function topicSkeleton(topic: TopicSummary): TopicProfile {
   const papers = topic.topPapers || []
   return {
@@ -176,6 +246,8 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
           icon={Building2}
         />
       </section>
+
+      <BenchmarkStrip topic={selected} />
 
       <section className="grid grid-cols-[minmax(0,1.34fr)_minmax(400px,0.86fr)] gap-2.5 max-[1160px]:grid-cols-1">
         <Card>

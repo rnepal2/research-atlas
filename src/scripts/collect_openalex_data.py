@@ -44,11 +44,19 @@ TOPIC_FIELDS = "id,display_name,description,works_count,cited_by_count,domain,fi
 
 
 class OpenAlexClient:
-    def __init__(self, api_key: str | None, cache_dir: Path, min_interval: float = 0.28, max_attempts: int = 4) -> None:
+    def __init__(
+        self,
+        api_key: str | None,
+        cache_dir: Path,
+        min_interval: float = 0.28,
+        max_attempts: int = 4,
+        allow_unauthenticated: bool = False,
+    ) -> None:
         self.api_key = api_key
         self.cache_dir = cache_dir
         self.min_interval = min_interval
         self.max_attempts = max_attempts
+        self.allow_unauthenticated = allow_unauthenticated
         self.session = requests.Session()
         self.last_request_at = 0.0
         self.cache_dir.mkdir(parents=True, exist_ok=True)
@@ -69,7 +77,7 @@ class OpenAlexClient:
                 time.sleep(self.min_interval - elapsed)
             response = self.session.get(url, params=params, timeout=45)
             self.last_request_at = time.time()
-            if response.status_code == 429 and not self.api_key:
+            if response.status_code == 429 and not self.api_key and not self.allow_unauthenticated:
                 raise RuntimeError(
                     "OpenAlex returned 429 without OPENALEX_API_KEY. Set OPENALEX_API_KEY for live collection, "
                     "or rerun with --allow-unauthenticated for a small development probe."
@@ -234,6 +242,8 @@ def main() -> None:
     parser.add_argument("--missing-only", action="store_true", help="Collect only configured topics with no raw works file.")
     parser.add_argument("--stale-below", type=int, help="Collect only topics whose raw works file has fewer than this many rows.")
     parser.add_argument("--allow-unauthenticated", action="store_true", help="Allow live collection without OPENALEX_API_KEY for small development probes.")
+    parser.add_argument("--min-interval", type=float, help="Minimum seconds between OpenAlex requests.")
+    parser.add_argument("--max-attempts", type=int, help="Maximum attempts for each OpenAlex request.")
     parser.add_argument("--skip-metadata", action="store_true", help="Skip topic metadata search and collect works/entities only.")
     args = parser.parse_args()
 
@@ -257,7 +267,15 @@ def main() -> None:
         )
 
     logging.info("Collecting %s topic(s); target max works per topic is %s", len(topics), args.max_works or DEFAULT_MAX_WORKS)
-    client = OpenAlexClient(api_key, Path(args.cache_dir))
+    min_interval = args.min_interval if args.min_interval is not None else (1.1 if not api_key else 0.28)
+    max_attempts = args.max_attempts if args.max_attempts is not None else (2 if not api_key and args.allow_unauthenticated else 4)
+    client = OpenAlexClient(
+        api_key,
+        Path(args.cache_dir),
+        min_interval=min_interval,
+        max_attempts=max_attempts,
+        allow_unauthenticated=args.allow_unauthenticated,
+    )
     for topic in topics:
         if not args.skip_metadata:
             collect_topic_metadata(client, topic, output_dir)

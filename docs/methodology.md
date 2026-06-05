@@ -31,6 +31,10 @@ Institution strength combines topic publication share, citation share, rising-au
 
 Each topic carries a compact quality profile: collected works, topic-ID match share, keyword fallback share, author/institution/country resolution rates, latest publication year, mapped country count, and an overall completeness score. These values are meant to guide interpretation, not to certify coverage.
 
+## Peer Benchmarks
+
+Each topic is benchmarked against the current curated corpus after processing. The app calculates global, domain, and field momentum ranks; field medians for trend, works, and quality; and percentile-style labels such as top-decile, top-quartile, above-median, or developing signal. These benchmarks help readers compare a topic with similar OpenAlex areas instead of reading every metric in isolation.
+
 ## Paper Collections
 
 Paper Lens groups works into recent impact, most cited, newest, review-oriented, and bridge-paper collections. Bridge papers are works with multiple OpenAlex topic labels inside the selected topic snapshot.

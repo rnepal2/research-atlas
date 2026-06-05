@@ -151,6 +151,32 @@ def concentration_label(score: float) -> str:
     return "concentrated"
 
 
+def percentile_from_rank(rank: int, count: int) -> int:
+    if count <= 1:
+        return 100
+    return round(100 * (count - rank) / (count - 1))
+
+
+def median(values: list[float]) -> float:
+    if not values:
+        return 0.0
+    ordered = sorted(values)
+    middle = len(ordered) // 2
+    if len(ordered) % 2:
+        return ordered[middle]
+    return (ordered[middle - 1] + ordered[middle]) / 2
+
+
+def benchmark_label(percentile: int) -> str:
+    if percentile >= 90:
+        return "Top-decile momentum"
+    if percentile >= 75:
+        return "Top-quartile momentum"
+    if percentile >= 50:
+        return "Above-median momentum"
+    return "Developing signal"
+
+
 def topic_label(topic_obj: dict[str, Any] | None) -> str:
     if not topic_obj:
         return "Unclassified"
@@ -1016,10 +1042,72 @@ def trending_explanation(topic: dict[str, Any]) -> str:
     metrics = topic["metrics"]
     subtopic = topic["subtopics"][0]["label"] if topic.get("subtopics") else "the leading subtopic"
     institution = topic["institutions"][0]["name"] if topic.get("institutions") else "the leading institution"
+    benchmark = topic.get("benchmarks", {})
+    benchmark_text = (
+        f" It ranks #{benchmark['fieldTrendRank']} of {benchmark['fieldTopicCount']} in {topic.get('field', 'its field')}."
+        if benchmark.get("fieldTopicCount", 0) > 1
+        else ""
+    )
     return (
         f"{metrics['worksLast3Years']:,} recent works, {round(metrics['growthRate'] * 100)}% growth, "
         f"and {round(metrics['newAuthorShare'] * 100)}% new-author share; {subtopic} and {institution} anchor the visible signal."
+        f"{benchmark_text}"
     )
+
+
+def enrich_topic_benchmarks(topics: list[dict[str, Any]]) -> None:
+    def rank_group(group: list[dict[str, Any]], key: str) -> dict[str, int]:
+        ranked = sorted(group, key=lambda row: row["metrics"].get(key, 0), reverse=True)
+        return {topic["slug"]: index + 1 for index, topic in enumerate(ranked)}
+
+    domains: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
+    fields: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
+    all_trend_ranks = rank_group(topics, "trendScore")
+    quality_ranks = {
+        topic["slug"]: index + 1
+        for index, topic in enumerate(sorted(topics, key=lambda row: row["quality"].get("dataCompletenessScore", 0), reverse=True))
+    }
+    volume_ranks = rank_group(topics, "worksLast3Years")
+
+    for topic in topics:
+        domains[topic.get("domain") or "Unspecified domain"].append(topic)
+        fields[topic.get("field") or "Unspecified field"].append(topic)
+
+    domain_ranks = {domain: rank_group(group, "trendScore") for domain, group in domains.items()}
+    field_ranks = {field: rank_group(group, "trendScore") for field, group in fields.items()}
+
+    for topic in topics:
+        domain = topic.get("domain") or "Unspecified domain"
+        field = topic.get("field") or "Unspecified field"
+        domain_group = domains[domain]
+        field_group = fields[field]
+        domain_rank = domain_ranks[domain][topic["slug"]]
+        field_rank = field_ranks[field][topic["slug"]]
+        global_rank = all_trend_ranks[topic["slug"]]
+        quality_rank = quality_ranks[topic["slug"]]
+        volume_rank = volume_ranks[topic["slug"]]
+        field_percentile = percentile_from_rank(field_rank, len(field_group))
+        global_percentile = percentile_from_rank(global_rank, len(topics))
+        topic["benchmarks"] = {
+            "label": benchmark_label(field_percentile),
+            "globalTrendRank": global_rank,
+            "globalTopicCount": len(topics),
+            "globalTrendPercentile": global_percentile,
+            "domainTrendRank": domain_rank,
+            "domainTopicCount": len(domain_group),
+            "domainTrendPercentile": percentile_from_rank(domain_rank, len(domain_group)),
+            "fieldTrendRank": field_rank,
+            "fieldTopicCount": len(field_group),
+            "fieldTrendPercentile": field_percentile,
+            "qualityRank": quality_rank,
+            "qualityPercentile": percentile_from_rank(quality_rank, len(topics)),
+            "volumeRank": volume_rank,
+            "volumePercentile": percentile_from_rank(volume_rank, len(topics)),
+            "fieldMedianTrendScore": round(median([row["metrics"].get("trendScore", 0) for row in field_group]), 1),
+            "fieldMedianWorksLast3Years": round(median([row["metrics"].get("worksLast3Years", 0) for row in field_group])),
+            "fieldMedianQualityScore": round(median([row["quality"].get("dataCompletenessScore", 0) for row in field_group]), 1),
+            "takeaway": f"Ranks #{field_rank} of {len(field_group)} in {field} by momentum and #{domain_rank} of {len(domain_group)} in {domain}.",
+        }
 
 
 def process_topic(topic: dict[str, Any], raw_dir: Path, current_year: int) -> dict[str, Any]:
@@ -1285,6 +1373,7 @@ def topic_summary(topic: dict[str, Any]) -> dict[str, Any]:
         "summary": topic.get("summary", ""),
         "metrics": topic.get("metrics", {}),
         "quality": topic.get("quality", {}),
+        "benchmarks": topic.get("benchmarks", {}),
         "insights": topic.get("insights", [])[:6],
         "topSubtopics": topic.get("subtopics", [])[:6],
         "topAuthors": topic.get("authors", [])[:6],
@@ -1339,6 +1428,7 @@ def main() -> None:
             skipped_topics.append({"slug": topic["slug"], "label": topic["label"], "worksCollected": works_count})
             continue
         processed_topics.append(process_topic(topic, raw_dir, current_year))
+    enrich_topic_benchmarks(processed_topics)
     trending = sorted(
         [
             {
@@ -1357,6 +1447,10 @@ def main() -> None:
                 "newAuthorShare": topic["metrics"]["newAuthorShare"],
                 "qualityScore": topic["quality"]["dataCompletenessScore"],
                 "qualityLabel": quality_label(topic["quality"]["dataCompletenessScore"]),
+                "benchmarkLabel": topic.get("benchmarks", {}).get("label", ""),
+                "fieldTrendRank": topic.get("benchmarks", {}).get("fieldTrendRank"),
+                "fieldTopicCount": topic.get("benchmarks", {}).get("fieldTopicCount"),
+                "fieldTrendPercentile": topic.get("benchmarks", {}).get("fieldTrendPercentile"),
                 "signalDrivers": trending_drivers(topic),
                 "whyTrending": trending_explanation(topic),
             }

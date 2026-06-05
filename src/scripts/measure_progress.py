@@ -47,6 +47,7 @@ def main() -> None:
         sum(len(section.get("items", [])) for section in topic.get("insightSections", [])) or len(topic.get("insights", []))
         for topic in topics
     ]
+    topics_with_benchmarks = sum(1 for topic in topics if topic.get("benchmarks", {}).get("fieldTrendRank"))
     works_collected = int(artifact.get("coverage", {}).get("worksCollected", 0))
     topic_count = len(topics)
     median_insights = sorted(insight_counts)[len(insight_counts) // 2] if insight_counts else 0
@@ -61,6 +62,8 @@ def main() -> None:
             "rawTopicsWithWorks": sum(1 for count in raw_counts if count > 0),
             "rawWorksTotal": sum(raw_counts),
             "medianInsightItemsPerTopic": median_insights,
+            "topicsWithBenchmarks": topics_with_benchmarks,
+            "benchmarkCoverage": round(topics_with_benchmarks / max(1, topic_count), 3),
             "artifactBytes": artifact_path.stat().st_size,
             "indexArtifactBytes": index_path.stat().st_size if index_path.exists() else 0,
             "topicArtifactCount": len(list(topics_dir.glob("*.json"))) if topics_dir.exists() else 0,

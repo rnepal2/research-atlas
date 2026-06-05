@@ -5,9 +5,12 @@ Research Atlas currently uses OpenAlex only.
 ## Snapshot
 
 - 100 configured topic profiles
-- 78 currently collected and validated topic profiles
-- 51,802 validated OpenAlex works in the current processed snapshot
+- 100 currently collected and validated topic profiles
+- 83,270 validated OpenAlex works in the current processed snapshot
+- 83,568 raw OpenAlex works retained locally before processing filters
 - 3 OpenAlex-aligned domains: Physical Sciences, Health Sciences, Life Sciences
+- 11 OpenAlex-aligned fields and 17 curated work areas
+- 100 topic profiles with peer benchmark context
 - Compact published index: `data/processed/atlas-index.json`
 - Per-topic detail artifacts: `data/processed/topics/*.json`
 - Raw OpenAlex JSONL and API cache files stay local and are not committed
@@ -32,7 +35,7 @@ export OPENALEX_API_KEY="your-key"
 ./src/refresh_data.sh --stale-below 3000 --max-works 3000
 ```
 
-Live OpenAlex collection requires `OPENALEX_API_KEY`. Use `--stale-below` to collect only topics whose raw files are below the target depth, or `--missing-only` to collect only configured topics with no raw works yet.
+Live OpenAlex collection requires `OPENALEX_API_KEY` for deep refreshes. Unauthenticated collection is supported for probes and can retry through short rate-limit windows, but it is not reliable for full-corpus refreshes. Use `--stale-below` to collect only topics whose raw files are below the target depth, `--missing-only` to collect only configured topics with no raw works yet, and `--min-interval` / `--max-attempts` to tune rate-limit behavior.
 
 For a local rebuild from already collected raw files:
 

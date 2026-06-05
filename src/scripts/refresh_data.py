@@ -32,18 +32,35 @@ def main() -> None:
     parser.add_argument("--missing-only", action="store_true", help="Collect only configured topics with no raw works.")
     parser.add_argument("--stale-below", type=int, help="Collect only topics with fewer than this many raw works.")
     parser.add_argument("--allow-unauthenticated-openalex", action="store_true", help="Allow unauthenticated OpenAlex collection for small development probes.")
+    parser.add_argument("--min-interval", type=float, help="Minimum seconds between OpenAlex requests.")
+    parser.add_argument("--max-attempts", type=int, help="Maximum attempts for each OpenAlex request.")
     parser.add_argument("--fast", action="store_true", help="Use cached/raw data only; equivalent to --skip-collect.")
     parser.add_argument("--skip-collect", action="store_true")
     parser.add_argument("--include-metadata", action="store_true", help="Also refresh OpenAlex topic metadata discovery files.")
     parser.add_argument("--validate-only", action="store_true")
-    parser.add_argument("--max-artifact-mb", type=float, default=14.0)
+    parser.add_argument("--max-artifact-mb", type=float, default=24.0)
+    parser.add_argument("--max-index-mb", type=float, default=3.0)
+    parser.add_argument("--max-topic-file-mb", type=float, default=0.5)
     parser.add_argument("--topic-artifacts", action="store_true")
     args = parser.parse_args()
 
     artifact = str(Path(args.processed_dir) / "atlas.json")
 
     if args.validate_only:
-        run([sys.executable, str(SCRIPT_DIR / "validate_static_data.py"), "--artifact", artifact, "--max-artifact-mb", str(args.max_artifact_mb)])
+        run(
+            [
+                sys.executable,
+                str(SCRIPT_DIR / "validate_static_data.py"),
+                "--artifact",
+                artifact,
+                "--max-artifact-mb",
+                str(args.max_artifact_mb),
+                "--max-index-mb",
+                str(args.max_index_mb),
+                "--max-topic-file-mb",
+                str(args.max_topic_file_mb),
+            ]
+        )
         return
 
     if args.fast:
@@ -70,6 +87,10 @@ def main() -> None:
             collect.extend(["--stale-below", str(args.stale_below)])
         if args.allow_unauthenticated_openalex:
             collect.append("--allow-unauthenticated")
+        if args.min_interval is not None:
+            collect.extend(["--min-interval", str(args.min_interval)])
+        if args.max_attempts is not None:
+            collect.extend(["--max-attempts", str(args.max_attempts)])
         if not args.include_metadata:
             collect.append("--skip-metadata")
         run(collect)
@@ -89,7 +110,20 @@ def main() -> None:
         process.append("--topic-artifacts")
     run(process)
 
-    run([sys.executable, str(SCRIPT_DIR / "validate_static_data.py"), "--artifact", artifact, "--max-artifact-mb", str(args.max_artifact_mb)])
+    run(
+        [
+            sys.executable,
+            str(SCRIPT_DIR / "validate_static_data.py"),
+            "--artifact",
+            artifact,
+            "--max-artifact-mb",
+            str(args.max_artifact_mb),
+            "--max-index-mb",
+            str(args.max_index_mb),
+            "--max-topic-file-mb",
+            str(args.max_topic_file_mb),
+        ]
+    )
     run([sys.executable, str(SCRIPT_DIR / "sync_public_data.py"), "--source", artifact, "--target", args.public_artifact])
     run([sys.executable, str(SCRIPT_DIR / "generate_static_assets.py"), "--artifact", artifact, "--public-dir", args.public_dir])
     run([sys.executable, str(SCRIPT_DIR / "measure_progress.py"), "--artifact", artifact])
