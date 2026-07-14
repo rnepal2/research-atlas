@@ -10,7 +10,7 @@ interface MetricCardProps {
 
 export function MetricCard({ label, value, note, icon: Icon }: MetricCardProps) {
   return (
-    <Card className="bg-[linear-gradient(145deg,var(--card-soft),transparent_58%),var(--card)]">
+    <Card className="bg-[linear-gradient(145deg,var(--card-soft),transparent_58%),var(--card)] hover:-translate-y-px hover:ring-primary/25 hover:shadow-[0_12px_30px_color-mix(in_srgb,var(--primary)_7%,transparent)]">
       <CardContent className="min-h-[92px]">
         <div className="flex items-center justify-between gap-2 text-[0.69rem] font-semibold text-muted-foreground [&_svg]:size-4 [&_svg]:text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]">
           <span>{label}</span>

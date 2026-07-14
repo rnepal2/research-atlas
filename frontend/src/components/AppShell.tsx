@@ -96,7 +96,7 @@ export function AppShell({ atlas, navItems, activePath, children }: AppShellProp
         </div>
       </aside>
 
-      <main ref={mainRef} className="h-dvh min-w-0 max-w-[100vw] overflow-y-auto overscroll-contain px-5 pt-3.5 pb-8 max-[1160px]:h-auto max-[1160px]:max-w-full max-[1160px]:overflow-visible max-[1160px]:px-4 max-[1160px]:py-3.5 max-[1160px]:pb-7 max-[760px]:px-3 max-[760px]:py-3 max-[760px]:pb-6">
+      <main ref={mainRef} className="h-dvh min-w-0 max-w-[100vw] overflow-y-auto overscroll-contain px-5 pt-[22px] pb-8 max-[1160px]:h-auto max-[1160px]:max-w-full max-[1160px]:overflow-visible max-[1160px]:px-4 max-[1160px]:pt-[18px] max-[1160px]:pb-7 max-[760px]:px-3 max-[760px]:pt-4 max-[760px]:pb-6">
         {children}
       </main>
     </div>

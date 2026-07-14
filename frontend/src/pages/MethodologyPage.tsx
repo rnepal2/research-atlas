@@ -9,7 +9,7 @@ interface MethodologyPageProps {
 
 export function MethodologyPage({ atlas }: MethodologyPageProps) {
   return (
-    <div className="grid min-w-0 gap-2.5">
+    <div className="grid min-w-0 gap-3">
       <PageHeader
         eyebrow="About Research Atlas"
         title="About"

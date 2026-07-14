@@ -62,7 +62,7 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
     [atlas.trending, domain, field, workArea],
   )
   return (
-    <div className="grid min-w-0 gap-2.5">
+    <div className="grid min-w-0 gap-3">
       <PageHeader
         title="Trending Intelligence"
         description="Compare topic momentum using growth, participation, and breadth rather than field size alone."
@@ -101,7 +101,7 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
       <section className="grid grid-cols-4 gap-2 max-[1160px]:grid-cols-2 max-[760px]:grid-cols-1">
         {rows.slice(0, 4).map((topic, index) => (
           <Card
-            className="group relative min-h-[138px] overflow-hidden bg-[linear-gradient(145deg,color-mix(in_srgb,var(--primary)_7%,transparent),transparent_56%),var(--card)] hover:border-[color-mix(in_srgb,var(--primary)_34%,var(--border))]"
+            className="group relative min-h-[138px] overflow-hidden bg-[linear-gradient(145deg,color-mix(in_srgb,var(--primary)_7%,transparent),transparent_56%),var(--card)] hover:-translate-y-px hover:ring-primary/30 hover:shadow-[0_12px_30px_color-mix(in_srgb,var(--primary)_7%,transparent)]"
             key={topic.slug}
           >
             <span className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,var(--primary),transparent)] opacity-80" />

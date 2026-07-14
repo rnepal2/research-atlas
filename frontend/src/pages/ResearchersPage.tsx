@@ -62,7 +62,7 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
   const selected = rows.find((author) => author.openalexId === selectedId) || rows[0]
 
   return (
-    <div className="grid min-w-0 gap-2.5">
+    <div className="grid min-w-0 gap-3">
       <PageHeader
         title="Researcher Visibility"
         description="Find researchers gaining visibility across curated topics. Signals describe recent activity, not scientific quality."

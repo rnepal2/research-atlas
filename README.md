@@ -1,49 +1,34 @@
 # Research Atlas
 
-Static OpenAlex research atlas built with React, Vite, and a Python data pipeline.
+[Research Atlas](https://rnepal2.github.io/research-atlas/) is a static research intelligence site built from OpenAlex data.
 
-**Visit:**  [Website link](https://rnepal2.github.io/research-atlas/)
-
-## Run Locally
+## Development
 
 ```bash
-python3 -m pip install -r requirements.txt
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
-
-The app reads `frontend/public/data/atlas-index.json` plus per-topic files synced from `data/processed`.
 
 ## Refresh Data
 
 ```bash
-export OPENALEX_API_KEY="your-key"
-./src/refresh_data.sh --stale-below 3000 --max-works 3000
+python3 -m pip install -r requirements.txt
+OPENALEX_API_KEY="..." ./src/refresh_data.sh --max-works 1000 --require-complete-config
 ```
 
-For a local rebuild from existing raw files:
+The weekly GitHub Actions workflow refreshes all configured topics, validates the artifacts, builds the site, and publishes directly to `gh-pages`. Raw OpenAlex responses and API caches are not committed.
+
+To rebuild from existing local data:
 
 ```bash
 ./src/refresh_data.sh --fast
 ```
 
-Only processed static artifacts are committed. Raw OpenAlex files, API cache files, build output, and local caches are ignored.
-
-The GitHub Actions refresh runs weekly and publishes refreshed data directly to `gh-pages`. Add an `OPENALEX_API_KEY` repository secret before running it manually or on schedule.
-
 ## Build
 
 ```bash
-cd frontend
-npm run build
+GITHUB_PAGES=true npm --prefix frontend run build
 ```
 
-For GitHub Pages:
-
-```bash
-cd frontend
-GITHUB_PAGES=true npm run build
-```
-
-The deploy workflow publishes `frontend/dist` to the `gh-pages` branch. In GitHub Pages settings, use **Deploy from a branch** and select `gh-pages` / root. The first workflow run creates the branch.
+GitHub Pages serves the root of the `gh-pages` branch. Code deployments preserve the newest published data snapshot.

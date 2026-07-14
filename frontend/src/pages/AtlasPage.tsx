@@ -70,7 +70,7 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
   }
 
   return (
-    <div className="grid min-w-0 gap-2.5">
+    <div className="grid min-w-0 gap-3">
       <PageHeader
         title="Research Atlas"
         description="Explore momentum, expertise, papers, geography, and collaboration across curated OpenAlex topics."
@@ -92,7 +92,7 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
         }
       />
 
-      <Card className="border-border-strong bg-[linear-gradient(135deg,color-mix(in_srgb,var(--primary)_9%,transparent),transparent_60%),var(--card)]">
+      <Card className="bg-[linear-gradient(135deg,color-mix(in_srgb,var(--primary)_9%,transparent),transparent_60%),var(--card)] ring-border-strong">
         <CardHeader>
           <div>
             <CardTitle>Topic Navigator</CardTitle>
