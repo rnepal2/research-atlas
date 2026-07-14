@@ -45,25 +45,39 @@ def main() -> None:
     parser.add_argument("--max-index-mb", type=float, default=3.0)
     parser.add_argument("--max-topic-file-mb", type=float, default=0.5)
     parser.add_argument("--topic-artifacts", action="store_true")
+    parser.add_argument(
+        "--require-complete-config",
+        action="store_true",
+        help="Fail validation unless every configured topic is present.",
+    )
     args = parser.parse_args()
 
-    artifact = str(Path(args.processed_dir) / "atlas.json")
+    processed_dir = Path(args.processed_dir)
+    artifact = str(processed_dir / "atlas.json")
+    index_artifact = str(processed_dir / "atlas-index.json")
+    topics_dir = str(processed_dir / "topics")
+    public_data_dir = Path(args.public_artifact).parent
+    public_index = str(public_data_dir / "atlas-index.json")
+    public_topics = str(public_data_dir / "topics")
+
+    validation_args = [
+        "--artifact",
+        artifact,
+        "--index-artifact",
+        index_artifact,
+        "--topics-dir",
+        topics_dir,
+        "--max-artifact-mb",
+        str(args.max_artifact_mb),
+        "--max-index-mb",
+        str(args.max_index_mb),
+        "--max-topic-file-mb",
+        str(args.max_topic_file_mb),
+        *(["--config", args.config, "--require-complete-config"] if args.require_complete_config else []),
+    ]
 
     if args.validate_only:
-        run(
-            [
-                sys.executable,
-                str(SCRIPT_DIR / "validate_static_data.py"),
-                "--artifact",
-                artifact,
-                "--max-artifact-mb",
-                str(args.max_artifact_mb),
-                "--max-index-mb",
-                str(args.max_index_mb),
-                "--max-topic-file-mb",
-                str(args.max_topic_file_mb),
-            ]
-        )
+        run([sys.executable, str(SCRIPT_DIR / "validate_static_data.py"), *validation_args])
         return
 
     if args.fast:
@@ -119,21 +133,25 @@ def main() -> None:
         process.append("--topic-artifacts")
     run(process)
 
+    run([sys.executable, str(SCRIPT_DIR / "validate_static_data.py"), *validation_args])
     run(
         [
             sys.executable,
-            str(SCRIPT_DIR / "validate_static_data.py"),
-            "--artifact",
+            str(SCRIPT_DIR / "sync_public_data.py"),
+            "--source",
             artifact,
-            "--max-artifact-mb",
-            str(args.max_artifact_mb),
-            "--max-index-mb",
-            str(args.max_index_mb),
-            "--max-topic-file-mb",
-            str(args.max_topic_file_mb),
+            "--target",
+            args.public_artifact,
+            "--index-source",
+            index_artifact,
+            "--index-target",
+            public_index,
+            "--topics-source",
+            topics_dir,
+            "--topics-target",
+            public_topics,
         ]
     )
-    run([sys.executable, str(SCRIPT_DIR / "sync_public_data.py"), "--source", artifact, "--target", args.public_artifact])
     run([sys.executable, str(SCRIPT_DIR / "generate_static_assets.py"), "--artifact", artifact, "--public-dir", args.public_dir])
     run([sys.executable, str(SCRIPT_DIR / "measure_progress.py"), "--artifact", artifact])
 

@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 
 TOPIC_KEYS = {
     "slug",
@@ -59,6 +61,8 @@ def main() -> None:
     parser.add_argument("--max-artifact-mb", type=float, default=24.0)
     parser.add_argument("--max-index-mb", type=float, default=3.0)
     parser.add_argument("--max-topic-file-mb", type=float, default=0.5)
+    parser.add_argument("--config", default="data/config/topics.yaml")
+    parser.add_argument("--require-complete-config", action="store_true")
     args = parser.parse_args()
 
     artifact_path = Path(args.artifact)
@@ -69,6 +73,13 @@ def main() -> None:
     topics = artifact.get("topics") or []
     require(artifact.get("version") == 1, "Artifact version must be 1")
     require(len(topics) >= args.min_topics, f"Expected at least {args.min_topics} topics")
+    if args.require_complete_config:
+        config = yaml.safe_load(Path(args.config).read_text()) or {}
+        configured_topics = config.get("topics", []) if isinstance(config, dict) else config
+        require(
+            len(topics) == len(configured_topics),
+            f"Expected all {len(configured_topics)} configured topics, found {len(topics)}",
+        )
     require(artifact.get("taxonomy"), "Artifact taxonomy is empty")
     require(artifact.get("trending"), "Artifact trending list is empty")
     require(artifact.get("coverage"), "Artifact coverage summary is empty")

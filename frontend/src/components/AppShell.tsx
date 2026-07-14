@@ -27,7 +27,7 @@ export function AppShell({ atlas, navItems, activePath, children }: AppShellProp
     <div
       className={cx(
         'grid min-h-screen w-full items-start overflow-hidden transition-[grid-template-columns] duration-200 max-[1160px]:h-auto max-[1160px]:grid-cols-1 max-[1160px]:overflow-x-hidden max-[1160px]:overflow-y-visible',
-        collapsed ? 'grid-cols-[64px_minmax(0,1fr)]' : 'grid-cols-[256px_minmax(0,1fr)]',
+        collapsed ? 'grid-cols-[64px_minmax(0,1fr)]' : 'grid-cols-[264px_minmax(0,1fr)]',
       )}
     >
       <aside
@@ -68,7 +68,7 @@ export function AppShell({ atlas, navItems, activePath, children }: AppShellProp
               <a
                 key={item.path}
                 className={cx(
-                  'flex min-h-[39px] items-center gap-2.5 rounded-card px-[11px] py-2 text-[0.86rem] font-[660] text-muted-foreground transition-[background,color,transform] duration-150 hover:translate-x-0.5 hover:bg-secondary hover:text-foreground max-[1160px]:shrink-0 max-[760px]:min-h-[46px] max-[760px]:flex-col max-[760px]:justify-center max-[760px]:gap-1 max-[760px]:px-2 max-[760px]:text-center max-[760px]:text-[0.68rem]',
+                  'flex min-h-[38px] items-center gap-2.5 rounded-card px-[11px] py-2 text-[0.82rem] font-[640] text-muted-foreground transition-[background,color,transform] duration-150 hover:translate-x-0.5 hover:bg-secondary hover:text-foreground max-[1160px]:shrink-0 max-[760px]:min-h-[46px] max-[760px]:flex-col max-[760px]:justify-center max-[760px]:gap-1 max-[760px]:px-2 max-[760px]:text-center max-[760px]:text-[0.68rem]',
                   collapsed && 'justify-center px-0 max-[1160px]:justify-start max-[1160px]:px-[11px]',
                   active && 'bg-secondary text-foreground shadow-[inset_2px_0_0_var(--primary)]',
                   active && collapsed && 'shadow-[inset_0_-2px_0_var(--primary)] max-[1160px]:shadow-[inset_2px_0_0_var(--primary)]',
@@ -96,7 +96,7 @@ export function AppShell({ atlas, navItems, activePath, children }: AppShellProp
         </div>
       </aside>
 
-      <main ref={mainRef} className="h-dvh min-w-0 max-w-[100vw] overflow-y-auto overscroll-contain px-6 pt-4 pb-9 max-[1160px]:h-auto max-[1160px]:max-w-full max-[1160px]:overflow-visible max-[1160px]:px-[18px] max-[1160px]:py-4 max-[1160px]:pb-7 max-[760px]:px-3 max-[760px]:py-3 max-[760px]:pb-6">
+      <main ref={mainRef} className="h-dvh min-w-0 max-w-[100vw] overflow-y-auto overscroll-contain px-5 pt-3.5 pb-8 max-[1160px]:h-auto max-[1160px]:max-w-full max-[1160px]:overflow-visible max-[1160px]:px-4 max-[1160px]:py-3.5 max-[1160px]:pb-7 max-[760px]:px-3 max-[760px]:py-3 max-[760px]:pb-6">
         {children}
       </main>
     </div>

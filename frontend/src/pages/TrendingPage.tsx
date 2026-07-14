@@ -1,5 +1,6 @@
 import { Activity, ArrowUpRight, Filter } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { PageHeader } from '../components/PageHeader'
 import {
   Badge,
   Button,
@@ -61,15 +62,13 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
     [atlas.trending, domain, field, workArea],
   )
   return (
-    <div className="grid min-w-0 gap-3">
-      <section className="flex min-w-0 items-start justify-between gap-[18px] max-[760px]:flex-col max-[760px]:items-stretch">
-        <div className="min-w-0">
-          <h1 className="m-0 font-display text-[clamp(1.7rem,2.08vw,1.9rem)] leading-[1.2] font-[740] tracking-[0]">Trending Intelligence</h1>
-          <p className="mt-2 mb-0 max-w-[820px] text-[0.91rem] leading-[1.55] text-muted-foreground [overflow-wrap:anywhere]">
-            Topic momentum normalized away from raw field size, with filters by OpenAlex domain and direct paths into the Atlas view.
-          </p>
-        </div>
-        <div className="grid min-w-[min(620px,52vw)] grid-cols-3 gap-2 max-[1160px]:min-w-0 max-[1160px]:grid-cols-1 max-[760px]:w-full">
+    <div className="grid min-w-0 gap-2.5">
+      <PageHeader
+        title="Trending Intelligence"
+        description="Compare topic momentum using growth, participation, and breadth rather than field size alone."
+        actionsClassName="min-w-[min(620px,52vw)] max-[1160px]:min-w-0 max-[760px]:w-full"
+        actions={
+          <div className="grid grid-cols-3 gap-2 max-[1160px]:grid-cols-1">
           <SelectField
             label="Domain"
             value={domain}
@@ -96,28 +95,29 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
             options={workAreas.map((item) => ({ value: item, label: item }))}
           />
         </div>
-      </section>
+        }
+      />
 
-      <section className="grid grid-cols-4 gap-2.5 max-[1160px]:grid-cols-2 max-[760px]:grid-cols-1">
+      <section className="grid grid-cols-4 gap-2 max-[1160px]:grid-cols-2 max-[760px]:grid-cols-1">
         {rows.slice(0, 4).map((topic, index) => (
           <Card
-            className="group relative min-h-[152px] overflow-hidden bg-[linear-gradient(145deg,color-mix(in_srgb,var(--primary)_7%,transparent),transparent_56%),var(--card)] hover:border-[color-mix(in_srgb,var(--primary)_34%,var(--border))]"
+            className="group relative min-h-[138px] overflow-hidden bg-[linear-gradient(145deg,color-mix(in_srgb,var(--primary)_7%,transparent),transparent_56%),var(--card)] hover:border-[color-mix(in_srgb,var(--primary)_34%,var(--border))]"
             key={topic.slug}
           >
             <span className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,var(--primary),transparent)] opacity-80" />
-            <CardContent className="grid min-h-[152px] content-between gap-4">
+            <CardContent className="grid min-h-[138px] content-between gap-3">
               <div className="flex items-center justify-between gap-2">
                 <Badge variant={index === 0 ? 'default' : 'outline'}>#{String(index + 1).padStart(2, '0')}</Badge>
                 <span className="truncate text-[0.68rem] font-bold uppercase text-muted-foreground">{topic.domain}</span>
               </div>
               <div className="grid gap-2">
-                <h3 className="m-0 line-clamp-2 min-h-[2.35em] text-[0.98rem] leading-[1.22] font-[720]">{topic.label}</h3>
-                <p className="m-0 line-clamp-1 text-[0.75rem] text-muted-foreground">{topic.workArea}</p>
+                <h3 className="m-0 line-clamp-2 min-h-[2.3em] text-[0.92rem] leading-[1.2] font-[680]">{topic.label}</h3>
+                <p className="m-0 line-clamp-1 text-[0.71rem] text-muted-foreground">{topic.workArea}</p>
               </div>
               <div className="flex items-end justify-between gap-3">
                 <div className="grid gap-0.5">
                   <span className="text-[0.64rem] font-bold uppercase text-muted-foreground">Trend score</span>
-                  <strong className="text-[1.38rem] leading-none font-[760] text-primary">{formatScore(topic.trendScore)}</strong>
+                  <strong className="text-[1.26rem] leading-none font-[720] text-primary">{formatScore(topic.trendScore)}</strong>
                 </div>
                 <div className="grid justify-items-end gap-1">
                   <Badge variant="secondary">{formatNumber(topic.worksLast3Years)} works</Badge>
@@ -132,13 +132,13 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Momentum ranked topics</CardTitle>
-            <CardDescription>Growth, author/institution expansion, and cross-topic spread in the static snapshot.</CardDescription>
+            <CardTitle>Momentum-Ranked Topics</CardTitle>
+            <CardDescription>Growth, participation, and cross-topic spread in the current snapshot.</CardDescription>
           </div>
           <Filter aria-hidden="true" />
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[560px] w-full">
+          <ScrollArea className="h-[520px] w-full">
             <Table className={tableClass}>
               <TableHeader>
                 <TableRow>

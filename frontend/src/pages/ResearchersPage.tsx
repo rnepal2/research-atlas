@@ -1,5 +1,6 @@
 import { ExternalLink, Search, Users } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { PageHeader } from '../components/PageHeader'
 import {
   Card,
   CardContent,
@@ -61,15 +62,11 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
   const selected = rows.find((author) => author.openalexId === selectedId) || rows[0]
 
   return (
-    <div className="grid min-w-0 gap-3">
-      <section className="flex min-w-0 items-start justify-between gap-[18px] max-[760px]:flex-col max-[760px]:items-stretch">
-        <div className="min-w-0">
-          <h1 className="m-0 font-display text-[clamp(1.7rem,2.08vw,1.9rem)] leading-[1.2] font-[740] tracking-[0]">Researcher Visibility</h1>
-          <p className="mt-2 mb-0 max-w-[820px] text-[0.91rem] leading-[1.55] text-muted-foreground [overflow-wrap:anywhere]">
-            A discovery surface for researchers gaining visibility across selected OpenAlex topics. This is not a quality ranking.
-          </p>
-        </div>
-      </section>
+    <div className="grid min-w-0 gap-2.5">
+      <PageHeader
+        title="Researcher Visibility"
+        description="Find researchers gaining visibility across curated topics. Signals describe recent activity, not scientific quality."
+      />
 
       <section className="flex min-w-0 items-end justify-between gap-4 max-[760px]:flex-col max-[760px]:items-stretch">
         <SelectField
@@ -131,13 +128,13 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Researchers with increasing visibility</CardTitle>
-              <CardDescription>Recent works, citation velocity, bridge signal, topic focus, and topic coverage.</CardDescription>
+              <CardTitle>Researchers With Increasing Visibility</CardTitle>
+              <CardDescription>Recent work, citation velocity, bridge signal, focus, and topic coverage.</CardDescription>
             </div>
             <Users aria-hidden="true" />
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-[620px] w-full">
+            <ScrollArea className="h-[560px] w-full">
               <Table className={tableClass}>
                 <TableHeader>
                   <TableRow>
@@ -180,7 +177,7 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
           <Card className="self-start">
             <CardHeader>
               <div>
-                <CardTitle>Visibility evidence</CardTitle>
+                <CardTitle>Visibility Evidence</CardTitle>
                 <CardDescription>{selected.name}</CardDescription>
               </div>
             </CardHeader>

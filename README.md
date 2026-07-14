@@ -30,6 +30,8 @@ For a local rebuild from existing raw files:
 
 Only processed static artifacts are committed. Raw OpenAlex files, API cache files, build output, and local caches are ignored.
 
+The GitHub Actions refresh runs weekly and publishes refreshed data directly to `gh-pages`. Add an `OPENALEX_API_KEY` repository secret before running it manually or on schedule.
+
 ## Build
 
 ```bash

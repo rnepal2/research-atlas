@@ -50,7 +50,7 @@ def main() -> None:
         {
             "path": "/about",
             "title": "About Research Atlas",
-            "description": "How Research Atlas collects OpenAlex data, computes rankings, and presents research intelligence signals.",
+            "description": "What Research Atlas covers, where its OpenAlex data comes from, and how to interpret its directional signals.",
         },
     ]
     for topic in artifact.get("topics", []):

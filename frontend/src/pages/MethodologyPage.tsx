@@ -1,5 +1,6 @@
 import type { AtlasData } from '../data/types'
 import { BookOpen, Compass, Database, ExternalLink, Layers3, ShieldCheck } from 'lucide-react'
+import { PageHeader } from '../components/PageHeader'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui'
 
 interface MethodologyPageProps {
@@ -8,19 +9,14 @@ interface MethodologyPageProps {
 
 export function MethodologyPage({ atlas }: MethodologyPageProps) {
   return (
-    <div className="grid min-w-0 gap-3">
-      <section className="flex min-w-0 items-start justify-between gap-[18px] pb-1 max-[760px]:flex-col max-[760px]:items-stretch">
-        <div className="min-w-0">
-          <span className="mb-2 inline-block text-[0.68rem] font-bold uppercase text-muted-foreground">About Research Atlas</span>
-          <h1 className="m-0 font-display text-[clamp(1.7rem,2.08vw,1.9rem)] leading-[1.2] font-[740] tracking-[0]">About</h1>
-          <p className="mt-2 mb-0 max-w-[820px] text-[0.91rem] leading-[1.55] text-muted-foreground [overflow-wrap:anywhere]">
-            Research Atlas is a static research intelligence site for scanning fast-moving topics, visible researchers,
-            institutional activity, papers, geography, and collaboration structure across curated OpenAlex profiles.
-          </p>
-        </div>
-      </section>
+    <div className="grid min-w-0 gap-2.5">
+      <PageHeader
+        eyebrow="About Research Atlas"
+        title="About"
+        description="A public research intelligence atlas for exploring topic momentum, expertise, papers, geography, and collaboration."
+      />
 
-      <section className="grid grid-cols-[minmax(0,1.18fr)_minmax(260px,0.92fr)_minmax(260px,0.92fr)] gap-2.5 max-[1160px]:grid-cols-1">
+      <section className="grid grid-cols-[minmax(0,1.18fr)_minmax(260px,0.92fr)_minmax(260px,0.92fr)] gap-2 max-[1160px]:grid-cols-1">
         <Card className="overflow-hidden border-[color-mix(in_srgb,var(--primary)_34%,var(--border))] bg-[linear-gradient(140deg,color-mix(in_srgb,var(--primary)_10%,transparent),transparent_58%),var(--card)]">
           <CardHeader className="[&>svg]:size-[19px] [&>svg]:text-primary">
             <div>
@@ -31,9 +27,8 @@ export function MethodologyPage({ atlas }: MethodologyPageProps) {
           </CardHeader>
           <CardContent>
             <p className="m-0 text-[0.8rem] leading-[1.6] text-muted-foreground">
-              The interface is built for orientation. It helps readers notice where a topic is gaining momentum, who is
-              becoming more visible, which institutions appear active, and how collaboration patterns are organized in
-              the current public data snapshot.
+              Use it to see where research is moving, who is becoming more visible, which institutions are active, and
+              how collaboration is organized in the current snapshot.
             </p>
           </CardContent>
         </Card>
@@ -48,8 +43,8 @@ export function MethodologyPage({ atlas }: MethodologyPageProps) {
           </CardHeader>
           <CardContent className="grid gap-3">
             <p className="m-0 text-[0.8rem] leading-[1.6] text-muted-foreground">
-              Research Atlas currently uses OpenAlex works, topics, authorships, institutions, countries, and sources.
-              The published site ships compact static artifacts generated offline.
+              Research Atlas uses OpenAlex works, topics, authorships, institutions, countries, and sources. Data is
+              processed offline and published as compact static artifacts.
             </p>
             <Button asChild variant="outline" size="sm" className="w-fit">
               <a href={atlas.source.url} target="_blank" rel="noopener noreferrer">
@@ -70,14 +65,14 @@ export function MethodologyPage({ atlas }: MethodologyPageProps) {
           </CardHeader>
           <CardContent>
             <p className="m-0 text-[0.8rem] leading-[1.6] text-muted-foreground">
-              Start with Atlas for a topic profile, Trending for momentum discovery, Researchers for rising visibility,
-              and Networks for collaboration structure. Follow paper and OpenAlex links when a signal needs validation.
+              Use Atlas for topic profiles, Trending for momentum, Researchers for rising visibility, and Networks for
+              collaboration. Follow source links when a signal needs validation.
             </p>
           </CardContent>
         </Card>
       </section>
 
-      <section className="grid grid-cols-[minmax(0,1fr)_minmax(280px,0.62fr)] gap-2.5 max-[1160px]:grid-cols-1">
+      <section className="grid grid-cols-[minmax(0,1fr)_minmax(280px,0.62fr)] gap-2 max-[1160px]:grid-cols-1">
         <Card>
           <CardHeader className="[&>svg]:size-[19px] [&>svg]:text-primary">
             <div>
@@ -92,8 +87,8 @@ export function MethodologyPage({ atlas }: MethodologyPageProps) {
                 <AccordionTrigger className="text-[0.83rem] hover:no-underline">The Public Site Is Static</AccordionTrigger>
                 <AccordionContent>
                   <p className="m-0 text-[0.78rem] leading-[1.5] text-muted-foreground">
-                    Data is collected and processed offline, then published as static JSON for GitHub Pages. A refresh
-                    run creates a new snapshot; the browser does not query OpenAlex live.
+                    Data is collected and processed offline, then published as static JSON for GitHub Pages. A weekly
+                    refresh creates a new snapshot; the browser does not query OpenAlex live.
                   </p>
                 </AccordionContent>
               </AccordionItem>
@@ -128,7 +123,7 @@ export function MethodologyPage({ atlas }: MethodologyPageProps) {
           </CardContent>
         </Card>
 
-        <Card className="bg-card-soft">
+        <Card className="self-start bg-card-soft">
           <CardHeader className="[&>svg]:size-[19px] [&>svg]:text-primary">
             <div>
               <CardTitle>What Belongs Here</CardTitle>

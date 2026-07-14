@@ -1,57 +1,75 @@
 name: Refresh OpenAlex Data
 
 on:
+  schedule:
+    - cron: "17 07 * * 1"
   workflow_dispatch:
     inputs:
       max_works:
         description: Max works per topic
         required: false
-        default: "3000"
-      stale_below:
-        description: Refresh topics with fewer raw works than this
-        required: false
-        default: "2604"
-      limit_topics:
-        description: Optional number of shallowest topics to refresh; use 0 for all
-        required: false
-        default: "10"
+        default: "1000"
 
 permissions:
   contents: write
 
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install Python dependencies
         run: python -m pip install -r requirements.txt
 
-      - name: Refresh static artifact
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Verify OpenAlex credentials
         env:
           OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
-        run: >
-          ./src/refresh_data.sh
-          --max-works "${{ inputs.max_works }}"
-          --stale-below "${{ inputs.stale_below }}"
-          --sort-by-raw-depth
-          --limit-topics "${{ inputs.limit_topics }}"
+        run: test -n "$OPENALEX_API_KEY" || (echo "OPENALEX_API_KEY is not configured" && exit 1)
 
-      - name: Commit refreshed artifact
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: Refresh OpenAlex static data
-          file_pattern: |
-            data/processed/atlas.json
-            data/processed/atlas-index.json
-            data/processed/progress_metrics.json
-            data/processed/topics/*.json
-            frontend/public/route-metadata.json
-            frontend/public/sitemap.xml
+      - name: Refresh and validate data
+        env:
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+          MAX_WORKS: ${{ inputs.max_works || '1000' }}
+        run: ./src/refresh_data.sh --max-works "$MAX_WORKS" --require-complete-config
+
+      - name: Build static site
+        working-directory: frontend
+        env:
+          GITHUB_PAGES: "true"
+        run: npm run build
+
+      - name: Publish gh-pages branch
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          touch frontend/dist/.nojekyll
+          cd frontend/dist
+          git init --initial-branch=gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Refresh OpenAlex data ${GITHUB_RUN_ID}"
+          git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages

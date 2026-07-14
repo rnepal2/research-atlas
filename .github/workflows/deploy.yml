@@ -30,11 +30,32 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      - name: Preserve latest published data
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/research-atlas-data
+          if git clone --depth 1 --branch gh-pages \
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            /tmp/research-atlas-pages; then
+            if [ -d /tmp/research-atlas-pages/data ]; then
+              cp -R /tmp/research-atlas-pages/data/. /tmp/research-atlas-data/
+            fi
+          fi
+
       - name: Build static site
         working-directory: frontend
         env:
           GITHUB_PAGES: "true"
         run: npm run build
+
+      - name: Restore latest published data
+        run: |
+          if [ -n "$(find /tmp/research-atlas-data -mindepth 1 -print -quit)" ]; then
+            rm -rf frontend/dist/data
+            mkdir -p frontend/dist/data
+            cp -R /tmp/research-atlas-data/. frontend/dist/data/
+          fi
 
       - name: Publish gh-pages branch
         env:
