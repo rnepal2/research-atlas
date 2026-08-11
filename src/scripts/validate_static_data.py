@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -38,6 +39,14 @@ def validate_topic(topic: dict[str, Any]) -> None:
     missing = TOPIC_KEYS - topic.keys()
     require(not missing, f"{topic.get('slug', 'unknown topic')} missing keys: {sorted(missing)}")
     require(topic["yearlyMetrics"], f"{topic['slug']} has no yearly metrics")
+    expected_years = set(range(date.today().year - 9, date.today().year + 1))
+    actual_years = {int(row["year"]) for row in topic["yearlyMetrics"]}
+    require(actual_years == expected_years, f"{topic['slug']} has incomplete yearly metrics")
+    require(
+        topic["quality"].get("yearlyCountSource") in {"openalex-topic", "curated-search"},
+        f"{topic['slug']} yearly metrics are derived from a biased work sample",
+    )
+    require(topic["quality"].get("yearlyCountYears") == 10, f"{topic['slug']} has incomplete OpenAlex yearly counts")
     require(len(topic["papers"]) >= 8, f"{topic['slug']} has too few papers")
     require(len(topic["authors"]) >= 8, f"{topic['slug']} has too few authors")
     require(len(topic["institutions"]) >= 8, f"{topic['slug']} has too few institutions")
@@ -107,6 +116,17 @@ def main() -> None:
         require(row.get("qualityLabel"), f"{row.get('slug', 'trending row')} has no quality label")
     for topic in topics:
         validate_topic(topic)
+    if len(topics) >= 20:
+        current_year = date.today().year
+        current_year_peaks = sum(
+            next(row["works"] for row in topic["yearlyMetrics"] if row["year"] == current_year)
+            >= max(row["works"] for row in topic["yearlyMetrics"])
+            for topic in topics
+        )
+        require(
+            current_year_peaks / len(topics) < 0.8,
+            "Current year peaks across most topics; yearly metrics may be derived from a newest-work sample",
+        )
 
     print(f"Validated {artifact_path} with {len(topics)} topics")
 

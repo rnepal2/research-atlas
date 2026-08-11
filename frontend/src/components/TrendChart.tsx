@@ -13,7 +13,11 @@ export function TrendChart({ rows }: TrendChartProps) {
   const visibleRows = range === '5y' ? rows.slice(-5) : rows
   const width = 820
   const height = 330
-  const margin = { top: 24, right: 70, bottom: 42, left: 52 }
+  const margin = { top: 24, right: 28, bottom: 42, left: 58 }
+  const currentYear = new Date().getFullYear()
+  const includesCurrentYear = visibleRows.at(-1)?.year === currentYear
+  const completedRows = includesCurrentYear ? visibleRows.slice(0, -1) : visibleRows
+  const partialRows = includesCurrentYear ? visibleRows.slice(-2) : []
   const x = d3
     .scalePoint<number>()
     .domain(visibleRows.map((row) => row.year))
@@ -24,21 +28,13 @@ export function TrendChart({ rows }: TrendChartProps) {
     .domain([0, d3.max(visibleRows, (row) => row.works) || 1])
     .nice()
     .range([height - margin.bottom, margin.top])
-  const yVelocity = d3
-    .scaleLinear()
-    .domain([0, d3.max(visibleRows, (row) => row.citationVelocity) || 1])
-    .nice()
-    .range([height - margin.bottom, margin.top])
-  const workLine = d3
+  const line = d3
     .line<YearlyMetric>()
     .x((row) => x(row.year) || 0)
     .y((row) => yWorks(row.works))
-    .curve(d3.curveCatmullRom.alpha(0.55))(visibleRows)
-  const citationLine = d3
-    .line<YearlyMetric>()
-    .x((row) => x(row.year) || 0)
-    .y((row) => yVelocity(row.citationVelocity))
-    .curve(d3.curveCatmullRom.alpha(0.55))(visibleRows)
+    .curve(d3.curveCatmullRom.alpha(0.55))
+  const workLine = line(completedRows)
+  const partialLine = line(partialRows)
   const workArea =
     d3
       .area<YearlyMetric>()
@@ -48,7 +44,6 @@ export function TrendChart({ rows }: TrendChartProps) {
       .curve(d3.curveCatmullRom.alpha(0.55))(visibleRows) || ''
 
   const yTicks = yWorks.ticks(4)
-  const velocityTicks = yVelocity.ticks(4)
   const xTicks = visibleRows.filter((_, index) => index % 2 === 0 || index === visibleRows.length - 1)
 
   return (
@@ -66,7 +61,7 @@ export function TrendChart({ rows }: TrendChartProps) {
           </Button>
         </div>
       </div>
-      <svg className="w-full" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Publication and citation velocity trend">
+      <svg className="w-full" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Annual OpenAlex-matched works trend">
         <defs>
           <linearGradient id="works-area-gradient" x1="0" x2="0" y1="0" y2="1">
             <stop offset="0%" stopColor="var(--chart-primary)" stopOpacity="0.28" />
@@ -81,35 +76,22 @@ export function TrendChart({ rows }: TrendChartProps) {
             </text>
           </g>
         ))}
-        {velocityTicks.map((tick) => (
-          <text key={tick} className="fill-[color-mix(in_srgb,var(--chart-secondary)_72%,var(--muted-foreground))] text-[11px]" x={width - margin.right + 14} y={yVelocity(tick) + 4}>
-            {formatCompact(tick)}
-          </text>
-        ))}
         {xTicks.map((row) => (
           <text key={row.year} className="fill-muted-foreground text-[11px]" x={x(row.year)} y={height - 8} textAnchor="middle">
-            {row.year}
+            {row.year === currentYear ? `${row.year} YTD` : row.year}
           </text>
         ))}
         <text className="fill-[color-mix(in_srgb,var(--foreground)_74%,transparent)] text-[11px] font-bold" x={margin.left} y={15}>
           Works
         </text>
-        <text className="fill-[color-mix(in_srgb,var(--chart-secondary)_72%,var(--muted-foreground))] text-[11px] font-bold" x={width - margin.right} y={15} textAnchor="end">
-          Citation velocity
-        </text>
         <path className="fill-[url(#works-area-gradient)]" d={workArea} />
-        {citationLine && <path className="fill-none stroke-chart-secondary [stroke-dasharray:5_6] [stroke-width:2.4]" d={citationLine} />}
         {workLine && <path className="fill-none stroke-chart-primary [stroke-width:3.2]" d={workLine} />}
+        {partialLine && <path className="fill-none stroke-chart-primary [stroke-dasharray:6_6] [stroke-width:3.2]" d={partialLine} />}
         {visibleRows.map((row) => (
           <g key={row.year}>
-            <circle className="fill-card-solid stroke-chart-primary [stroke-width:2.2]" cx={x(row.year)} cy={yWorks(row.works)} r={4.5}>
+            <circle className={row.year === currentYear ? 'fill-card-solid stroke-chart-primary [stroke-dasharray:3_2] [stroke-width:2.2]' : 'fill-card-solid stroke-chart-primary [stroke-width:2.2]'} cx={x(row.year)} cy={yWorks(row.works)} r={4.5}>
               <title>
-                {row.year}: {formatCompact(row.works)} works
-              </title>
-            </circle>
-            <circle className="fill-card-solid stroke-chart-secondary [stroke-width:2.2]" cx={x(row.year)} cy={yVelocity(row.citationVelocity)} r={3.5}>
-              <title>
-                {row.year}: {formatCompact(row.citationVelocity)} citation velocity
+                {row.year}{row.year === currentYear ? ' YTD' : ''}: {formatCompact(row.works)} matched works
               </title>
             </circle>
           </g>
@@ -118,12 +100,9 @@ export function TrendChart({ rows }: TrendChartProps) {
       <div className="-mt-1 flex items-center gap-4 text-[0.74rem] text-muted-foreground">
         <span className="inline-flex items-center gap-[7px]">
           <span className="size-[7px] rounded-full bg-primary" />
-          Works
+          OpenAlex matches
         </span>
-        <span className="inline-flex items-center gap-[7px]">
-          <span className="size-[7px] rounded-full bg-accent-2" />
-          Citation velocity
-        </span>
+        {includesCurrentYear && <span>Dashed segment: year to date</span>}
       </div>
     </div>
   )

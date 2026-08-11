@@ -13,25 +13,13 @@ def normalize(value: float, scale: float) -> float:
 
 def topic_trend_score(
     recent_work_growth: float,
-    citation_velocity_growth: float,
-    active_author_growth: float,
-    institution_growth: float,
     topic_overlap_growth: float,
     baseline_size: int,
 ) -> float:
-    size_penalty = min(20.0, max(0.0, (baseline_size - 50000) / 25000))
+    size_penalty = min(15.0, max(0.0, (baseline_size - 50000) / 25000))
     work_component = min(1.0, max(0.0, recent_work_growth) / 4.0)
-    citation_component = min(1.0, max(0.0, citation_velocity_growth) / 4.0)
-    author_component = min(1.0, max(0.0, active_author_growth) / 4.0)
-    institution_component = min(1.0, max(0.0, institution_growth) / 4.0)
     overlap_component = min(1.0, max(0.0, topic_overlap_growth))
-    score = (
-        35.0 * work_component
-        + 25.0 * citation_component
-        + 20.0 * author_component
-        + 10.0 * institution_component
-        + 10.0 * overlap_component
-    )
+    score = 85.0 * work_component + 15.0 * overlap_component
     return clamp(score - size_penalty)
 
 

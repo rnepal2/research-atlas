@@ -52,7 +52,7 @@ export function ResearchAtlasApp() {
       if (path === '/trending') {
         return {
           title: 'Trending Intelligence | Research Atlas',
-          description: 'Ranked research topics by publication growth, citation velocity, author growth, and institution expansion.',
+          description: 'Ranked research topics by completed-period publication growth and cross-topic breadth.',
         }
       }
       if (path === '/researchers') {

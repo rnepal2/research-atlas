@@ -49,13 +49,30 @@ jobs:
           GITHUB_PAGES: "true"
         run: npm run build
 
-      - name: Restore latest published data
+      - name: Use newest data snapshot
         run: |
-          if [ -n "$(find /tmp/research-atlas-data -mindepth 1 -print -quit)" ]; then
-            rm -rf frontend/dist/data
-            mkdir -p frontend/dist/data
-            cp -R /tmp/research-atlas-data/. frontend/dist/data/
-          fi
+          python - <<'PY'
+          import json
+          import shutil
+          from datetime import datetime
+          from pathlib import Path
+
+          built = Path("frontend/dist/data")
+          published = Path("/tmp/research-atlas-data")
+
+          def generated_at(path):
+              index = path / "atlas-index.json"
+              if not index.exists():
+                  return datetime.min
+              return datetime.fromisoformat(json.loads(index.read_text())["generatedAt"].replace("Z", "+00:00")).replace(tzinfo=None)
+
+          if generated_at(published) > generated_at(built):
+              shutil.rmtree(built, ignore_errors=True)
+              shutil.copytree(published, built)
+              print("Using the newer published data snapshot")
+          else:
+              print("Using the newer built data snapshot")
+          PY
 
       - name: Publish gh-pages branch
         env:

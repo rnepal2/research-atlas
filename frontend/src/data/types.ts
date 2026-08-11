@@ -193,6 +193,8 @@ export interface TopicQuality {
   latestPublicationYear: number
   mappedCountries: number
   dataCompletenessScore: number
+  yearlyCountSource: 'openalex-topic' | 'curated-search'
+  yearlyCountYears: number
 }
 
 export interface TopicInsight {

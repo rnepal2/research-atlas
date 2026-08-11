@@ -29,7 +29,7 @@ topics:
       - retrieval-augmented generation
       - dense retrieval language model
       - knowledge intensive NLP
-    collection: { years_back: 10, max_works: 180 }
+    collection: { years_back: 10, max_works: 180, yearly_counts: search }
 
   - slug: ai-agents
     label: AI Agents

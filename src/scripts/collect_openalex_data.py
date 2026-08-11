@@ -7,7 +7,7 @@ import json
 import logging
 import os
 import time
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
@@ -137,6 +137,11 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
             handle.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
+def write_json(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
+
+
 def collect_topic_metadata(client: OpenAlexClient, topic: dict[str, Any], output_dir: Path) -> list[dict[str, Any]]:
     metadata = []
     for topic_id in topic.get("openalex_topic_ids", []):
@@ -229,6 +234,55 @@ def collect_works(client: OpenAlexClient, topic: dict[str, Any], output_dir: Pat
     return works
 
 
+def yearly_search_query(topic: dict[str, Any]) -> str:
+    terms = []
+    for query in topic.get("keyword_queries", []):
+        escaped = str(query).replace('"', '\\"').strip()
+        if escaped:
+            terms.append(f'"{escaped}"')
+    return " OR ".join(terms)
+
+
+def collect_yearly_counts(client: OpenAlexClient, topic: dict[str, Any], output_dir: Path) -> None:
+    current_year = date.today().year
+    years_back = int(topic.get("collection", {}).get("years_back", 10))
+    min_year = current_year - years_back
+    topic_ids = [short_openalex_id(value) for value in topic.get("openalex_topic_ids", [])]
+    strategy = topic.get("collection", {}).get("yearly_counts", "topic" if topic_ids else "search")
+
+    params: dict[str, Any] = {
+        "filter": f"publication_year:>{min_year}",
+        "group_by": "publication_year",
+        "per-page": 200,
+    }
+    if strategy == "topic" and topic_ids:
+        params["filter"] += f",topics.id:{'|'.join(topic_ids)}"
+        source = "openalex-topic"
+    else:
+        query = yearly_search_query(topic)
+        if not query:
+            raise RuntimeError(f"{topic['slug']} has no usable query for yearly counts")
+        params["search"] = query
+        source = "curated-search"
+
+    payload = client.get("works", params, use_cache=False)
+    values = {
+        int(row["key"]): int(row["count"])
+        for row in payload.get("group_by", [])
+        if str(row.get("key", "")).isdigit() and min_year < int(row["key"]) <= current_year
+    }
+    counts = [{"year": year, "works": values.get(year, 0)} for year in range(min_year + 1, current_year + 1)]
+    write_json(
+        output_dir / topic["slug"] / "yearly_counts.json",
+        {
+            "generatedAt": datetime.now(timezone.utc).isoformat(),
+            "source": source,
+            "years": counts,
+        },
+    )
+    logging.info("Collected %s yearly count rows for %s", len(counts), topic["slug"])
+
+
 def collect_entity_extracts(topic: dict[str, Any], works: list[dict[str, Any]], output_dir: Path) -> None:
     authors: dict[str, dict[str, Any]] = {}
     institutions: dict[str, dict[str, Any]] = {}
@@ -268,6 +322,7 @@ def main() -> None:
     parser.add_argument("--max-attempts", type=int, help="Maximum attempts for each OpenAlex request.")
     parser.add_argument("--max-retry-wait", type=int, help="Maximum seconds to wait between OpenAlex retries.")
     parser.add_argument("--skip-metadata", action="store_true", help="Skip topic metadata search and collect works/entities only.")
+    parser.add_argument("--yearly-only", action="store_true", help="Refresh aggregate publication-year counts without collecting work samples.")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -306,8 +361,11 @@ def main() -> None:
         allow_unauthenticated=args.allow_unauthenticated,
     )
     for topic in topics:
-        if not args.skip_metadata:
+        if not args.skip_metadata and not args.yearly_only:
             collect_topic_metadata(client, topic, output_dir)
+        collect_yearly_counts(client, topic, output_dir)
+        if args.yearly_only:
+            continue
         works = collect_works(client, topic, output_dir, args.max_works)
         collect_entity_extracts(topic, works, output_dir)
 

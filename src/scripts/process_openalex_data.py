@@ -91,6 +91,12 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
+def read_json(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text())
+
+
 def publication_year(work: dict[str, Any]) -> int:
     try:
         return int(work.get("publication_year") or 0)
@@ -172,7 +178,16 @@ def year_window(current_year: int) -> list[int]:
     return list(range(current_year - 9, current_year + 1))
 
 
-def build_yearly_metrics(works: list[dict[str, Any]], current_year: int) -> list[dict[str, Any]]:
+def build_yearly_metrics(
+    works: list[dict[str, Any]],
+    current_year: int,
+    yearly_counts: dict[str, Any],
+) -> list[dict[str, Any]]:
+    aggregate_counts = {
+        int(row["year"]): int(row["works"])
+        for row in yearly_counts.get("years", [])
+        if row.get("year") is not None and row.get("works") is not None
+    }
     rows = []
     for year in year_window(current_year):
         year_works = [work for work in works if work.get("publication_year") == year]
@@ -187,7 +202,7 @@ def build_yearly_metrics(works: list[dict[str, Any]], current_year: int) -> list
         rows.append(
             {
                 "year": year,
-                "works": len(year_works),
+                "works": aggregate_counts.get(year, 0) if yearly_counts.get("source") else len(year_works),
                 "citations": citations,
                 "citationVelocity": round(safe_divide(citations, max(1, current_year - year + 1)), 2),
                 "authors": len(authors),
@@ -863,7 +878,8 @@ def process_topic(topic: dict[str, Any], raw_dir: Path, current_year: int) -> di
         }.values()
     )
 
-    yearly = build_yearly_metrics(works, current_year)
+    yearly_counts = read_json(raw_dir / topic["slug"] / "yearly_counts.json")
+    yearly = build_yearly_metrics(works, current_year, yearly_counts)
     edges_counter = coauthor_edges(works)
     centrality = degree_centrality(edges_counter)
     bridge = betweenness_centrality(edges_counter)
@@ -875,6 +891,8 @@ def process_topic(topic: dict[str, Any], raw_dir: Path, current_year: int) -> di
     paper_collections = build_paper_collections(works, current_year)
     countries = build_country_rows(works)
     quality = build_quality(topic, works, countries)
+    quality["yearlyCountSource"] = yearly_counts.get("source", "sample")
+    quality["yearlyCountYears"] = len(yearly) if yearly_counts.get("source") else 0
     network = build_author_network(works, authors, edges_counter)
     institution_network = build_institution_network(works, institutions)
     network_communities = {
@@ -883,23 +901,18 @@ def process_topic(topic: dict[str, Any], raw_dir: Path, current_year: int) -> di
     }
     subtopic_matrix = build_subtopic_matrix(institutions, subtopics)
 
-    recent_start = current_year - 2
-    prior_start = current_year - 5
-    works_recent = period_sum(yearly, "works", recent_start, current_year)
+    recent_start = current_year - 3
+    recent_end = current_year - 1
+    prior_start = current_year - 6
+    works_recent = period_sum(yearly, "works", recent_start, recent_end)
     works_prior = period_sum(yearly, "works", prior_start, recent_start - 1)
-    citation_recent = period_sum(yearly, "citationVelocity", recent_start, current_year)
-    citation_prior = period_sum(yearly, "citationVelocity", prior_start, recent_start - 1)
-    authors_recent = period_sum(yearly, "authors", recent_start, current_year)
-    authors_prior = period_sum(yearly, "authors", prior_start, recent_start - 1)
-    institutions_recent = period_sum(yearly, "institutions", recent_start, current_year)
-    institutions_prior = period_sum(yearly, "institutions", prior_start, recent_start - 1)
 
     institution_work_values = [institution["works"] for institution in institutions]
     all_authors = {entry["author"]["id"] for work in works for entry in author_entries(work)}
     recent_authors = {
         entry["author"]["id"]
         for work in works
-        if int(work.get("publication_year") or 0) >= recent_start
+        if recent_start <= int(work.get("publication_year") or 0) <= recent_end
         for entry in author_entries(work)
     }
     prior_authors = {
@@ -912,18 +925,15 @@ def process_topic(topic: dict[str, Any], raw_dir: Path, current_year: int) -> di
 
     trend = topic_trend_score(
         max(0.0, growth_rate(works_recent, works_prior)),
-        max(0.0, growth_rate(citation_recent, citation_prior)),
-        max(0.0, growth_rate(authors_recent, authors_prior)),
-        max(0.0, growth_rate(institutions_recent, institutions_prior)),
         min(1.0, len(subtopics) / 12),
-        len(works),
+        int(works_recent),
     )
     metrics = {
-        "worksLastYear": int(period_sum(yearly, "works", current_year, current_year)),
+        "worksLastYear": int(period_sum(yearly, "works", recent_end, recent_end)),
         "worksLast3Years": int(works_recent),
-        "worksLast5Years": int(period_sum(yearly, "works", current_year - 4, current_year)),
+        "worksLast5Years": int(period_sum(yearly, "works", current_year - 5, recent_end)),
         "growthRate": round(growth_rate(works_recent, works_prior), 3),
-        "citationVelocity": round(period_sum(yearly, "citationVelocity", recent_start, current_year), 2),
+        "citationVelocity": round(period_sum(yearly, "citationVelocity", recent_start, recent_end), 2),
         "activeAuthors": len(all_authors),
         "activeInstitutions": len({institution["openalexId"] for institution in institutions}),
         "concentrationScore": round(hhi(institution_work_values), 3),
@@ -1234,7 +1244,7 @@ def main() -> None:
         "topics": processed_topics,
         "trending": trending,
         "methodology": {
-            "trendScore": "recent publication growth, citation velocity, author growth, institution growth, cross-topic expansion, and baseline size penalty",
+            "trendScore": "growth in complete-year OpenAlex publication counts, cross-topic breadth, and a baseline size adjustment",
             "risingResearcherScore": "recent topic publications, citation velocity, growth versus prior period, bridge signal, and topic focus",
             "institutionStrengthScore": "topic publication share, citation share, rising author count, collaboration centrality, and subtopic breadth",
         },

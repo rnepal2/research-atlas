@@ -15,8 +15,8 @@
     "topicsAtOrAboveTargetDepth": 1,
     "topicsBelowTargetDepth": 99,
     "medianInsightItemsPerTopic": 6,
-    "artifactBytes": 17130543,
-    "indexArtifactBytes": 1901654,
+    "artifactBytes": 17136523,
+    "indexArtifactBytes": 1908008,
     "topicArtifactCount": 100,
     "skippedTopics": 0,
     "shallowestTopics": [

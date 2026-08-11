@@ -4,20 +4,17 @@ Research Atlas is a static OpenAlex snapshot. Its scores are discovery signals, 
 
 ## Topic Profiles
 
-Each topic is defined in `data/config/topics.yaml` with an OpenAlex-style domain, field, subfield, work area, optional topic IDs, and keyword fallback queries. The refresh pipeline collects recent works, removes future-dated records, deduplicates by OpenAlex ID, skips configured topics without enough raw works, and builds compact profiles for the frontend.
+Each topic is defined in `data/config/topics.yaml` with an OpenAlex-style domain, field, subfield, work area, optional topic IDs, and keyword fallback queries. Annual publication trends come from OpenAlex aggregate counts. A separate bounded work sample supports papers, researchers, institutions, geography, and networks.
 
 ## Trend Score
 
-Trend score combines normalized recent signals:
+Trend score combines:
 
-- Work growth
-- Citation velocity growth
-- Active author growth
-- Institution growth
-- Cross-topic expansion
+- Growth across the latest three completed publication years versus the preceding three
+- Cross-topic breadth
 - A size penalty for very large established areas
 
-This keeps broad fields from automatically outranking smaller areas with faster momentum.
+The current year is excluded from growth comparisons and shown as year to date in the chart.
 
 ## Rising Researcher Score
 
@@ -42,7 +39,8 @@ Researcher networks use coauthorship edges. Institution networks use shared-work
 ## Caveats
 
 - OpenAlex topic assignment is model-generated and can be noisy.
-- Keyword fallback can capture adjacent work when a topic is new or broad.
+- Curated keyword searches can capture adjacent work when a dedicated OpenAlex topic is unavailable.
+- Entity-level panels are based on bounded samples and should not be read as exhaustive rankings.
 - Citations favor older papers, so the app also uses citation velocity.
 - Author and institution disambiguation depends on OpenAlex records.
 - The public site is static until the pipeline is refreshed and rebuilt.

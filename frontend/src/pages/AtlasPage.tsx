@@ -161,7 +161,7 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
             <div>
               <CardTitle>{selected.label} Activity Trend</CardTitle>
               <CardDescription>
-                {selected.domain} / {selected.field} / {selected.subfield}
+                Complete annual OpenAlex matches; {new Date().getFullYear()} is year to date.
               </CardDescription>
             </div>
             <Badge variant="secondary">{formatNumber(selected.papers.length)} selected papers</Badge>
