@@ -6,7 +6,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from './select'
-import { cn } from '@/lib/utils'
+import { useId } from 'react'
+import { Field } from './field'
 
 export interface SelectOption {
   value: string
@@ -30,19 +31,15 @@ export function SelectField({
   options: SelectOption[]
   placeholder?: string
 }) {
-  const labelId = label ? `${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-label` : undefined
+  const generatedId = useId()
+  const labelId = label ? `${generatedId}-label` : undefined
 
   return (
-    <div className={cn('grid min-w-0 gap-[7px]', className)}>
-      {label && (
-        <span id={labelId} className="min-h-0 text-[0.67rem] font-bold tracking-[0] text-muted-foreground uppercase">
-          {label}
-        </span>
-      )}
+    <Field className={className} label={label} labelId={labelId}>
       <Select value={value} onValueChange={onValueChange}>
         <SelectTrigger
           aria-labelledby={labelId}
-          className="h-[38px] w-full min-w-0 rounded-card border-border bg-input px-[11px] text-[0.83rem] font-semibold text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] data-[state=open]:border-border-strong data-[state=open]:ring-3 data-[state=open]:ring-ring/50 dark:bg-input dark:hover:bg-[color-mix(in_srgb,var(--input)_82%,var(--card-hover))]"
+          className="h-9 w-full min-w-0 rounded-card border-border-strong bg-input px-[11px] text-[0.83rem] font-semibold text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition-[border-color,box-shadow] hover:border-[color-mix(in_srgb,var(--primary)_64%,var(--border))] data-[state=open]:border-primary data-[state=open]:ring-3 data-[state=open]:ring-primary/25 dark:bg-[color-mix(in_srgb,var(--card-solid)_78%,transparent)] dark:hover:bg-[color-mix(in_srgb,var(--input)_82%,var(--card-hover))]"
         >
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
@@ -68,6 +65,6 @@ export function SelectField({
           </SelectGroup>
         </SelectContent>
       </Select>
-    </div>
+    </Field>
   )
 }

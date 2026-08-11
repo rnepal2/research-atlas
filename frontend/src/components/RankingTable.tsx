@@ -1,6 +1,6 @@
 import type { AuthorProfile, InstitutionProfile } from '../data/types'
 import { formatCompact, formatScore } from '../lib/format'
-import { ScrollArea, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui'
+import { DataRegion, dataTableStyles, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui'
 
 interface RankingTableProps {
   type: 'authors' | 'institutions'
@@ -8,23 +8,14 @@ interface RankingTableProps {
   limit?: number
 }
 
-const tableClass =
-  'min-w-[760px] border-collapse [&_strong]:font-[650] [&_strong]:text-foreground'
-const headClass =
-  'sticky top-0 z-[2] h-auto border-b border-border bg-[linear-gradient(180deg,color-mix(in_srgb,var(--card-solid)_96%,transparent),color-mix(in_srgb,var(--card-solid)_90%,transparent))] px-2 py-[9px] text-left text-[0.66rem] font-bold tracking-[0] text-muted-foreground uppercase backdrop-blur-[14px]'
-const cellClass =
-  'border-b border-border px-2 py-[9px] text-[0.79rem] leading-[1.35] whitespace-normal text-[color-mix(in_srgb,var(--foreground)_82%,var(--muted-foreground))]'
-const rowClass = 'transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_5%,transparent)]'
-
-const scorePillClass =
-  'inline-flex h-[26px] min-w-11 items-center justify-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--primary)_18%,transparent)] px-[7px] text-[0.74rem] font-bold text-primary'
+const { table: tableClass, head: headClass, cell: cellClass, row: rowClass, scorePill: scorePillClass } = dataTableStyles
 
 export function RankingTable({ type, rows, limit = 8 }: RankingTableProps) {
   const visible = rows.slice(0, limit)
   if (type === 'authors') {
     const authors = visible as AuthorProfile[]
     return (
-      <ScrollArea className="h-[302px] w-full">
+      <DataRegion density="panel">
         <Table className={tableClass}>
           <TableHeader>
             <TableRow>
@@ -53,13 +44,13 @@ export function RankingTable({ type, rows, limit = 8 }: RankingTableProps) {
             ))}
           </TableBody>
         </Table>
-      </ScrollArea>
+      </DataRegion>
     )
   }
 
   const institutions = visible as InstitutionProfile[]
   return (
-    <ScrollArea className="h-[302px] w-full">
+    <DataRegion density="panel">
       <Table className={tableClass}>
         <TableHeader>
           <TableRow>
@@ -88,6 +79,6 @@ export function RankingTable({ type, rows, limit = 8 }: RankingTableProps) {
           ))}
         </TableBody>
       </Table>
-    </ScrollArea>
+    </DataRegion>
   )
 }

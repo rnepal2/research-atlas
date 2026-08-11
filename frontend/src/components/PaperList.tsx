@@ -1,7 +1,7 @@
 import { ExternalLink } from 'lucide-react'
 import type { PaperProfile } from '../data/types'
 import { formatCompact } from '../lib/format'
-import { ScrollArea } from './ui'
+import { DataRegion } from './ui'
 
 interface PaperListProps {
   papers: PaperProfile[]
@@ -10,7 +10,7 @@ interface PaperListProps {
 
 export function PaperList({ papers, limit = 6 }: PaperListProps) {
   return (
-    <ScrollArea className="h-[390px]">
+    <DataRegion density="panel">
       <div className="grid gap-0">
         {papers.slice(0, limit).map((paper) => (
           <article className="grid gap-[7px] border-b border-border py-[11px] last:border-b-0" key={paper.openalexId}>
@@ -32,6 +32,6 @@ export function PaperList({ papers, limit = 6 }: PaperListProps) {
           </article>
         ))}
       </div>
-    </ScrollArea>
+    </DataRegion>
   )
 }

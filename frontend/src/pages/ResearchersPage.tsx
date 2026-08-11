@@ -1,5 +1,5 @@
 import { ExternalLink, Search, Users } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { PageHeader } from '../components/PageHeader'
 import {
   Card,
@@ -8,7 +8,8 @@ import {
   CardHeader,
   CardTitle,
   Input,
-  ScrollArea,
+  DataRegion,
+  Field,
   SelectField,
   Table,
   TableBody,
@@ -26,16 +27,10 @@ interface ResearchersPageProps {
   initialTopicSlug?: string
 }
 
-const tableClass =
-  'min-w-[760px] border-collapse [&_strong]:font-[650] [&_strong]:text-foreground'
-const headClass =
-  'sticky top-0 z-[2] h-auto border-b border-border bg-[linear-gradient(180deg,color-mix(in_srgb,var(--card-solid)_96%,transparent),color-mix(in_srgb,var(--card-solid)_90%,transparent))] px-2 py-[9px] text-left text-[0.66rem] font-bold tracking-[0] text-muted-foreground uppercase backdrop-blur-[14px]'
-const cellClass =
-  'border-b border-border px-2 py-[9px] text-[0.79rem] leading-[1.35] whitespace-normal text-[color-mix(in_srgb,var(--foreground)_82%,var(--muted-foreground))]'
-const rowClass = 'transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_5%,transparent)]'
+import { dataTableStyles } from '../components/ui/data-table-styles'
 
-const scorePillClass =
-  'inline-flex h-[26px] min-w-11 items-center justify-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--primary)_18%,transparent)] px-[7px] text-[0.74rem] font-bold text-primary'
+const { head: headClass, cell: cellClass, row: rowClass, scorePill: scorePillClass } = dataTableStyles
+const tableClass = 'min-w-[640px] table-fixed border-collapse [&_strong]:font-[650] [&_strong]:text-foreground'
 
 export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProps) {
   const [topicSlug, setTopicSlug] = useState(initialTopicSlug || 'all')
@@ -43,6 +38,7 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
   const [country, setCountry] = useState('All countries')
   const [institution, setInstitution] = useState('All institutions')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const searchLabelId = useId()
   const scopedTopic = useMemo(() => atlas.topics.find((topic) => topic.slug === topicSlug), [atlas.topics, topicSlug])
   const { topic: topicDetail, loading: topicLoading, error: topicError } = useTopicDetail(topicSlug === 'all' ? undefined : topicSlug, scopedTopic)
   const source = useMemo(
@@ -68,9 +64,9 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
         description="Find researchers gaining visibility across curated topics. Signals describe recent activity, not scientific quality."
       />
 
-      <section className="flex min-w-0 items-end justify-between gap-4 max-[760px]:flex-col max-[760px]:items-stretch">
+      <section className="grid min-w-0 grid-cols-[minmax(220px,1.2fr)_minmax(150px,0.7fr)_minmax(190px,0.9fr)_minmax(240px,1.1fr)] items-end gap-3 max-[900px]:grid-cols-2 max-[760px]:grid-cols-1">
         <SelectField
-          className="min-w-[260px] flex-[0_1_360px] max-[760px]:w-full max-[760px]:min-w-0 max-[760px]:flex-none"
+          className="min-w-0"
           label="Topic scope"
           value={topicSlug}
           onValueChange={(value) => {
@@ -89,31 +85,31 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
           ]}
         />
         <SelectField
-          className="min-w-[180px] flex-[0_1_220px] max-[760px]:w-full max-[760px]:min-w-0 max-[760px]:flex-none"
+          className="min-w-0"
           label="Country"
           value={country}
           onValueChange={setCountry}
           options={countries.map((item) => ({ value: item, label: item }))}
         />
         <SelectField
-          className="min-w-[220px] flex-[0_1_300px] max-[760px]:w-full max-[760px]:min-w-0 max-[760px]:flex-none"
+          className="min-w-0"
           label="Institution"
           value={institution}
           onValueChange={setInstitution}
           options={institutions.map((item) => ({ value: item, label: item }))}
         />
-        <label className="grid min-w-[280px] flex-[0_1_430px] gap-[7px] max-[760px]:w-full max-[760px]:min-w-0 max-[760px]:flex-none">
-          <span className="min-h-0 text-[0.67rem] font-bold uppercase tracking-[0] text-muted-foreground">Search</span>
+        <Field className="min-w-0" label="Search" labelId={searchLabelId}>
           <span className="relative min-w-0">
             <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-[18px] -translate-y-1/2 text-[color-mix(in_srgb,var(--foreground)_58%,var(--muted-foreground))]" />
             <Input
-              className="h-9 rounded-card border-border-strong bg-[color-mix(in_srgb,var(--card-solid)_90%,transparent)] pl-10 pr-3 text-[0.88rem] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_0_0_1px_color-mix(in_srgb,var(--foreground)_8%,transparent)] placeholder:text-[color-mix(in_srgb,var(--muted-foreground)_84%,transparent)] hover:border-[color-mix(in_srgb,var(--primary)_64%,var(--border))] focus-visible:border-primary focus-visible:ring-primary/25 dark:bg-[color-mix(in_srgb,var(--card-solid)_78%,transparent)]"
+              className="pl-10 pr-3 text-[0.88rem] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_0_0_1px_color-mix(in_srgb,var(--foreground)_8%,transparent)] placeholder:text-[color-mix(in_srgb,var(--muted-foreground)_84%,transparent)]"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Researcher, institution, topic"
+              aria-labelledby={searchLabelId}
             />
           </span>
-        </label>
+        </Field>
       </section>
 
       {(topicSlug !== 'all' && (topicLoading || topicError)) && (
@@ -124,7 +120,7 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
         </Card>
       )}
 
-      <section className="grid grid-cols-[minmax(0,1fr)_320px] gap-2.5 max-[1160px]:grid-cols-1">
+      <section className="grid grid-cols-[minmax(0,1fr)_292px] gap-2.5 max-[1160px]:grid-cols-1">
         <Card>
           <CardHeader>
             <div>
@@ -134,16 +130,16 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
             <Users aria-hidden="true" />
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-[560px] w-full">
+            <DataRegion density="page">
               <Table className={tableClass}>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className={headClass}>Researcher</TableHead>
-                    <TableHead className={headClass}>Institution</TableHead>
-                    <TableHead className={headClass}>Topics</TableHead>
+                    <TableHead className={`${headClass} w-[22%]`}>Researcher</TableHead>
+                    <TableHead className={`${headClass} w-[22%]`}>Institution</TableHead>
+                    <TableHead className={`${headClass} w-[30%]`}>Topics</TableHead>
                     <TableHead className={headClass}>Recent</TableHead>
                     <TableHead className={headClass}>Citations</TableHead>
-                    <TableHead className={headClass}>Bridge</TableHead>
+                    <TableHead className={`${headClass} max-[1380px]:hidden`}>Bridge</TableHead>
                     <TableHead className={headClass}>Score</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -151,7 +147,19 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
                   {rows.map((author) => {
                     const topicsSeen = 'topicsSeen' in author && Array.isArray(author.topicsSeen) ? author.topicsSeen : author.topics
                     return (
-                      <TableRow className={`${rowClass} cursor-pointer`} key={`${author.openalexId}-${author.topics.join('-')}`} onClick={() => setSelectedId(author.openalexId)}>
+                      <TableRow
+                        aria-selected={selected?.openalexId === author.openalexId}
+                        className={`${rowClass} cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary`}
+                        key={`${author.openalexId}-${author.topics.join('-')}`}
+                        onClick={() => setSelectedId(author.openalexId)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault()
+                            setSelectedId(author.openalexId)
+                          }
+                        }}
+                        tabIndex={0}
+                      >
                         <TableCell className={cellClass}>
                           <strong>{author.name}</strong>
                           <br />
@@ -161,7 +169,7 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
                         <TableCell className={cellClass}>{topicsSeen.slice(0, 3).join(', ')}</TableCell>
                         <TableCell className={cellClass}>{author.recentWorks}</TableCell>
                         <TableCell className={cellClass}>{formatCompact(author.citations)}</TableCell>
-                        <TableCell className={cellClass}>{formatScore(author.bridgeScore)}</TableCell>
+                        <TableCell className={`${cellClass} max-[1380px]:hidden`}>{formatScore(author.bridgeScore)}</TableCell>
                         <TableCell className={cellClass}>
                           <span className={scorePillClass}>{formatScore(author.risingScore)}</span>
                         </TableCell>
@@ -170,7 +178,7 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
                   })}
                 </TableBody>
               </Table>
-            </ScrollArea>
+            </DataRegion>
           </CardContent>
         </Card>
         {selected && (

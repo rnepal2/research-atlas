@@ -5,11 +5,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Sigma from 'sigma'
 import type { NetworkData, NetworkNode } from '../data/types'
 import { formatCompact, formatScore } from '../lib/format'
+import { cn } from '../lib/utils'
 import { Button } from './ui'
 
 interface IntelligenceNetworkProps {
   network: NetworkData
   mode: 'author' | 'institution'
+  className?: string
 }
 
 interface HoverState {
@@ -104,7 +106,7 @@ function buildGraph(network: NetworkData, mode: 'author' | 'institution') {
   return { graph, communities, communityIndex, colors }
 }
 
-export function IntelligenceNetwork({ network, mode }: IntelligenceNetworkProps) {
+export function IntelligenceNetwork({ network, mode, className }: IntelligenceNetworkProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const sigmaRef = useRef<Sigma | null>(null)
   const graphBundle = useMemo(() => buildGraph(network, mode), [network, mode])
@@ -263,7 +265,7 @@ export function IntelligenceNetwork({ network, mode }: IntelligenceNetworkProps)
   }
 
   return (
-    <div className="relative min-h-[640px] overflow-hidden max-[760px]:min-h-[470px]">
+    <div className={cn('relative min-h-[320px] overflow-hidden max-[760px]:min-h-[430px]', className)}>
       <div className="absolute top-2.5 right-2.5 z-[3] grid gap-[5px]" aria-label="Network viewport controls">
         <Button className="size-[30px]" variant="outline" size="icon" type="button" onClick={() => zoom(-0.22)} aria-label="Zoom in network">
           <Plus aria-hidden="true" />

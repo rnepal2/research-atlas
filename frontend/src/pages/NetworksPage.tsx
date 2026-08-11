@@ -17,7 +17,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  ScrollArea,
+  DataRegion,
   Tabs,
   TabsList,
   TabsTrigger,
@@ -52,17 +52,21 @@ export function NetworksPage({ atlas, initialTopicSlug }: NetworksPageProps) {
         actionsClassName="max-[760px]:w-full"
         actions={
           <Tabs value={mode} onValueChange={setMode} className="max-[760px]:w-full">
-          <TabsList className="flex-nowrap border border-border bg-muted max-[760px]:w-full">
-            <TabsTrigger value="researchers" className="px-2.5 text-[0.76rem]">
+          <TabsList className="flex-nowrap max-[760px]:w-full">
+            <TabsTrigger value="researchers">
+              <Users aria-hidden="true" />
               Researchers
             </TabsTrigger>
-            <TabsTrigger value="institutions" className="px-2.5 text-[0.76rem]">
+            <TabsTrigger value="institutions">
+              <Building2 aria-hidden="true" />
               Institutions
             </TabsTrigger>
-            <TabsTrigger value="geo" className="px-2.5 text-[0.76rem]">
+            <TabsTrigger value="geo">
+              <Globe2 aria-hidden="true" />
               Geo Density
             </TabsTrigger>
-            <TabsTrigger value="matrix" className="px-2.5 text-[0.76rem]">
+            <TabsTrigger value="matrix">
+              <Rows3 aria-hidden="true" />
               Matrix
             </TabsTrigger>
           </TabsList>
@@ -81,34 +85,36 @@ export function NetworksPage({ atlas, initialTopicSlug }: NetworksPageProps) {
         </CardContent>
       </Card>
 
-      <section className="grid grid-cols-4 gap-2 max-[1160px]:grid-cols-2 max-[760px]:grid-cols-1">
+      <section className="grid grid-cols-4 gap-2 max-[1160px]:grid-cols-2 max-[480px]:grid-cols-1">
         <MetricCard
           label={mode === 'institutions' ? 'Institution nodes' : 'Researcher nodes'}
           value={formatNumber(activeNetwork.nodes.length)}
           note={`${formatNumber(activeNetwork.edges.length)} collaboration edges`}
           icon={Users}
+          compact
         />
-        <MetricCard label="Communities" value={formatNumber(activeCommunities.length)} note="Clusters in the active view" icon={Building2} />
-        <MetricCard label="Countries" value={formatNumber(geographicCountries.length)} note="Authorship-country activity" icon={Globe2} />
+        <MetricCard compact label="Communities" value={formatNumber(activeCommunities.length)} note="Clusters in the active view" icon={Building2} />
+        <MetricCard compact label="Countries" value={formatNumber(geographicCountries.length)} note="Authorship-country activity" icon={Globe2} />
         <MetricCard
           label="Matrix cells"
           value={formatNumber(selected ? selected.subtopicMatrix.rows.length * selected.subtopicMatrix.columns.length : 0)}
           note="Institution x subtopic activity"
           icon={Rows3}
+          compact
         />
       </section>
 
       {selected && mode === 'researchers' && (
-        <section className="grid grid-cols-[minmax(0,1fr)_318px] gap-2 max-[1160px]:grid-cols-1">
-          <Card>
+        <section className="grid h-[clamp(25rem,calc(100dvh-19rem),44rem)] grid-cols-[minmax(0,1fr)_300px] gap-2 max-[1160px]:h-auto max-[1160px]:grid-cols-1">
+          <Card className="min-h-0">
             <CardHeader>
               <div>
                 <CardTitle>Researcher Coauthorship Communities</CardTitle>
                 <CardDescription>Cluster hulls use OpenAlex topic labels; node size follows rising visibility.</CardDescription>
               </div>
             </CardHeader>
-            <CardContent>
-              <IntelligenceNetwork network={selected.network} mode="author" />
+            <CardContent className="min-h-0 flex-1">
+              <IntelligenceNetwork className="h-full" network={selected.network} mode="author" />
             </CardContent>
           </Card>
           <NetworkInspector
@@ -120,16 +126,16 @@ export function NetworksPage({ atlas, initialTopicSlug }: NetworksPageProps) {
       )}
 
       {selected && mode === 'institutions' && (
-        <section className="grid grid-cols-[minmax(0,1fr)_318px] gap-2 max-[1160px]:grid-cols-1">
-          <Card>
+        <section className="grid h-[clamp(25rem,calc(100dvh-19rem),44rem)] grid-cols-[minmax(0,1fr)_300px] gap-2 max-[1160px]:h-auto max-[1160px]:grid-cols-1">
+          <Card className="min-h-0">
             <CardHeader>
               <div>
                 <CardTitle>Institution Collaboration Network</CardTitle>
                 <CardDescription>Edges connect institutions appearing together on works in the selected topic artifact.</CardDescription>
               </div>
             </CardHeader>
-            <CardContent>
-              <IntelligenceNetwork network={selected.institutionNetwork} mode="institution" />
+            <CardContent className="min-h-0 flex-1">
+              <IntelligenceNetwork className="h-full" network={selected.institutionNetwork} mode="institution" />
             </CardContent>
           </Card>
           <NetworkInspector
@@ -175,15 +181,15 @@ export function NetworksPage({ atlas, initialTopicSlug }: NetworksPageProps) {
 function NetworkInspector({ title, rows, communities }: { title: string; rows: string[][]; communities: NetworkCommunitySummary[] }) {
   const topCommunity = communities[0]
   return (
-    <Card className="self-start">
+    <Card className="h-full min-h-0 self-start max-[1160px]:h-auto">
       <CardHeader>
         <div>
           <CardTitle>{title}</CardTitle>
           <CardDescription>Top-ranked entities for the selected view.</CardDescription>
         </div>
       </CardHeader>
-      <CardContent className="grid gap-3">
-        <ScrollArea className="h-[332px]">
+      <CardContent className="grid min-h-0 flex-1 content-start gap-3 overflow-y-auto pr-2.5">
+        <DataRegion density="compact" className="shrink-0">
           <div className="grid gap-0">
             {rows.map(([label, value]) => (
               <div className="grid grid-cols-[minmax(0,1fr)_minmax(96px,0.85fr)] items-start gap-3 border-b border-border py-[9px] last:border-b-0" key={label}>
@@ -192,7 +198,7 @@ function NetworkInspector({ title, rows, communities }: { title: string; rows: s
               </div>
             ))}
           </div>
-        </ScrollArea>
+        </DataRegion>
         {topCommunity && (
           <div className="grid gap-[7px] rounded-card border border-border bg-card-soft p-3">
             <span className="text-[0.68rem] font-bold uppercase text-muted-foreground">Dominant community</span>
