@@ -11,6 +11,7 @@ import { TopicSelector } from '../components/TopicSelector'
 import { TrendChart } from '../components/TrendChart'
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui'
 import { useTopicDetail } from '../data/useTopicDetail'
+import { getDefaultTopic } from '../data/topicSelection'
 import type { AtlasData, TopicProfile, TopicSummary } from '../data/types'
 import { formatCompact, formatNumber, formatPercent, formatScore } from '../lib/format'
 import { navigate } from '../lib/router'
@@ -54,10 +55,7 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
   const initialTopic = useMemo(
     () =>
       atlas.topics.find((topic) => topic.slug === initialTopicSlug) ||
-      atlas.trending
-        .map((item) => atlas.topics.find((topic) => topic.slug === item.slug))
-        .find((topic) => topic?.domain === 'Health Sciences') ||
-      atlas.topics.find((topic) => topic.domain === 'Health Sciences') ||
+      getDefaultTopic(atlas, { domain: 'Health Sciences' }) ||
       atlas.topics[0],
     [atlas, initialTopicSlug],
   ) as TopicSummary

@@ -1,4 +1,5 @@
 import type { AtlasData, TopicSummary } from '../data/types'
+import { getDefaultTopic } from '../data/topicSelection'
 import { SelectField } from './ui'
 
 interface TopicSelectorProps {
@@ -26,13 +27,19 @@ export function TopicSelector({ atlas, selected, onChange }: TopicSelectorProps)
       <SelectField
         label="Domain"
         value={selected.domain}
-        onValueChange={(value) => selectFirst((topic) => topic.domain === value)}
+        onValueChange={(value) => {
+          const next = getDefaultTopic(atlas, { domain: value })
+          if (next) onChange(next)
+        }}
         options={domains.map((domain) => ({ value: domain, label: domain }))}
       />
       <SelectField
         label="Field"
         value={selected.field}
-        onValueChange={(value) => selectFirst((topic) => topic.domain === selected.domain && topic.field === value)}
+        onValueChange={(value) => {
+          const next = getDefaultTopic(atlas, { domain: selected.domain, field: value })
+          if (next) onChange(next)
+        }}
         options={fields.map((field) => ({ value: field, label: field }))}
       />
       <SelectField
