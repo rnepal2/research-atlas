@@ -95,7 +95,7 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
         <CardHeader>
           <div>
             <CardTitle>Topic Navigator</CardTitle>
-            <CardDescription>Choose a research domain, field, and topic.</CardDescription>
+            <CardDescription>Choose a research domain, field, and topic. Indicators below describe the selected topic, not a domain total.</CardDescription>
           </div>
           <Badge variant="secondary">{selected.workArea}</Badge>
         </CardHeader>
@@ -129,9 +129,9 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
 
       <section className="grid grid-cols-4 gap-2 max-[1160px]:grid-cols-2 max-[760px]:grid-cols-1">
         <MetricCard
-          label="Recent works"
+          label="Works (2023–2025)"
           value={formatNumber(selected.metrics.worksLast3Years)}
-          note={`${formatNumber(selected.metrics.worksLast5Years)} in five years`}
+          note={`${formatNumber(selected.metrics.worksLast5Years)} across 2021–2025`}
           icon={BookOpen}
         />
         <MetricCard
@@ -160,7 +160,7 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
             <div>
               <CardTitle>{selected.label} Activity Trend</CardTitle>
               <CardDescription>
-                Annual publication activity; {new Date().getFullYear()} is year to date.
+                Annual matched works for this topic; {new Date().getFullYear()} is year to date.
               </CardDescription>
             </div>
             <Badge variant="secondary">{formatNumber(selected.papers.length)} selected papers</Badge>
