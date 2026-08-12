@@ -41,30 +41,30 @@ export function ResearchAtlasApp() {
         if (topicMatch?.[2] === 'rising-researchers') {
           return {
             title: `${topic.label} Rising Researchers | Research Atlas`,
-            description: `Researchers with increasing visibility in ${topic.label}, based on OpenAlex topic activity.`,
+            description: `Researchers with increasing recent activity in ${topic.label}, based on publication and citation patterns.`,
           }
         }
         return {
           title: `${topic.label} Research Atlas`,
-          description: `OpenAlex intelligence profile for ${topic.label}: momentum, papers, institutions, researchers, geography, and networks.`,
+          description: `Research profile for ${topic.label}: momentum, papers, institutions, researchers, geography, and collaboration.`,
         }
       }
       if (path === '/trending') {
         return {
-          title: 'Trending Intelligence | Research Atlas',
+          title: 'Research Momentum | Research Atlas',
           description: 'Ranked research topics by completed-period publication growth and cross-topic breadth.',
         }
       }
       if (path === '/researchers') {
         return {
-          title: 'Researcher Visibility | Research Atlas',
-          description: 'Discover researchers with increasing visibility across curated OpenAlex topic snapshots.',
+          title: 'Researcher Activity | Research Atlas',
+          description: 'Explore researchers with increasing recent activity across curated research topics.',
         }
       }
       if (path === '/networks') {
         return {
-          title: 'Collaboration Intelligence | Research Atlas',
-          description: 'Explore researcher, institution, geographic, and subtopic collaboration structure.',
+          title: 'Collaboration Networks | Research Atlas',
+          description: 'Explore researcher and institution networks and the geography of research activity.',
         }
       }
       if (path === '/about' || path === '/methodology') {

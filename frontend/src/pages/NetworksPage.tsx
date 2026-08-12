@@ -1,10 +1,9 @@
-import { Building2, Globe2, Rows3, Users } from 'lucide-react'
+import { Building2, Globe2, Users } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { DensityMap } from '../components/DensityMap'
 import { IntelligenceNetwork } from '../components/IntelligenceNetwork'
 import { MetricCard } from '../components/MetricCard'
 import { PageHeader } from '../components/PageHeader'
-import { SubtopicMatrix } from '../components/SubtopicMatrix'
 import { TopicSelector } from '../components/TopicSelector'
 import {
   Accordion,
@@ -47,8 +46,8 @@ export function NetworksPage({ atlas, initialTopicSlug }: NetworksPageProps) {
   return (
     <div className="grid min-w-0 gap-3">
       <PageHeader
-        title="Collaboration Intelligence"
-        description="Explore researcher and institution networks, geographic activity, and subtopic expertise."
+        title="Collaboration Networks"
+        description="Explore how researchers and institutions connect, and where activity is concentrated geographically."
         actionsClassName="max-[760px]:w-full"
         actions={
           <Tabs value={mode} onValueChange={setMode} className="max-[760px]:w-full">
@@ -63,29 +62,25 @@ export function NetworksPage({ atlas, initialTopicSlug }: NetworksPageProps) {
             </TabsTrigger>
             <TabsTrigger value="geo">
               <Globe2 aria-hidden="true" />
-              Geo Density
-            </TabsTrigger>
-            <TabsTrigger value="matrix">
-              <Rows3 aria-hidden="true" />
-              Matrix
+              Geography
             </TabsTrigger>
           </TabsList>
         </Tabs>
         }
       />
 
-      <Card className="bg-[linear-gradient(135deg,color-mix(in_srgb,var(--primary)_9%,transparent),transparent_60%),var(--card)] ring-border-strong">
+      <Card className="bg-[linear-gradient(135deg,color-mix(in_srgb,var(--primary)_3%,transparent),transparent_60%),var(--card)]">
         <CardContent>
           <TopicSelector atlas={atlas} selected={selected || initialTopic} onChange={updateTopic} />
           {(topicLoading || topicError) && (
             <div className="mt-3 rounded-card border border-border bg-card-soft p-3 text-[0.78rem] text-muted-foreground">
-              {topicLoading ? `Loading ${initialTopic.label} network artifact...` : topicError}
+              {topicLoading ? `Loading the ${initialTopic.label} network...` : topicError}
             </div>
           )}
         </CardContent>
       </Card>
 
-      <section className="grid grid-cols-4 gap-2 max-[1160px]:grid-cols-2 max-[480px]:grid-cols-1">
+      <section className="grid grid-cols-3 gap-2 max-[900px]:grid-cols-1">
         <MetricCard
           label={mode === 'institutions' ? 'Institution nodes' : 'Researcher nodes'}
           value={formatNumber(activeNetwork.nodes.length)}
@@ -95,13 +90,6 @@ export function NetworksPage({ atlas, initialTopicSlug }: NetworksPageProps) {
         />
         <MetricCard compact label="Communities" value={formatNumber(activeCommunities.length)} note="Clusters in the active view" icon={Building2} />
         <MetricCard compact label="Countries" value={formatNumber(geographicCountries.length)} note="Authorship-country activity" icon={Globe2} />
-        <MetricCard
-          label="Matrix cells"
-          value={formatNumber(selected ? selected.subtopicMatrix.rows.length * selected.subtopicMatrix.columns.length : 0)}
-          note="Institution x subtopic activity"
-          icon={Rows3}
-          compact
-        />
       </section>
 
       {selected && mode === 'researchers' && (
@@ -110,7 +98,7 @@ export function NetworksPage({ atlas, initialTopicSlug }: NetworksPageProps) {
             <CardHeader>
               <div>
                 <CardTitle>Researcher Coauthorship Communities</CardTitle>
-                <CardDescription>Cluster hulls use OpenAlex topic labels; node size follows rising visibility.</CardDescription>
+                <CardDescription>Colors identify topic communities; node size reflects the activity score.</CardDescription>
               </div>
             </CardHeader>
             <CardContent className="min-h-0 flex-1">
@@ -119,8 +107,8 @@ export function NetworksPage({ atlas, initialTopicSlug }: NetworksPageProps) {
           </Card>
           <NetworkInspector
             communities={activeCommunities}
-            title="Bridge researchers"
-            rows={selected.authors.slice(0, 10).map((author) => [author.name, `${formatNumber(author.risingScore)} visibility / ${author.recentWorks} recent`])}
+            title="Leading researchers"
+            rows={selected.authors.slice(0, 10).map((author) => [author.name, `${formatNumber(author.risingScore)} score / ${author.recentWorks} recent works`])}
           />
         </section>
       )}
@@ -131,7 +119,7 @@ export function NetworksPage({ atlas, initialTopicSlug }: NetworksPageProps) {
             <CardHeader>
               <div>
                 <CardTitle>Institution Collaboration Network</CardTitle>
-                <CardDescription>Edges connect institutions appearing together on works in the selected topic artifact.</CardDescription>
+                <CardDescription>Edges connect institutions that appear together on works in the selected topic.</CardDescription>
               </div>
             </CardHeader>
             <CardContent className="min-h-0 flex-1">
@@ -140,7 +128,7 @@ export function NetworksPage({ atlas, initialTopicSlug }: NetworksPageProps) {
           </Card>
           <NetworkInspector
             communities={activeCommunities}
-            title="Institution hubs"
+            title="Leading institutions"
             rows={selected.institutions.slice(0, 10).map((item) => [item.name, `${item.country || 'Unknown'} / ${item.works} works`])}
           />
         </section>
@@ -161,19 +149,6 @@ export function NetworksPage({ atlas, initialTopicSlug }: NetworksPageProps) {
         </Card>
       )}
 
-      {selected && mode === 'matrix' && (
-        <Card>
-          <CardHeader>
-            <div>
-              <CardTitle>Institution x Subtopic Matrix</CardTitle>
-              <CardDescription>Compact expertise map for the top institutions and subtopics in the selected topic.</CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <SubtopicMatrix matrix={selected.subtopicMatrix} />
-          </CardContent>
-        </Card>
-      )}
     </div>
   )
 }
@@ -185,7 +160,7 @@ function NetworkInspector({ title, rows, communities }: { title: string; rows: s
       <CardHeader>
         <div>
           <CardTitle>{title}</CardTitle>
-          <CardDescription>Top-ranked entities for the selected view.</CardDescription>
+          <CardDescription>Highest-ranked entities in the selected view.</CardDescription>
         </div>
       </CardHeader>
       <CardContent className="grid min-h-0 flex-1 content-start gap-3 overflow-y-auto pr-2.5">
@@ -228,7 +203,7 @@ function NetworkInspector({ title, rows, communities }: { title: string; rows: s
             <AccordionTrigger className="text-[0.82rem] hover:no-underline">Interpretation caveat</AccordionTrigger>
             <AccordionContent>
               <p className="m-0 text-[0.78rem] leading-[1.5] text-muted-foreground">
-                This is a compact top-node sketch, not a full graph of every OpenAlex author or institution.
+                This is a focused view of the strongest connections, not a complete record of every author or institution.
               </p>
             </AccordionContent>
           </AccordionItem>

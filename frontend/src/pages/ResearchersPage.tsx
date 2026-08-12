@@ -8,8 +8,8 @@ import {
   CardHeader,
   CardTitle,
   Input,
-  DataRegion,
   Field,
+  Pagination,
   SelectField,
   Table,
   TableBody,
@@ -38,6 +38,8 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
   const [country, setCountry] = useState('All countries')
   const [institution, setInstitution] = useState('All institutions')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
+  const pageSize = 10
   const searchLabelId = useId()
   const scopedTopic = useMemo(() => atlas.topics.find((topic) => topic.slug === topicSlug), [atlas.topics, topicSlug])
   const { topic: topicDetail, loading: topicLoading, error: topicError } = useTopicDetail(topicSlug === 'all' ? undefined : topicSlug, scopedTopic)
@@ -55,13 +57,17 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
       .filter((author) => institution === 'All institutions' || author.institution === institution)
       .slice(0, 50)
   }, [source, query, country, institution])
-  const selected = rows.find((author) => author.openalexId === selectedId) || rows[0]
+  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize))
+  const currentPage = Math.min(page, pageCount)
+  const pageStart = (currentPage - 1) * pageSize
+  const visibleRows = rows.slice(pageStart, pageStart + pageSize)
+  const selected = rows.find((author) => author.openalexId === selectedId) || visibleRows[0] || rows[0]
 
   return (
     <div className="grid min-w-0 gap-3">
       <PageHeader
-        title="Researcher Visibility"
-        description="Find researchers gaining visibility across curated topics. Signals describe recent activity, not scientific quality."
+        title="Researcher Activity"
+        description="Explore researchers whose recent activity and citation momentum are increasing across the selected topics."
       />
 
       <section className="grid min-w-0 grid-cols-[minmax(220px,1.2fr)_minmax(150px,0.7fr)_minmax(190px,0.9fr)_minmax(240px,1.1fr)] items-end gap-3 max-[900px]:grid-cols-2 max-[760px]:grid-cols-1">
@@ -74,6 +80,7 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
             setCountry('All countries')
             setInstitution('All institutions')
             setSelectedId(null)
+            setPage(1)
           }}
           options={[
             { value: 'all', label: 'All curated topics' },
@@ -88,14 +95,22 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
           className="min-w-0"
           label="Country"
           value={country}
-          onValueChange={setCountry}
+          onValueChange={(value) => {
+            setCountry(value)
+            setSelectedId(null)
+            setPage(1)
+          }}
           options={countries.map((item) => ({ value: item, label: item }))}
         />
         <SelectField
           className="min-w-0"
           label="Institution"
           value={institution}
-          onValueChange={setInstitution}
+          onValueChange={(value) => {
+            setInstitution(value)
+            setSelectedId(null)
+            setPage(1)
+          }}
           options={institutions.map((item) => ({ value: item, label: item }))}
         />
         <Field className="min-w-0" label="Search" labelId={searchLabelId}>
@@ -104,7 +119,11 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
             <Input
               className="pl-10 pr-3 text-[0.88rem] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_0_0_1px_color-mix(in_srgb,var(--foreground)_8%,transparent)] placeholder:text-[color-mix(in_srgb,var(--muted-foreground)_84%,transparent)]"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => {
+                setQuery(event.target.value)
+                setSelectedId(null)
+                setPage(1)
+              }}
               placeholder="Researcher, institution, topic"
               aria-labelledby={searchLabelId}
             />
@@ -124,13 +143,12 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Researchers With Increasing Visibility</CardTitle>
-              <CardDescription>Recent work, citation velocity, bridge signal, focus, and topic coverage.</CardDescription>
+              <CardTitle>Rising Researcher Activity</CardTitle>
+              <CardDescription>Directional indicators based on recent work, citation momentum, topic focus, and collaboration breadth.</CardDescription>
             </div>
             <Users aria-hidden="true" />
           </CardHeader>
-          <CardContent>
-            <DataRegion density="page">
+          <CardContent className="grid gap-3">
               <Table className={tableClass}>
                 <TableHeader>
                   <TableRow>
@@ -144,7 +162,7 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rows.map((author) => {
+                  {visibleRows.map((author) => {
                     const topicsSeen = 'topicsSeen' in author && Array.isArray(author.topicsSeen) ? author.topicsSeen : author.topics
                     return (
                       <TableRow
@@ -178,14 +196,24 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
                   })}
                 </TableBody>
               </Table>
-            </DataRegion>
+            <Pagination
+              page={currentPage}
+              pageCount={pageCount}
+              pageSize={pageSize}
+              totalItems={rows.length}
+              itemLabel="researchers"
+              onPageChange={(nextPage) => {
+                setPage(nextPage)
+                setSelectedId(null)
+              }}
+            />
           </CardContent>
         </Card>
         {selected && (
           <Card className="self-start">
             <CardHeader>
               <div>
-                <CardTitle>Visibility Evidence</CardTitle>
+                <CardTitle>Researcher Profile</CardTitle>
                 <CardDescription>{selected.name}</CardDescription>
               </div>
             </CardHeader>
@@ -201,7 +229,7 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
                 </span>
                 <span className="rounded-card border border-border bg-card-soft p-2 text-[0.72rem] text-muted-foreground">
                   <strong className="block text-[1.18rem] text-foreground">{formatScore(selected.risingScore)}</strong>
-                  visibility
+                  activity score
                 </span>
                 <span className="rounded-card border border-border bg-card-soft p-2 text-[0.72rem] text-muted-foreground">
                   <strong className="block text-[1.18rem] text-foreground">{formatScore(selected.focus * 100)}</strong>

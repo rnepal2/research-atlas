@@ -34,7 +34,7 @@ export function GlobalSearch({ atlas }: GlobalSearchProps) {
     <div className="relative min-w-0 flex-[0_1_420px] w-[min(420px,36vw)] max-[760px]:w-full max-[760px]:flex-none">
       <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-[18px] -translate-y-1/2 text-[color-mix(in_srgb,var(--foreground)_58%,var(--muted-foreground))]" />
       <Input
-        className="h-9 rounded-card border-border-strong bg-[color-mix(in_srgb,var(--card-solid)_90%,transparent)] pl-10 pr-3 text-[0.88rem] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_0_0_1px_color-mix(in_srgb,var(--foreground)_8%,transparent)] placeholder:text-[color-mix(in_srgb,var(--muted-foreground)_84%,transparent)] hover:border-[color-mix(in_srgb,var(--primary)_64%,var(--border))] focus-visible:border-primary focus-visible:ring-primary/25 dark:bg-[color-mix(in_srgb,var(--card-solid)_78%,transparent)]"
+        className="bg-[color-mix(in_srgb,var(--card-solid)_90%,transparent)] pl-10 pr-3 text-[0.88rem] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] placeholder:text-[color-mix(in_srgb,var(--muted-foreground)_84%,transparent)] dark:bg-[color-mix(in_srgb,var(--card-solid)_78%,transparent)]"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder="Search topics, fields, domains"

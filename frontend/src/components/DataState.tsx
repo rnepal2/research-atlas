@@ -16,7 +16,7 @@ export function DataState({ loading, error, children }: DataStateProps) {
             <LoaderCircle className="mt-1 size-6 animate-spin text-primary" aria-hidden="true" />
             <div>
               <h1 className="mt-0 mb-2 text-2xl font-bold">Loading Research Atlas</h1>
-              <p className="m-0 text-muted-foreground italic">Preparing the intelligence artifacts...</p>
+              <p className="m-0 text-muted-foreground italic">Preparing the latest research data...</p>
             </div>
           </div>
         </div>

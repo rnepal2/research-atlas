@@ -9,7 +9,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  DataRegion,
+  Pagination,
   SelectField,
   Table,
   TableBody,
@@ -38,6 +38,8 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
   const [domain, setDomain] = useState('All domains')
   const [field, setField] = useState('All fields')
   const [workArea, setWorkArea] = useState('All work areas')
+  const [page, setPage] = useState(1)
+  const pageSize = 6
   const domains = ['All domains', ...new Set(atlas.trending.map((topic) => topic.domain))]
   const fields = ['All fields', ...new Set(atlas.trending.filter((topic) => domain === 'All domains' || topic.domain === domain).map((topic) => topic.field).filter(Boolean))]
   const workAreas = [
@@ -58,11 +60,16 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
         .filter((topic) => workArea === 'All work areas' || topic.workArea === workArea),
     [atlas.trending, domain, field, workArea],
   )
+  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize))
+  const currentPage = Math.min(page, pageCount)
+  const pageStart = (currentPage - 1) * pageSize
+  const visibleRows = rows.slice(pageStart, pageStart + pageSize)
+
   return (
     <div className="grid min-w-0 gap-3">
       <PageHeader
-        title="Trending Intelligence"
-        description="Compare topic momentum using growth, participation, and breadth rather than field size alone."
+        title="Research Momentum"
+        description="Compare topics by recent growth, participation, and research breadth, adjusted for differences in field size."
         actionsClassName="min-w-[min(620px,52vw)] max-[1160px]:min-w-0 max-[760px]:w-full"
         actions={
           <div className="grid grid-cols-3 gap-2 max-[1160px]:grid-cols-1">
@@ -73,6 +80,7 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
               setDomain(value)
               setField('All fields')
               setWorkArea('All work areas')
+              setPage(1)
             }}
             options={domains.map((item) => ({ value: item, label: item }))}
           />
@@ -82,13 +90,17 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
             onValueChange={(value) => {
               setField(value)
               setWorkArea('All work areas')
+              setPage(1)
             }}
             options={fields.map((item) => ({ value: item, label: item }))}
           />
           <SelectField
             label="Work area"
             value={workArea}
-            onValueChange={setWorkArea}
+            onValueChange={(value) => {
+              setWorkArea(value)
+              setPage(1)
+            }}
             options={workAreas.map((item) => ({ value: item, label: item }))}
           />
         </div>
@@ -98,10 +110,9 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
       <section className="grid grid-cols-4 gap-2 max-[1160px]:grid-cols-2 max-[760px]:grid-cols-1">
         {rows.slice(0, 4).map((topic, index) => (
           <Card
-            className="group relative min-h-[138px] overflow-hidden bg-[linear-gradient(145deg,color-mix(in_srgb,var(--primary)_7%,transparent),transparent_56%),var(--card)] hover:-translate-y-px hover:ring-primary/30 hover:shadow-[0_12px_30px_color-mix(in_srgb,var(--primary)_7%,transparent)]"
+            className="group relative min-h-[138px] overflow-hidden bg-[linear-gradient(145deg,color-mix(in_srgb,var(--primary)_4%,transparent),transparent_56%),var(--card)] hover:-translate-y-px hover:shadow-[0_12px_30px_rgba(0,0,0,0.12)]"
             key={topic.slug}
           >
-            <span className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,var(--primary),transparent)] opacity-80" />
             <CardContent className="grid min-h-[138px] content-between gap-3">
               <div className="flex items-center justify-between gap-2">
                 <Badge variant={index === 0 ? 'default' : 'outline'}>#{String(index + 1).padStart(2, '0')}</Badge>
@@ -113,12 +124,12 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
               </div>
               <div className="flex items-end justify-between gap-3">
                 <div className="grid gap-0.5">
-                  <span className="text-[0.64rem] font-bold uppercase text-muted-foreground">Trend score</span>
+                  <span className="text-[0.64rem] font-bold uppercase text-muted-foreground">Momentum score</span>
                   <strong className="text-[1.26rem] leading-none font-[720] text-primary">{formatScore(topic.trendScore)}</strong>
                 </div>
                 <div className="grid justify-items-end gap-1">
                   <Badge variant="secondary">{formatNumber(topic.worksLast3Years)} works</Badge>
-                  <span className="text-[0.66rem] font-bold text-muted-foreground">{topic.qualityLabel}</span>
+                  <span className="text-[0.66rem] font-bold text-muted-foreground">{topic.qualityLabel?.replace('snapshot', 'coverage') || 'Coverage available'}</span>
                 </div>
               </div>
             </CardContent>
@@ -129,33 +140,32 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Momentum-Ranked Topics</CardTitle>
-            <CardDescription>Growth, participation, and cross-topic spread in the current snapshot.</CardDescription>
+            <CardTitle>Topics by Momentum</CardTitle>
+            <CardDescription>Ranked using recent growth, participation, and breadth in the current data release.</CardDescription>
           </div>
           <Filter aria-hidden="true" />
         </CardHeader>
-        <CardContent>
-          <DataRegion density="page">
+        <CardContent className="grid gap-3">
             <Table className={tableClass}>
               <TableHeader>
                 <TableRow>
                   <TableHead className={headClass}>Rank</TableHead>
                   <TableHead className={headClass}>Topic</TableHead>
-                  <TableHead className={headClass}>OpenAlex path</TableHead>
-                  <TableHead className={headClass}>Why it ranks</TableHead>
-                  <TableHead className={headClass}>Signal drivers</TableHead>
-                  <TableHead className={headClass}>Evidence</TableHead>
+                  <TableHead className={headClass}>Research area</TableHead>
+                  <TableHead className={headClass}>What is changing</TableHead>
+                  <TableHead className={headClass}>Contributing factors</TableHead>
+                  <TableHead className={headClass}>Context</TableHead>
                   <TableHead className={headClass}>Recent works</TableHead>
                   <TableHead className={headClass}>Growth</TableHead>
-                  <TableHead className={headClass}>Trend</TableHead>
+                  <TableHead className={headClass}>Momentum</TableHead>
                   <TableHead className={headClass} />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((topic, index) => (
+                {visibleRows.map((topic, index) => (
                   <TableRow className={rowClass} key={topic.slug}>
                     <TableCell className={cellClass}>
-                      <strong>{index + 1}</strong>
+                      <strong>{pageStart + index + 1}</strong>
                     </TableCell>
                     <TableCell className={cellClass}>
                       <strong>{topic.label}</strong>
@@ -170,7 +180,9 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
                     <TableCell className={cellClass}>
                       <strong>{topic.topSubtopic}</strong>
                       <br />
-                      <span className="text-muted-foreground">{topic.whyTrending || 'Momentum is normalized against prior activity.'}</span>
+                      <span className="text-muted-foreground">
+                        {formatNumber(topic.worksLast3Years)} recent works; {formatPercent(topic.growthRate)} growth versus the prior period.
+                      </span>
                     </TableCell>
                     <TableCell className={cellClass}>
                       <div className="flex max-w-[300px] flex-wrap gap-1.5">
@@ -187,7 +199,7 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
                       <span className="text-muted-foreground">
                         {topic.topCountry || 'Unknown'} / {formatPercent(topic.newAuthorShare || 0)} new authors
                       </span>
-                      {topic.qualityLabel && <span className="mt-1 block text-[0.68rem] font-bold text-primary">{topic.qualityLabel}</span>}
+                      {topic.qualityLabel && <span className="mt-1 block text-[0.68rem] font-bold text-muted-foreground">{topic.qualityLabel.replace('snapshot', 'coverage')}</span>}
                     </TableCell>
                     <TableCell className={cellClass}>{formatNumber(topic.worksLast3Years)}</TableCell>
                     <TableCell className={cellClass}>{formatPercent(topic.growthRate)}</TableCell>
@@ -207,7 +219,14 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
                 ))}
               </TableBody>
             </Table>
-          </DataRegion>
+          <Pagination
+            page={currentPage}
+            pageCount={pageCount}
+            pageSize={pageSize}
+            totalItems={rows.length}
+            itemLabel="topics"
+            onPageChange={setPage}
+          />
         </CardContent>
       </Card>
     </div>

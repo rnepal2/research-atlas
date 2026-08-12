@@ -61,7 +61,7 @@ export function TrendChart({ rows }: TrendChartProps) {
           </Button>
         </div>
       </div>
-      <svg className="w-full" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Annual OpenAlex-matched works trend">
+      <svg className="w-full" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Annual matched research works trend">
         <defs>
           <linearGradient id="works-area-gradient" x1="0" x2="0" y1="0" y2="1">
             <stop offset="0%" stopColor="var(--chart-primary)" stopOpacity="0.28" />
@@ -100,7 +100,7 @@ export function TrendChart({ rows }: TrendChartProps) {
       <div className="-mt-1 flex items-center gap-4 text-[0.74rem] text-muted-foreground">
         <span className="inline-flex items-center gap-[7px]">
           <span className="size-[7px] rounded-full bg-primary" />
-          OpenAlex matches
+          Matched works
         </span>
         {includesCurrentYear && <span>Dashed segment: year to date</span>}
       </div>

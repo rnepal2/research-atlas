@@ -39,14 +39,14 @@ export function SelectField({
       <Select value={value} onValueChange={onValueChange}>
         <SelectTrigger
           aria-labelledby={labelId}
-          className="h-9 w-full min-w-0 rounded-card border-border-strong bg-input px-[11px] text-[0.83rem] font-semibold text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition-[border-color,box-shadow] hover:border-[color-mix(in_srgb,var(--primary)_64%,var(--border))] data-[state=open]:border-primary data-[state=open]:ring-3 data-[state=open]:ring-primary/25 dark:bg-[color-mix(in_srgb,var(--card-solid)_78%,transparent)] dark:hover:bg-[color-mix(in_srgb,var(--input)_82%,var(--card-hover))]"
+          className="h-10 w-full min-w-0 rounded-card border-border bg-input px-3 text-[0.84rem] font-semibold text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition-[border-color,box-shadow] hover:border-border-strong data-[state=open]:border-border-strong data-[state=open]:ring-3 data-[state=open]:ring-ring dark:bg-[color-mix(in_srgb,var(--card-solid)_78%,transparent)] dark:hover:bg-[color-mix(in_srgb,var(--input)_82%,var(--card-hover))]"
         >
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent
           position="popper"
           sideOffset={7}
-          className="w-[var(--radix-select-trigger-width)] border border-border-strong bg-popover text-popover-foreground shadow-[0_24px_70px_rgba(0,0,0,0.42)]"
+          className="w-[var(--radix-select-trigger-width)] border border-border bg-popover text-popover-foreground shadow-[0_24px_70px_rgba(0,0,0,0.42)]"
         >
           <SelectGroup>
             {options.map((option) => (

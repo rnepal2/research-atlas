@@ -17,7 +17,7 @@ export function MethodologyPage({ atlas }: MethodologyPageProps) {
       />
 
       <section className="grid grid-cols-[minmax(0,1.18fr)_minmax(260px,0.92fr)_minmax(260px,0.92fr)] gap-2 max-[1160px]:grid-cols-1">
-        <Card className="overflow-hidden border-[color-mix(in_srgb,var(--primary)_34%,var(--border))] bg-[linear-gradient(140deg,color-mix(in_srgb,var(--primary)_10%,transparent),transparent_58%),var(--card)]">
+        <Card className="overflow-hidden bg-[linear-gradient(140deg,color-mix(in_srgb,var(--primary)_4%,transparent),transparent_58%),var(--card)]">
           <CardHeader className="[&>svg]:size-[19px] [&>svg]:text-primary">
             <div>
               <CardTitle>What This Site Is</CardTitle>

@@ -1,4 +1,4 @@
-import { Activity, BookOpen, Building2, Database, Moon, ShieldCheck, Sun, Users } from 'lucide-react'
+import { Activity, BookOpen, Building2, Moon, ShieldCheck, Sun, Users } from 'lucide-react'
 import { useMemo } from 'react'
 import { DensityMap } from '../components/DensityMap'
 import { FrontierCards } from '../components/FrontierCards'
@@ -52,7 +52,13 @@ function topicSkeleton(topic: TopicSummary): TopicProfile {
 
 export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: AtlasPageProps) {
   const initialTopic = useMemo(
-    () => atlas.topics.find((topic) => topic.slug === initialTopicSlug) || atlas.trending.map((item) => atlas.topics.find((topic) => topic.slug === item.slug)).find(Boolean) || atlas.topics[0],
+    () =>
+      atlas.topics.find((topic) => topic.slug === initialTopicSlug) ||
+      atlas.trending
+        .map((item) => atlas.topics.find((topic) => topic.slug === item.slug))
+        .find((topic) => topic?.domain === 'Health Sciences') ||
+      atlas.topics.find((topic) => topic.domain === 'Health Sciences') ||
+      atlas.topics[0],
     [atlas, initialTopicSlug],
   ) as TopicSummary
   const { topic, loading: topicLoading, error: topicError } = useTopicDetail(initialTopic?.slug, initialTopic)
@@ -73,17 +79,12 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
     <div className="grid min-w-0 gap-3">
       <PageHeader
         title="Research Atlas"
-        description="Explore momentum, expertise, papers, geography, and collaboration across curated OpenAlex topics."
+        description="Explore how research topics are changing—across publications, researchers, institutions, geography, and collaboration."
         actionsClassName="min-w-[min(620px,48vw)] flex-[0_1_620px] max-[760px]:w-full max-[760px]:min-w-0 max-[760px]:flex-none"
         actions={
           <div className="flex items-start justify-end gap-2 max-[760px]:w-full max-[760px]:flex-col">
           <GlobalSearch atlas={atlas} />
           <div className="inline-flex shrink-0 items-center gap-2 max-[760px]:w-full max-[760px]:justify-start">
-            <Button asChild variant="outline" size="icon">
-              <a href={atlas.source.url} target="_blank" rel="noreferrer" aria-label="Open OpenAlex" title="Open OpenAlex">
-                <Database aria-hidden="true" />
-              </a>
-            </Button>
             <Button variant="outline" size="icon" onClick={onThemeChange} aria-label="Toggle theme">
               {theme === 'dark' ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}
             </Button>
@@ -92,28 +93,28 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
         }
       />
 
-      <Card className="bg-[linear-gradient(135deg,color-mix(in_srgb,var(--primary)_9%,transparent),transparent_60%),var(--card)] ring-border-strong">
+      <Card className="bg-[linear-gradient(135deg,color-mix(in_srgb,var(--primary)_3%,transparent),transparent_60%),var(--card)]">
         <CardHeader>
           <div>
             <CardTitle>Topic Navigator</CardTitle>
-            <CardDescription>Choose an OpenAlex domain, field, and topic profile.</CardDescription>
+            <CardDescription>Choose a research domain, field, and topic.</CardDescription>
           </div>
-          <Badge variant="default">{selected.workArea}</Badge>
+          <Badge variant="secondary">{selected.workArea}</Badge>
         </CardHeader>
         <CardContent>
           <TopicSelector atlas={atlas} selected={selected} onChange={updateTopic} />
           {(topicLoading || topicError) && (
             <div className="mt-3 rounded-card border border-border bg-card-soft p-3 text-[0.78rem] text-muted-foreground">
-              {topicLoading ? `Loading ${selected.label} detail artifact...` : topicError}
+              {topicLoading ? `Loading the ${selected.label} topic profile...` : topicError}
             </div>
           )}
           <div className="mt-3 grid grid-cols-4 gap-2.5 max-[1160px]:grid-cols-2 max-[760px]:grid-cols-1">
             <div className="grid gap-1 rounded-card border border-border bg-card-soft p-2.5">
-              <span className="text-[0.66rem] font-bold uppercase text-muted-foreground">Snapshot quality</span>
+              <span className="text-[0.66rem] font-bold uppercase text-muted-foreground">Data coverage</span>
               <strong className="text-[1.25rem] leading-none text-foreground">{formatScore(selected.quality?.dataCompletenessScore ?? 0)}</strong>
             </div>
             <div className="grid gap-1 rounded-card border border-border bg-card-soft p-2.5">
-              <span className="text-[0.66rem] font-bold uppercase text-muted-foreground">Works collected</span>
+              <span className="text-[0.66rem] font-bold uppercase text-muted-foreground">Works included</span>
               <strong className="text-[1.25rem] leading-none text-foreground">{formatNumber(selected.quality?.worksCollected ?? selected.metrics.worksLast5Years)}</strong>
             </div>
             <div className="grid gap-1 rounded-card border border-border bg-card-soft p-2.5">
@@ -161,7 +162,7 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
             <div>
               <CardTitle>{selected.label} Activity Trend</CardTitle>
               <CardDescription>
-                Complete annual OpenAlex matches; {new Date().getFullYear()} is year to date.
+                Annual publication activity; {new Date().getFullYear()} is year to date.
               </CardDescription>
             </div>
             <Badge variant="secondary">{formatNumber(selected.papers.length)} selected papers</Badge>
@@ -211,8 +212,8 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Topic Intelligence Signals</CardTitle>
-            <CardDescription>Evidence-based explanations derived from the current snapshot.</CardDescription>
+            <CardTitle>Topic Insights</CardTitle>
+            <CardDescription>Concise explanations of the strongest patterns in the current data.</CardDescription>
           </div>
           <ShieldCheck aria-hidden="true" />
         </CardHeader>

@@ -47,12 +47,12 @@ export function AppShell({ atlas, navItems, activePath, children }: AppShellProp
             }}
             title="Research Atlas"
           >
-            <span className="grid size-10 place-items-center rounded-card border border-border-strong bg-[linear-gradient(135deg,color-mix(in_srgb,var(--primary)_36%,transparent),rgba(255,255,255,0.02)),var(--secondary)] text-primary shadow-[0_14px_34px_rgba(54,215,199,0.16)] [&_svg]:size-5">
+            <span className="grid size-10 place-items-center rounded-card border border-border bg-[linear-gradient(135deg,color-mix(in_srgb,var(--primary)_18%,transparent),rgba(255,255,255,0.02)),var(--secondary)] text-primary [&_svg]:size-5">
               <Command aria-hidden="true" />
             </span>
             <span className={cx('min-w-0', collapsed && 'hidden')}>
               <span className="block whitespace-nowrap font-display text-[0.98rem] leading-[1.15] font-bold">Research Atlas</span>
-              <span className="mt-[3px] block text-[0.72rem] text-muted-foreground">OpenAlex Intelligence</span>
+              <span className="mt-[3px] block text-[0.72rem] text-muted-foreground">Research discovery atlas</span>
             </span>
           </a>
           <Button variant="ghost" size="icon" onClick={() => setCollapsed((value) => !value)} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
@@ -89,9 +89,11 @@ export function AppShell({ atlas, navItems, activePath, children }: AppShellProp
 
         <div className={cx('mt-auto grid shrink-0 gap-3 max-[1160px]:hidden', collapsed ? '-mx-2.5' : '-mx-3.5')}>
           <Separator />
-          <div className={cx('grid gap-0.5 px-5 py-1', collapsed && 'hidden')}>
-            <span className="text-[0.67rem] font-bold uppercase tracking-[0] text-muted-foreground">Data Refresh</span>
-            <span className="text-[0.78rem] font-[680] text-foreground">{formatDate(atlas.generatedAt)}</span>
+          <div className={cx('grid gap-1 px-5 py-1', collapsed && 'hidden')}>
+            <a className="text-[0.7rem] font-[650] text-muted-foreground hover:text-foreground" href={atlas.source.url} target="_blank" rel="noreferrer">
+              Data from OpenAlex
+            </a>
+            <span className="text-[0.72rem] text-muted-foreground">Updated {formatDate(atlas.generatedAt)}</span>
           </div>
         </div>
       </aside>
