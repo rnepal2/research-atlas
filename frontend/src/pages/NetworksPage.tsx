@@ -71,7 +71,7 @@ export function NetworksPage({ atlas, initialTopicSlug }: NetworksPageProps) {
 
       <Card className="bg-[linear-gradient(135deg,color-mix(in_srgb,var(--primary)_3%,transparent),transparent_60%),var(--card)]">
         <CardContent>
-          <TopicSelector atlas={atlas} selected={selected || initialTopic} onChange={updateTopic} />
+          <TopicSelector key={(selected || initialTopic).slug} atlas={atlas} selected={selected || initialTopic} onChange={updateTopic} />
           {(topicLoading || topicError) && (
             <div className="mt-3 rounded-card border border-border bg-card-soft p-3 text-[0.78rem] text-muted-foreground">
               {topicLoading ? `Loading the ${initialTopic.label} network...` : topicError}

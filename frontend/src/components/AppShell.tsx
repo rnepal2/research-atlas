@@ -90,10 +90,8 @@ export function AppShell({ atlas, navItems, activePath, children }: AppShellProp
         <div className={cx('mt-auto grid shrink-0 gap-3 max-[1160px]:hidden', collapsed ? '-mx-2.5' : '-mx-3.5')}>
           <Separator />
           <div className={cx('grid gap-1 px-5 py-1', collapsed && 'hidden')}>
-            <a className="text-[0.7rem] font-[650] text-muted-foreground hover:text-foreground" href={atlas.source.url} target="_blank" rel="noreferrer">
-              Data from OpenAlex
-            </a>
-            <span className="text-[0.72rem] text-muted-foreground">Updated {formatDate(atlas.generatedAt)}</span>
+            <span className="text-[0.7rem] font-[650] text-muted-foreground">Data Refresh</span>
+            <span className="text-[0.72rem] text-muted-foreground">{formatDate(atlas.generatedAt)}</span>
           </div>
         </div>
       </aside>

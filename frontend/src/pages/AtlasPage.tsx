@@ -100,7 +100,7 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
           <Badge variant="secondary">{selected.workArea}</Badge>
         </CardHeader>
         <CardContent>
-          <TopicSelector atlas={atlas} selected={selected} onChange={updateTopic} />
+          <TopicSelector key={selected.slug} atlas={atlas} selected={selected} onChange={updateTopic} />
           {(topicLoading || topicError) && (
             <div className="mt-3 rounded-card border border-border bg-card-soft p-3 text-[0.78rem] text-muted-foreground">
               {topicLoading ? `Loading the ${selected.label} topic profile...` : topicError}
