@@ -5,15 +5,24 @@ interface TopicScope {
   field?: string
 }
 
+const domainDefaultSlugs: Record<string, string> = {
+  'Health Sciences': 'car-t-cell-therapy',
+}
+
 /**
- * Returns the consistently preferred profile for a selection scope. The
- * trending leaderboard controls the preference, with metric-based sorting as
- * a stable fallback for topics that are not present in that leaderboard.
+ * Returns the consistently preferred profile for a selection scope. Explicit
+ * domain defaults take precedence, then the trending leaderboard controls the
+ * preference, with metric-based sorting as a stable fallback.
  */
 export function getDefaultTopic(atlas: AtlasData, scope: TopicScope = {}): TopicSummary | undefined {
   const candidates = atlas.topics.filter(
     (topic) => (!scope.domain || topic.domain === scope.domain) && (!scope.field || topic.field === scope.field),
   )
+  const configuredDefault = scope.domain ? domainDefaultSlugs[scope.domain] : undefined
+  const configuredTopic = candidates.find((topic) => topic.slug === configuredDefault)
+  if (configuredTopic) {
+    return configuredTopic
+  }
   const trendingRank = new Map(atlas.trending.map((topic, index) => [topic.slug, index]))
 
   return [...candidates].sort((left, right) => {
