@@ -38,6 +38,7 @@ NON_PERSON_AUTHOR_MARKERS = (
     "consortium",
     "collaboration",
 )
+NON_SCHOLARLY_TITLE_PREFIXES = ("data from ", "supplemental ", "supplementary ")
 
 
 def require(condition: bool, message: str) -> None:
@@ -73,7 +74,18 @@ def validate_topic(topic: dict[str, Any]) -> None:
         ),
         f"{topic['slug']} includes a non-person researcher signal",
     )
+    require(
+        all(
+            not str(author.get("recentWork") or "").casefold().startswith(NON_SCHOLARLY_TITLE_PREFIXES)
+            for author in topic["authors"]
+        ),
+        f"{topic['slug']} includes a supplemental-data researcher signal",
+    )
     require(all(paper.get("citations", 0) >= 0 for paper in topic["papers"]), f"{topic['slug']} has invalid paper citations")
+    require(
+        all(not str(paper.get("title") or "").casefold().startswith(NON_SCHOLARLY_TITLE_PREFIXES) for paper in topic["papers"]),
+        f"{topic['slug']} includes a supplemental-data paper",
+    )
     require(all(institution.get("works", 0) > 0 for institution in topic["institutions"]), f"{topic['slug']} has an institution without sampled works")
     require(all(country.get("name") for country in topic["countries"]), f"{topic['slug']} has country rows without display names")
     require(all("workShare" in country for country in topic["countries"]), f"{topic['slug']} has country rows without work share")

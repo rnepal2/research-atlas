@@ -17,7 +17,7 @@ sys.path.insert(0, str(ROOT))
 from src.analytics.network_metrics import betweenness_centrality, coauthor_edges, degree_centrality
 from src.analytics.ranking import institution_strength_score, normalize, rising_researcher_score, topic_trend_score
 from src.analytics.topic_metrics import fragmentation_score, growth_rate, hhi, safe_divide
-from src.analytics.work_relevance import work_matches_topic
+from src.analytics.work_relevance import canonical_work_title, work_matches_topic
 
 COUNTRY_NAMES = {
     "AE": "United Arab Emirates",
@@ -899,13 +899,29 @@ def trending_explanation(topic: dict[str, Any]) -> str:
 
 def process_topic(topic: dict[str, Any], raw_dir: Path, current_year: int) -> dict[str, Any]:
     raw_works = read_jsonl(raw_dir / topic["slug"] / "works.jsonl")
-    works = list(
-        {
-            work.get("id"): work
-            for work in raw_works
-            if work.get("id") and publication_year(work) <= current_year and work_matches_topic(work, topic)
-        }.values()
-    )
+    candidates = {
+        work.get("id"): work
+        for work in raw_works
+        if work.get("id") and publication_year(work) <= current_year and work_matches_topic(work, topic)
+    }.values()
+    # OpenAlex occasionally has distinct IDs for duplicate repository records.
+    # Retain one best record per exact normalized title so duplicate uploads
+    # cannot create artificial repeated-activity signals.
+    by_title: dict[str, dict[str, Any]] = {}
+    for work in candidates:
+        title = canonical_work_title(work)
+        existing = by_title.get(title)
+        source = (work.get("primary_location") or {}).get("source") or {}
+        existing_source = ((existing or {}).get("primary_location") or {}).get("source") or {}
+        quality = (source.get("type") == "journal", bool((work.get("primary_location") or {}).get("is_published")), int(work.get("cited_by_count") or 0))
+        existing_quality = (
+            existing_source.get("type") == "journal",
+            bool(((existing or {}).get("primary_location") or {}).get("is_published")),
+            int((existing or {}).get("cited_by_count") or 0),
+        )
+        if existing is None or quality > existing_quality:
+            by_title[title] = work
+    works = list(by_title.values())
 
     yearly_counts = read_json(raw_dir / topic["slug"] / "yearly_counts.json")
     yearly = build_yearly_metrics(works, current_year, yearly_counts)
