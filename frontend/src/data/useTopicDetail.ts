@@ -48,7 +48,7 @@ export function useTopicDetail(slug: string | undefined, fallback?: TopicSummary
       }
       setState({ slug: requestedSlug, topic: null, loading: true, error: null })
       try {
-        const response = await fetch(`${import.meta.env.BASE_URL}data/topics/${requestedSlug}.json`)
+        const response = await fetch(`${import.meta.env.BASE_URL}data/topics/${requestedSlug}.json`, { cache: 'no-store' })
         if (!response.ok) {
           throw new Error(`Could not load topic ${requestedSlug}: ${response.status}`)
         }

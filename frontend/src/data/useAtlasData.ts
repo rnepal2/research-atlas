@@ -21,10 +21,12 @@ export function useAtlasData(): AtlasDataState {
     let cancelled = false
     async function load() {
       try {
-        let response = await fetch(indexUrl)
+        // Data artifacts are regenerated independently of the hashed app
+        // bundle, so never let a browser combine a new UI with a stale index.
+        let response = await fetch(indexUrl, { cache: 'no-store' })
         let loadedFrom = indexUrl
         if (!response.ok) {
-          response = await fetch(fallbackDataUrl)
+          response = await fetch(fallbackDataUrl, { cache: 'no-store' })
           loadedFrom = fallbackDataUrl
         }
         if (!response.ok) {
