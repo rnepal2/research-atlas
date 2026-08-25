@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
 import type { AtlasData } from './types'
 
-const indexUrl = `${import.meta.env.BASE_URL}data/atlas-index.json`
-const fallbackDataUrl = `${import.meta.env.BASE_URL}data/atlas.json`
+// The static host can retain data JSON longer than a newly deployed hashed UI
+// bundle. One version per page load keeps the UI and its data snapshot aligned.
+const dataSnapshotVersion = Date.now().toString(36)
+const indexUrl = `${import.meta.env.BASE_URL}data/atlas-index.json?v=${dataSnapshotVersion}`
+const fallbackDataUrl = `${import.meta.env.BASE_URL}data/atlas.json?v=${dataSnapshotVersion}`
 
 interface AtlasDataState {
   data: AtlasData | null
