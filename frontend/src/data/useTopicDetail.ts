@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
+import { dataSnapshotVersion } from './dataSnapshotVersion'
 import type { TopicProfile, TopicSummary } from './types'
 
 const cache = new Map<string, TopicProfile>()
-const dataSnapshotVersion = Date.now().toString(36)
 
 interface TopicDetailState {
   slug?: string

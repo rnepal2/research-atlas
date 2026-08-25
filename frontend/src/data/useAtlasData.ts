@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
+import { dataSnapshotVersion } from './dataSnapshotVersion'
 import type { AtlasData } from './types'
 
 // The static host can retain data JSON longer than a newly deployed hashed UI
-// bundle. One version per page load keeps the UI and its data snapshot aligned.
-const dataSnapshotVersion = Date.now().toString(36)
+// bundle. The deployment-specific version keeps the UI and its data aligned.
 const indexUrl = `${import.meta.env.BASE_URL}data/atlas-index.json?v=${dataSnapshotVersion}`
 const fallbackDataUrl = `${import.meta.env.BASE_URL}data/atlas.json?v=${dataSnapshotVersion}`
 
