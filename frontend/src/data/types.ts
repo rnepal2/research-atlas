@@ -185,6 +185,7 @@ export interface PaperCollections {
 
 export interface TopicQuality {
   worksCollected: number
+  rawWorksCollected?: number
   topicIdMatchShare: number
   keywordFallbackShare: number
   authorResolutionRate: number

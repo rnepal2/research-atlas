@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT))
 from src.analytics.network_metrics import betweenness_centrality, coauthor_edges, degree_centrality
 from src.analytics.ranking import institution_strength_score, normalize, rising_researcher_score, topic_trend_score
 from src.analytics.topic_metrics import fragmentation_score, growth_rate, hhi, safe_divide
+from src.analytics.work_relevance import work_matches_topic
 
 COUNTRY_NAMES = {
     "AE": "United Arab Emirates",
@@ -114,11 +115,18 @@ def entity_url(openalex_id: str | None) -> str | None:
     return openalex_id if openalex_id and openalex_id.startswith("http") else None
 
 
+def is_credible_author(author: dict[str, Any]) -> bool:
+    name = str(author.get("display_name") or "").strip()
+    normalized = name.casefold()
+    non_person_markers = ("anonymous", "assignee", "research team", "research group", "working group", "consortium", "collaboration")
+    return bool(name) and "*" not in name and not any(marker in normalized for marker in non_person_markers)
+
+
 def author_entries(work: dict[str, Any]) -> list[dict[str, Any]]:
     entries = []
     for authorship in work.get("authorships", []):
         author = authorship.get("author") or {}
-        if author.get("id"):
+        if author.get("id") and is_credible_author(author):
             entries.append({"author": author, "authorship": authorship})
     return entries
 
@@ -337,8 +345,11 @@ def build_authors(works: list[dict[str, Any]], current_year: int, centrality: di
         lambda: {
             "name": "",
             "works": 0,
+            "fractionalWorks": 0.0,
             "recentWorks": 0,
+            "recentFractionalWorks": 0.0,
             "priorWorks": 0,
+            "priorFractionalWorks": 0.0,
             "citations": 0,
             "institutions": Counter(),
             "countries": Counter(),
@@ -346,24 +357,37 @@ def build_authors(works: list[dict[str, Any]], current_year: int, centrality: di
             "recentWork": "",
         }
     )
+    # Entity extracts are a rolling activity sample, so include the current
+    # calendar year. Topic-level momentum remains based on complete OpenAlex
+    # annual counts below, where year-to-date values are kept separate.
+    recent_start = current_year - 2
+    recent_end = current_year
+    prior_start = current_year - 5
+    prior_end = current_year - 3
     for work in works:
         year = int(work.get("publication_year") or 0)
         citations = int(work.get("cited_by_count") or 0)
         primary_topic = topic_label(work.get("primary_topic"))
-        for entry in author_entries(work):
+        entries = author_entries(work)
+        fractional_works = safe_divide(1, max(1, len(entries)))
+        fractional_citations = safe_divide(citations, max(1, len(entries)))
+        for entry in entries:
             author = entry["author"]
             author_id = author["id"]
             row = authors[author_id]
             row["name"] = author.get("display_name") or short_id(author_id)
             row["works"] += 1
-            row["citations"] += citations
+            row["fractionalWorks"] += fractional_works
+            row["citations"] += fractional_citations
             row["topics"][primary_topic] += 1
-            if year >= current_year - 2:
+            if recent_start <= year <= recent_end:
                 row["recentWorks"] += 1
+                row["recentFractionalWorks"] += fractional_works
                 if not row["recentWork"]:
                     row["recentWork"] = work.get("title") or work.get("display_name") or ""
-            elif current_year - 5 <= year <= current_year - 3:
+            elif prior_start <= year <= prior_end:
                 row["priorWorks"] += 1
+                row["priorFractionalWorks"] += fractional_works
             for institution in entry["authorship"].get("institutions", []):
                 if institution.get("display_name"):
                     row["institutions"][institution["display_name"]] += 1
@@ -372,13 +396,15 @@ def build_authors(works: list[dict[str, Any]], current_year: int, centrality: di
 
     rows = []
     for author_id, row in authors.items():
-        if row["recentWorks"] <= 0:
+        # A single coauthored paper—or a negligible fraction of a large
+        # consortium paper—is insufficient evidence for a visibility signal.
+        if row["recentWorks"] < 2 or row["recentFractionalWorks"] < 0.1:
             continue
-        publication_component = normalize(row["recentWorks"], 8)
-        citation_velocity = safe_divide(row["citations"], max(1, row["works"]))
-        growth_component = normalize(max(0.0, growth_rate(row["recentWorks"], row["priorWorks"])), 2.0)
+        publication_component = normalize(row["recentFractionalWorks"], 4)
+        citation_velocity = safe_divide(row["citations"], max(1, row["fractionalWorks"]))
+        growth_component = normalize(max(0.0, growth_rate(row["recentFractionalWorks"], row["priorFractionalWorks"])), 2.0)
         bridge_component = normalize((centrality.get(author_id, 0.0) + bridge.get(author_id, 0.0)) / 2.0, 1.0)
-        focus_component = normalize(row["recentWorks"] / max(1, row["works"]), 1.0)
+        focus_component = normalize(row["recentFractionalWorks"] / max(1, row["fractionalWorks"]), 1.0)
         score = rising_researcher_score(publication_component, normalize(citation_velocity, 250), growth_component, bridge_component, focus_component)
         drivers = []
         if row["recentWorks"] >= 3:
@@ -398,7 +424,7 @@ def build_authors(works: list[dict[str, Any]], current_year: int, centrality: di
                 "country": row["countries"].most_common(1)[0][0] if row["countries"] else "",
                 "works": row["works"],
                 "recentWorks": row["recentWorks"],
-                "citations": row["citations"],
+                "citations": round(row["citations"]),
                 "citationVelocity": round(citation_velocity, 2),
                 "risingScore": round(score, 1),
                 "focus": round(row["recentWorks"] / max(1, row["works"]), 2),
@@ -432,6 +458,8 @@ def build_institutions(works: list[dict[str, Any]], authors: list[dict[str, Any]
     total_citations = max(1, sum(int(work.get("cited_by_count") or 0) for work in works))
     rising_author_institutions = Counter(author["institution"] for author in authors[:20])
 
+    recent_start = current_year - 2
+    recent_end = current_year
     for work in works:
         year = int(work.get("publication_year") or 0)
         citations = int(work.get("cited_by_count") or 0)
@@ -445,7 +473,7 @@ def build_institutions(works: list[dict[str, Any]], authors: list[dict[str, Any]
             row["type"] = institution.get("type") or row["type"]
             row["works"] += 1
             row["citations"] += citations
-            if year >= current_year - 2:
+            if recent_start <= year <= recent_end:
                 row["recentWorks"] += 1
             row["topics"][topic_label(work.get("primary_topic"))] += 1
             for entry in author_entries(work):
@@ -721,7 +749,7 @@ def frontier_cards(topic: dict[str, Any], subtopics: list[dict[str, Any]], autho
     return cards
 
 
-def build_quality(topic: dict[str, Any], works: list[dict[str, Any]], countries: list[dict[str, Any]]) -> dict[str, Any]:
+def build_quality(topic: dict[str, Any], works: list[dict[str, Any]], countries: list[dict[str, Any]], raw_works_count: int) -> dict[str, Any]:
     seed_topic_ids = {short_id(value) for value in topic.get("openalex_topic_ids", [])}
     matched_by_topic = sum(1 for work in works if seed_topic_ids and seed_topic_ids.intersection(work_topic_ids(work)))
     authorships = [authorship for work in works for authorship in work.get("authorships", [])]
@@ -748,6 +776,7 @@ def build_quality(topic: dict[str, Any], works: list[dict[str, Any]], countries:
     )
     return {
         "worksCollected": len(works),
+        "rawWorksCollected": raw_works_count,
         "topicIdMatchShare": round(topic_id_share, 3),
         "keywordFallbackShare": round(1.0 - topic_id_share, 3) if seed_topic_ids else 1.0,
         "authorResolutionRate": round(author_rate, 3),
@@ -869,12 +898,12 @@ def trending_explanation(topic: dict[str, Any]) -> str:
 
 
 def process_topic(topic: dict[str, Any], raw_dir: Path, current_year: int) -> dict[str, Any]:
-    works = read_jsonl(raw_dir / topic["slug"] / "works.jsonl")
+    raw_works = read_jsonl(raw_dir / topic["slug"] / "works.jsonl")
     works = list(
         {
             work.get("id"): work
-            for work in works
-            if work.get("id") and publication_year(work) <= current_year
+            for work in raw_works
+            if work.get("id") and publication_year(work) <= current_year and work_matches_topic(work, topic)
         }.values()
     )
 
@@ -890,7 +919,7 @@ def process_topic(topic: dict[str, Any], raw_dir: Path, current_year: int) -> di
     papers = build_papers(works, current_year)
     paper_collections = build_paper_collections(works, current_year)
     countries = build_country_rows(works)
-    quality = build_quality(topic, works, countries)
+    quality = build_quality(topic, works, countries, len(raw_works))
     quality["yearlyCountSource"] = yearly_counts.get("source", "sample")
     quality["yearlyCountYears"] = len(yearly) if yearly_counts.get("source") else 0
     network = build_author_network(works, authors, edges_counter)
@@ -1008,31 +1037,31 @@ def build_global_leaderboards(topics: list[dict[str, Any]]) -> dict[str, Any]:
     institutions: dict[str, dict[str, Any]] = {}
     for topic in topics:
         for author in topic["authors"]:
-            row = authors.setdefault(
-                author["openalexId"],
-                {
+            row = authors.get(author["openalexId"])
+            if row is None or author.get("risingScore", 0) > row.get("aggregateScore", 0):
+                topics_seen = row.get("topicsSeen", []) if row else []
+                authors[author["openalexId"]] = {
                     **author,
-                    "topicsSeen": [],
-                    "aggregateScore": 0.0,
-                    "aggregateRecentWorks": 0,
-                },
-            )
-            row["topicsSeen"].append(topic["label"])
-            row["aggregateScore"] += author.get("risingScore", 0)
-            row["aggregateRecentWorks"] += author.get("recentWorks", 0)
+                    "topicsSeen": topics_seen,
+                    "aggregateScore": author.get("risingScore", 0),
+                    "aggregateRecentWorks": author.get("recentWorks", 0),
+                }
+                row = authors[author["openalexId"]]
+            if topic["label"] not in row["topicsSeen"]:
+                row["topicsSeen"].append(topic["label"])
         for institution in topic["institutions"]:
-            row = institutions.setdefault(
-                institution["openalexId"],
-                {
+            row = institutions.get(institution["openalexId"])
+            if row is None or institution.get("strengthScore", 0) > row.get("aggregateScore", 0):
+                topics_seen = row.get("topicsSeen", []) if row else []
+                institutions[institution["openalexId"]] = {
                     **institution,
-                    "topicsSeen": [],
-                    "aggregateScore": 0.0,
-                    "aggregateWorks": 0,
-                },
-            )
-            row["topicsSeen"].append(topic["label"])
-            row["aggregateScore"] += institution.get("strengthScore", 0)
-            row["aggregateWorks"] += institution.get("works", 0)
+                    "topicsSeen": topics_seen,
+                    "aggregateScore": institution.get("strengthScore", 0),
+                    "aggregateWorks": institution.get("works", 0),
+                }
+                row = institutions[institution["openalexId"]]
+            if topic["label"] not in row["topicsSeen"]:
+                row["topicsSeen"].append(topic["label"])
 
     return {
         "authors": sorted(authors.values(), key=lambda row: (row["aggregateScore"], row["aggregateRecentWorks"]), reverse=True)[:80],
@@ -1245,7 +1274,7 @@ def main() -> None:
         "trending": trending,
         "methodology": {
             "trendScore": "growth in complete-year OpenAlex publication counts, cross-topic breadth, and a baseline size adjustment",
-            "risingResearcherScore": "recent topic publications, citation velocity, growth versus prior period, bridge signal, and topic focus",
+            "risingResearcherScore": "repeated recent topic publications, fractionally attributed cited-work impact, growth versus the prior period, bridge signal, and topic focus",
             "institutionStrengthScore": "topic publication share, citation share, rising author count, collaboration centrality, and subtopic breadth",
         },
     }

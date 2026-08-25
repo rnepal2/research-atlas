@@ -45,7 +45,7 @@ export function MethodologyPage({ atlas }: MethodologyPageProps) {
             <p className="m-0 text-[0.8rem] leading-[1.6] text-muted-foreground">
               Research Atlas uses OpenAlex works, topics, authorships, institutions, countries, and sources. Data is
               processed offline and published as compact static artifacts. Annual trends use aggregate OpenAlex counts;
-              entity-level views use bounded work samples.
+              entity-level views use bounded, topic-relevant work samples. Researcher signals require repeated recent activity and a meaningful fractional contribution; cited-work impact is also fractionally attributed across coauthors.
             </p>
             <Button asChild variant="outline" size="sm" className="w-fit">
               <a href={atlas.source.url} target="_blank" rel="noopener noreferrer">
@@ -106,9 +106,9 @@ export function MethodologyPage({ atlas }: MethodologyPageProps) {
                 <AccordionTrigger className="text-[0.83rem] hover:no-underline">Signals Are Directional</AccordionTrigger>
                 <AccordionContent>
                   <p className="m-0 text-[0.78rem] leading-[1.5] text-muted-foreground">
-                    Phrases like momentum, rising visibility, and institution strength describe evidence inside the
+                    Phrases like momentum, researcher activity, and institution strength describe evidence inside the
                     snapshot. Momentum compares completed publication years; the current year is shown separately as
-                    year to date. These signals are not claims about scientific quality.
+                    year to date. Researcher visibility requires at least two recent sampled works. These signals are not claims about scientific quality.
                   </p>
                 </AccordionContent>
               </AccordionItem>

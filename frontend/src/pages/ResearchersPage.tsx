@@ -67,7 +67,7 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
     <div className="grid min-w-0 gap-3">
       <PageHeader
         title="Researcher Activity"
-        description="Explore researchers whose recent activity and citation momentum are increasing across the selected topics."
+        description="Explore researchers with repeated recent activity across the selected topics. The all-topics view uses each researcher’s strongest eligible topic profile."
       />
 
       <section className="grid min-w-0 grid-cols-[minmax(220px,1.2fr)_minmax(150px,0.7fr)_minmax(190px,0.9fr)_minmax(240px,1.1fr)] items-end gap-3 max-[900px]:grid-cols-2 max-[760px]:grid-cols-1">
@@ -143,8 +143,8 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Rising Researcher Activity</CardTitle>
-              <CardDescription>Directional indicators based on recent work, citation momentum, topic focus, and collaboration breadth.</CardDescription>
+              <CardTitle>Recent Researcher Activity</CardTitle>
+              <CardDescription>Signals require at least two recent sampled works; cited-work impact is fractional across coauthors, and new work may not yet be cited.</CardDescription>
             </div>
             <Users aria-hidden="true" />
           </CardHeader>
@@ -156,7 +156,7 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
                     <TableHead className={`${headClass} w-[22%]`}>Institution</TableHead>
                     <TableHead className={`${headClass} w-[30%]`}>Topics</TableHead>
                     <TableHead className={headClass}>Recent</TableHead>
-                    <TableHead className={headClass}>Citations</TableHead>
+                    <TableHead className={headClass}>Cited-work impact</TableHead>
                     <TableHead className={`${headClass} max-[1380px]:hidden`}>Bridge</TableHead>
                     <TableHead className={headClass}>Score</TableHead>
                   </TableRow>
@@ -194,6 +194,11 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
                       </TableRow>
                     )
                   })}
+                  {!visibleRows.length && (
+                    <TableRow>
+                      <TableCell className={cellClass} colSpan={7}>No researcher signals meet the minimum evidence threshold for this selection.</TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             <Pagination

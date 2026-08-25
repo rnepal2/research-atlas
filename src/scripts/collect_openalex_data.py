@@ -6,6 +6,7 @@ import hashlib
 import json
 import logging
 import os
+import sys
 import time
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -14,6 +15,11 @@ from urllib.parse import urlencode
 
 import requests
 import yaml
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+
+from src.analytics.work_relevance import work_matches_topic
 
 
 BASE_URL = "https://api.openalex.org"
@@ -203,18 +209,18 @@ def collect_works(client: OpenAlexClient, topic: dict[str, Any], output_dir: Pat
     works_path = output_dir / topic["slug"] / "works.jsonl"
 
     for work in read_jsonl(works_path):
-        if work.get("id"):
+        if work.get("id") and work_matches_topic(work, topic):
             collected[work["id"]] = work
     existing_count = len(collected)
     max_works = max(max_works, existing_count)
-    per_query_cap = max(50, max_works // max(1, len(topic.get("openalex_topic_ids", [])) + len(topic.get("keyword_queries", []))))
+    per_query_cap = max(100, max_works // max(1, len(topic.get("openalex_topic_ids", [])) + len(topic.get("keyword_queries", []))))
 
     for topic_id in topic.get("openalex_topic_ids", []):
         filter_value = f"publication_year:>{min_year},topics.id:{short_openalex_id(topic_id)}"
         for sort_order in ["cited_by_count:desc", "publication_date:desc"]:
             params = {"filter": filter_value, "sort": sort_order}
-            for work in fetch_works_for_params(client, params, max(25, per_query_cap // 2)):
-                if work.get("id"):
+            for work in fetch_works_for_params(client, params, per_query_cap):
+                if work.get("id") and work_matches_topic(work, topic):
                     collected[work["id"]] = work
 
     for query in topic.get("keyword_queries", []):
@@ -224,8 +230,8 @@ def collect_works(client: OpenAlexClient, topic: dict[str, Any], output_dir: Pat
                 "filter": f"publication_year:>{min_year}",
                 "sort": sort_order,
             }
-            for work in fetch_works_for_params(client, params, max(25, per_query_cap // 2)):
-                if work.get("id"):
+            for work in fetch_works_for_params(client, params, per_query_cap):
+                if work.get("id") and work_matches_topic(work, topic):
                     collected[work["id"]] = work
 
     works = list(collected.values())[:max_works]

@@ -29,6 +29,16 @@ TOPIC_KEYS = {
     "frontierCards",
 }
 
+NON_PERSON_AUTHOR_MARKERS = (
+    "anonymous",
+    "assignee",
+    "research team",
+    "research group",
+    "working group",
+    "consortium",
+    "collaboration",
+)
+
 
 def require(condition: bool, message: str) -> None:
     if not condition:
@@ -47,15 +57,29 @@ def validate_topic(topic: dict[str, Any]) -> None:
         f"{topic['slug']} yearly metrics are derived from a biased work sample",
     )
     require(topic["quality"].get("yearlyCountYears") == 10, f"{topic['slug']} has incomplete OpenAlex yearly counts")
-    require(len(topic["papers"]) >= 8, f"{topic['slug']} has too few papers")
-    require(len(topic["authors"]) >= 8, f"{topic['slug']} has too few authors")
-    require(len(topic["institutions"]) >= 8, f"{topic['slug']} has too few institutions")
-    require(len(topic["countries"]) >= 4, f"{topic['slug']} has too few country rows")
+    require(topic["quality"].get("worksCollected", 0) > 0, f"{topic['slug']} has no topic-relevant sampled works")
+    require(
+        topic["quality"].get("rawWorksCollected", 0) >= topic["quality"].get("worksCollected", 0),
+        f"{topic['slug']} reports more qualifying works than raw works",
+    )
+    require(all(author.get("recentWorks", 0) >= 2 for author in topic["authors"]), f"{topic['slug']} includes a one-work researcher signal")
+    require(all(author.get("citations", 0) >= 0 for author in topic["authors"]), f"{topic['slug']} has invalid author citations")
+    require(
+        all(
+            author.get("name")
+            and "*" not in author["name"]
+            and not any(marker in author["name"].casefold() for marker in NON_PERSON_AUTHOR_MARKERS)
+            for author in topic["authors"]
+        ),
+        f"{topic['slug']} includes a non-person researcher signal",
+    )
+    require(all(paper.get("citations", 0) >= 0 for paper in topic["papers"]), f"{topic['slug']} has invalid paper citations")
+    require(all(institution.get("works", 0) > 0 for institution in topic["institutions"]), f"{topic['slug']} has an institution without sampled works")
     require(all(country.get("name") for country in topic["countries"]), f"{topic['slug']} has country rows without display names")
     require(all("workShare" in country for country in topic["countries"]), f"{topic['slug']} has country rows without work share")
-    require(topic["quality"].get("worksCollected", 0) >= 40, f"{topic['slug']} has too few collected works")
     require(topic["quality"].get("latestPublicationYear", 0) >= 2020, f"{topic['slug']} has stale publication coverage")
-    require(topic["network"].get("nodes"), f"{topic['slug']} has no researcher network nodes")
+    if topic["authors"]:
+        require(topic["network"].get("nodes"), f"{topic['slug']} has no researcher network nodes")
     require(topic["institutionNetwork"].get("nodes"), f"{topic['slug']} has no institution network nodes")
     require(len(topic.get("insights", [])) >= 4, f"{topic['slug']} has too few generated insights")
     require(topic.get("paperCollections", {}).get("recentImpact"), f"{topic['slug']} has no recent-impact papers")

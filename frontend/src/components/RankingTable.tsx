@@ -12,6 +12,15 @@ const { table: tableClass, head: headClass, cell: cellClass, row: rowClass, scor
 
 export function RankingTable({ type, rows, limit = 8 }: RankingTableProps) {
   const visible = rows.slice(0, limit)
+  if (!visible.length) {
+    return (
+      <p className="m-0 py-4 text-[0.78rem] leading-[1.45] text-muted-foreground">
+        {type === 'authors'
+          ? 'No researcher signals meet the minimum evidence threshold in this topic sample.'
+          : 'No institution signals are available in this topic sample.'}
+      </p>
+    )
+  }
   if (type === 'authors') {
     const authors = visible as AuthorProfile[]
     return (
@@ -22,7 +31,7 @@ export function RankingTable({ type, rows, limit = 8 }: RankingTableProps) {
               <TableHead className={headClass}>Researcher</TableHead>
               <TableHead className={headClass}>Institution</TableHead>
               <TableHead className={headClass}>Recent</TableHead>
-              <TableHead className={headClass}>Citations</TableHead>
+              <TableHead className={headClass}>Cited-work impact</TableHead>
               <TableHead className={headClass}>Bridge</TableHead>
               <TableHead className={headClass}>Score</TableHead>
             </TableRow>

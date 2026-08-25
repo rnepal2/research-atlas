@@ -7,7 +7,7 @@
   "current": {
     "configuredTopics": 100,
     "topics": 100,
-    "worksCollected": 83270,
+    "worksCollected": 8007,
     "rawTopicsWithWorks": 100,
     "rawWorksTotal": 83568,
     "minimumRawWorksPerTopic": 451,
@@ -15,8 +15,8 @@
     "topicsAtOrAboveTargetDepth": 1,
     "topicsBelowTargetDepth": 99,
     "medianInsightItemsPerTopic": 6,
-    "artifactBytes": 17136523,
-    "indexArtifactBytes": 1908008,
+    "artifactBytes": 14485014,
+    "indexArtifactBytes": 1638721,
     "topicArtifactCount": 100,
     "skippedTopics": 0,
     "shallowestTopics": [
@@ -94,7 +94,7 @@
   },
   "multipliers": {
     "topicCoverage": 1.282,
-    "workCoverage": 1.599,
+    "workCoverage": 0.154,
     "analyticsDepth": 1.0
   },
   "targets": {
@@ -106,7 +106,7 @@
   },
   "deficit": {
     "topicsToFiveX": 290,
-    "worksToFiveX": 177175,
+    "worksToFiveX": 252438,
     "rawTopicsWithoutWorks": 0,
     "avgWorksNeededPerConfiguredTopic": 2604,
     "suggestedCollectionCommand": "./src/refresh_data.sh --stale-below 3000 --max-works 3000"

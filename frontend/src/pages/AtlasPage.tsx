@@ -112,7 +112,7 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
               <strong className="text-[1.25rem] leading-none text-foreground">{formatScore(selected.quality?.dataCompletenessScore ?? 0)}</strong>
             </div>
             <div className="grid gap-1 rounded-card border border-border bg-card-soft p-2.5">
-              <span className="text-[0.66rem] font-bold uppercase text-muted-foreground">Works included</span>
+              <span className="text-[0.66rem] font-bold uppercase text-muted-foreground">Sampled works</span>
               <strong className="text-[1.25rem] leading-none text-foreground">{formatNumber(selected.quality?.worksCollected ?? selected.metrics.worksLast5Years)}</strong>
             </div>
             <div className="grid gap-1 rounded-card border border-border bg-card-soft p-2.5">
@@ -141,13 +141,13 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
           icon={Activity}
         />
         <MetricCard
-          label="Active authors"
+          label="Authors in sample"
           value={formatCompact(selected.metrics.activeAuthors)}
           note={`${formatPercent(selected.metrics.newAuthorShare)} new-author share`}
           icon={Users}
         />
         <MetricCard
-          label="Institutions"
+          label="Institutions in sample"
           value={formatNumber(selected.metrics.activeInstitutions)}
           note={`Concentration ${formatScore(selected.metrics.concentrationScore)}`}
           icon={Building2}
@@ -186,8 +186,8 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Researchers With Increasing Visibility</CardTitle>
-              <CardDescription>Recent activity, citation velocity, topic focus, and bridge signal.</CardDescription>
+              <CardTitle>Researchers with Recent Topic Activity</CardTitle>
+              <CardDescription>At least two recent sampled works; cited-work impact is fractional across coauthors, and new work may not yet be cited.</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
