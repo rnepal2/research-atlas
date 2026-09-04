@@ -47,6 +47,11 @@ WORK_FIELDS = ",".join(
     ]
 )
 TOPIC_FIELDS = "id,display_name,description,works_count,cited_by_count,domain,field,subfield,keywords"
+MAX_RESULTS_PER_QUERY = 100
+
+
+class OpenAlexCollectionDeferredError(RuntimeError):
+    """Raised when the live refresh should stop and fall back to cached raw data."""
 
 
 class OpenAlexClient:
@@ -55,8 +60,8 @@ class OpenAlexClient:
         api_key: str | None,
         cache_dir: Path,
         min_interval: float = 0.28,
-        max_attempts: int = 4,
-        max_retry_wait: int = 90,
+        max_attempts: int = 2,
+        max_retry_wait: int = 15,
         allow_unauthenticated: bool = False,
     ) -> None:
         self.api_key = api_key
@@ -91,6 +96,24 @@ class OpenAlexClient:
                     "or rerun with --allow-unauthenticated for a small development probe."
                 )
             if response.status_code in {429, 500, 502, 503, 504}:
+                if response.status_code == 429:
+                    remaining = response.headers.get("X-RateLimit-Remaining")
+                    if remaining is not None:
+                        try:
+                            if float(remaining) <= 0:
+                                raise OpenAlexCollectionDeferredError(
+                                    "OpenAlex daily API budget is exhausted; using the last complete cached snapshot."
+                                )
+                        except ValueError:
+                            pass
+                    if attempt == self.max_attempts - 1:
+                        raise OpenAlexCollectionDeferredError(
+                            "OpenAlex remained rate-limited after a bounded retry; using the last complete cached snapshot."
+                        )
+                elif attempt == self.max_attempts - 1:
+                    raise OpenAlexCollectionDeferredError(
+                        f"OpenAlex remained unavailable with HTTP {response.status_code}; using the last complete cached snapshot."
+                    )
                 retry_after = response.headers.get("retry-after")
                 wait = min(self.max_retry_wait, int(retry_after) if retry_after and retry_after.isdigit() else 2**attempt)
                 logging.warning("OpenAlex %s for %s; retrying in %ss", response.status_code, response.url, wait)
@@ -185,7 +208,7 @@ def fetch_works_for_params(
     while len(rows) < max_works and cursor:
         page_params = dict(params)
         page_params["cursor"] = cursor
-        page_params["per-page"] = min(200, max_works - len(rows))
+        page_params["per-page"] = min(MAX_RESULTS_PER_QUERY, max_works - len(rows))
         page_params["select"] = WORK_FIELDS
         try:
             payload = client.get("works", page_params)
@@ -213,24 +236,30 @@ def collect_works(client: OpenAlexClient, topic: dict[str, Any], output_dir: Pat
             collected[work["id"]] = work
     existing_count = len(collected)
     max_works = max(max_works, existing_count)
-    per_query_cap = max(100, max_works // max(1, len(topic.get("openalex_topic_ids", [])) + len(topic.get("keyword_queries", []))))
+    query_cap = min(MAX_RESULTS_PER_QUERY, max_works)
 
-    for topic_id in topic.get("openalex_topic_ids", []):
+    topic_ids = topic.get("openalex_topic_ids", [])
+    for topic_id in topic_ids:
         filter_value = f"publication_year:>{min_year},topics.id:{short_openalex_id(topic_id)}"
         for sort_order in ["cited_by_count:desc", "publication_date:desc"]:
             params = {"filter": filter_value, "sort": sort_order}
-            for work in fetch_works_for_params(client, params, per_query_cap):
+            for work in fetch_works_for_params(client, params, query_cap):
                 if work.get("id") and work_matches_topic(work, topic):
                     collected[work["id"]] = work
 
-    for query in topic.get("keyword_queries", []):
+    # Keyword searches cost substantially more than filter requests. Combine
+    # each topic's curated phrases into one advanced search and take one page
+    # each for highly cited and newest works. This keeps a full 100-topic run
+    # comfortably inside the free daily OpenAlex budget.
+    combined_query = yearly_search_query(topic)
+    if not topic_ids and combined_query:
         for sort_order in ["cited_by_count:desc", "publication_date:desc"]:
             params = {
-                "search": query,
+                "search": combined_query,
                 "filter": f"publication_year:>{min_year}",
                 "sort": sort_order,
             }
-            for work in fetch_works_for_params(client, params, per_query_cap):
+            for work in fetch_works_for_params(client, params, query_cap):
                 if work.get("id") and work_matches_topic(work, topic):
                     collected[work["id"]] = work
 
@@ -259,7 +288,7 @@ def collect_yearly_counts(client: OpenAlexClient, topic: dict[str, Any], output_
     params: dict[str, Any] = {
         "filter": f"publication_year:>{min_year}",
         "group_by": "publication_year",
-        "per-page": 200,
+        "per-page": MAX_RESULTS_PER_QUERY,
     }
     if strategy == "topic" and topic_ids:
         params["filter"] += f",topics.id:{'|'.join(topic_ids)}"
@@ -347,6 +376,16 @@ def main() -> None:
     if not topics:
         raise SystemExit("No matching topics found.")
 
+    status_path = Path(args.cache_dir) / "refresh_status.json"
+    write_json(
+        status_path,
+        {
+            "complete": False,
+            "topicsRequested": len(topics),
+            "topicsCompleted": 0,
+            "generatedAt": datetime.now(timezone.utc).isoformat(),
+        },
+    )
     api_key = os.getenv("OPENALEX_API_KEY")
     if not api_key and not args.allow_unauthenticated:
         raise SystemExit(
@@ -356,8 +395,8 @@ def main() -> None:
 
     logging.info("Collecting %s topic(s); target max works per topic is %s", len(topics), args.max_works or DEFAULT_MAX_WORKS)
     min_interval = args.min_interval if args.min_interval is not None else (1.1 if not api_key else 0.28)
-    max_attempts = args.max_attempts if args.max_attempts is not None else (2 if not api_key and args.allow_unauthenticated else 4)
-    max_retry_wait = args.max_retry_wait if args.max_retry_wait is not None else (12 if not api_key and args.allow_unauthenticated else 90)
+    max_attempts = args.max_attempts if args.max_attempts is not None else 2
+    max_retry_wait = args.max_retry_wait if args.max_retry_wait is not None else (12 if not api_key and args.allow_unauthenticated else 15)
     client = OpenAlexClient(
         api_key,
         Path(args.cache_dir),
@@ -366,14 +405,43 @@ def main() -> None:
         max_retry_wait=max_retry_wait,
         allow_unauthenticated=args.allow_unauthenticated,
     )
+    completed_topics = 0
     for topic in topics:
-        if not args.skip_metadata and not args.yearly_only:
-            collect_topic_metadata(client, topic, output_dir)
-        collect_yearly_counts(client, topic, output_dir)
-        if args.yearly_only:
-            continue
-        works = collect_works(client, topic, output_dir, args.max_works)
-        collect_entity_extracts(topic, works, output_dir)
+        try:
+            if not args.skip_metadata and not args.yearly_only:
+                collect_topic_metadata(client, topic, output_dir)
+            collect_yearly_counts(client, topic, output_dir)
+            if args.yearly_only:
+                completed_topics += 1
+                continue
+            works = collect_works(client, topic, output_dir, args.max_works)
+            collect_entity_extracts(topic, works, output_dir)
+            completed_topics += 1
+        except OpenAlexCollectionDeferredError as exc:
+            logging.error("%s", exc)
+            logging.error("Stopped live collection at %s; the last complete published snapshot will be retained.", topic["slug"])
+            write_json(
+                status_path,
+                {
+                    "complete": False,
+                    "topicsRequested": len(topics),
+                    "topicsCompleted": completed_topics,
+                    "stoppedAtTopic": topic["slug"],
+                    "reason": str(exc),
+                    "generatedAt": datetime.now(timezone.utc).isoformat(),
+                },
+            )
+            break
+    else:
+        write_json(
+            status_path,
+            {
+                "complete": True,
+                "topicsRequested": len(topics),
+                "topicsCompleted": completed_topics,
+                "generatedAt": datetime.now(timezone.utc).isoformat(),
+            },
+        )
 
 
 if __name__ == "__main__":

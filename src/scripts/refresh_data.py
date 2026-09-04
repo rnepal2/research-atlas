@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import argparse
+import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -117,6 +119,19 @@ def main() -> None:
         if not args.include_metadata:
             collect.append("--skip-metadata")
         run(collect)
+        collection_status_path = Path(args.cache_dir) / "refresh_status.json"
+        if collection_status_path.exists():
+            collection_status = json.loads(collection_status_path.read_text())
+            if not collection_status.get("complete"):
+                message = (
+                    "OpenAlex collection did not complete; retaining the last complete published snapshot "
+                    f"({collection_status.get('topicsCompleted', 0)}/{collection_status.get('topicsRequested', 0)} topics fetched)."
+                )
+                print(message, flush=True)
+                if os.getenv("GITHUB_ACTIONS") == "true":
+                    print(f"::warning title=OpenAlex refresh deferred::{message}", flush=True)
+                run([sys.executable, str(SCRIPT_DIR / "validate_static_data.py"), *validation_args])
+                return
 
     process = [
         sys.executable,

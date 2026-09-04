@@ -20,7 +20,7 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -53,7 +53,13 @@ jobs:
         env:
           OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
           MAX_WORKS: ${{ inputs.max_works || '1000' }}
-        run: ./src/refresh_data.sh --max-works "$MAX_WORKS" --require-complete-config
+        run: >-
+          ./src/refresh_data.sh
+          --max-works "$MAX_WORKS"
+          --min-interval 0.5
+          --max-attempts 2
+          --max-retry-wait 15
+          --require-complete-config
 
       - name: Build static site
         working-directory: frontend
