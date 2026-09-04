@@ -142,8 +142,9 @@ def main() -> None:
         args.raw_dir,
         "--output-dir",
         args.processed_dir,
-        "--skip-empty",
     ]
+    if not args.require_complete_config:
+        process.append("--skip-empty")
     if args.topic_artifacts:
         process.append("--topic-artifacts")
     run(process)

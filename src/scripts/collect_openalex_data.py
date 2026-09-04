@@ -236,32 +236,38 @@ def collect_works(client: OpenAlexClient, topic: dict[str, Any], output_dir: Pat
             collected[work["id"]] = work
     existing_count = len(collected)
     max_works = max(max_works, existing_count)
-    query_cap = min(MAX_RESULTS_PER_QUERY, max_works)
+    topic_ids = [short_openalex_id(value) for value in topic.get("openalex_topic_ids", [])]
+    filter_value = f"publication_year:>{min_year}"
+    if topic_ids:
+        filter_value += f",topics.id:{'|'.join(topic_ids)}"
 
-    topic_ids = topic.get("openalex_topic_ids", [])
-    for topic_id in topic_ids:
-        filter_value = f"publication_year:>{min_year},topics.id:{short_openalex_id(topic_id)}"
-        for sort_order in ["cited_by_count:desc", "publication_date:desc"]:
-            params = {"filter": filter_value, "sort": sort_order}
-            for work in fetch_works_for_params(client, params, query_cap):
-                if work.get("id") and work_matches_topic(work, topic):
-                    collected[work["id"]] = work
+    # Search each curated phrase once for influential works. Keeping the
+    # phrases separate avoids broad combined searches crowding niche phrases
+    # out of the first page, while the one-page cap keeps API spend bounded.
+    for query in topic.get("keyword_queries", []):
+        params = {
+            "search": query,
+            "filter": filter_value,
+            "sort": "cited_by_count:desc",
+        }
+        for work in fetch_works_for_params(client, params, MAX_RESULTS_PER_QUERY):
+            if work.get("id") and work_matches_topic(work, topic):
+                collected[work["id"]] = work
 
-    # Keyword searches cost substantially more than filter requests. Combine
-    # each topic's curated phrases into one advanced search and take one page
-    # each for highly cited and newest works. This keeps a full 100-topic run
-    # comfortably inside the free daily OpenAlex budget.
+    # Add one recency-focused page across all phrases so the sample supports
+    # current-activity metrics as well as historical impact. At the current
+    # 100-topic configuration this plan remains well below the free daily API
+    # budget, including the yearly-count searches below.
     combined_query = yearly_search_query(topic)
-    if not topic_ids and combined_query:
-        for sort_order in ["cited_by_count:desc", "publication_date:desc"]:
-            params = {
-                "search": combined_query,
-                "filter": f"publication_year:>{min_year}",
-                "sort": sort_order,
-            }
-            for work in fetch_works_for_params(client, params, query_cap):
-                if work.get("id") and work_matches_topic(work, topic):
-                    collected[work["id"]] = work
+    if combined_query:
+        params = {
+            "search": combined_query,
+            "filter": filter_value,
+            "sort": "publication_date:desc",
+        }
+        for work in fetch_works_for_params(client, params, MAX_RESULTS_PER_QUERY):
+            if work.get("id") and work_matches_topic(work, topic):
+                collected[work["id"]] = work
 
     works = list(collected.values())[:max_works]
     write_jsonl(works_path, works)
