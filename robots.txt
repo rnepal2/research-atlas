@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://rnepal2.github.io/research-atlas/sitemap.xml
