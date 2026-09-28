@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Research Atlas</title>
+    <script>
+      (function () {
+        var base = '/research-atlas'
+        var path = window.location.pathname
+        if (path.indexOf(base) === 0) {
+          path = path.slice(base.length)
+        }
+        if (!path) {
+          path = '/'
+        }
+        window.location.replace(base + '/?p=' + encodeURIComponent(path + window.location.search + window.location.hash))
+      })()
+    </script>
+  </head>
+  <body></body>
+</html>
+
