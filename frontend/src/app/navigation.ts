@@ -12,7 +12,7 @@ export const navItems: NavItem[] = [
   { label: 'Explore', path: '/explore', icon: Scan },
   { label: 'Compare', path: '/compare', icon: Columns2 },
   { label: 'Trending', path: '/trending', icon: TrendingUp },
-  { label: 'Researchers', path: '/researchers', icon: Users },
+  { label: 'People & institutions', path: '/people', icon: Users },
   { label: 'Networks', path: '/networks', icon: Network },
   { label: 'Methods & data', path: '/about', icon: Info },
 ]

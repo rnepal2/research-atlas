@@ -7,7 +7,17 @@ import { Button, SelectField } from '../components/ui'
 import { exportPapers, downloadText } from '../lib/exportResearch'
 import { useResearch } from '../data/research'
 
-function Comparison({ atlas, slug, topic, maxValue }: { atlas: AtlasData; slug: string; topic: TopicProfile | null; maxValue: number }) {
+function Comparison({
+  atlas,
+  slug,
+  topic,
+  maxValue,
+}: {
+  atlas: AtlasData
+  slug: string
+  topic: TopicProfile | null
+  maxValue: number
+}) {
   const summary = atlas.topics.find((t) => t.slug === slug)
   if (!summary) return null
   const year = new Date(atlas.generatedAt).getFullYear()
@@ -53,12 +63,29 @@ function Comparison({ atlas, slug, topic, maxValue }: { atlas: AtlasData; slug: 
 }
 
 export function ComparePage({ atlas }: { atlas: AtlasData }) {
-  const [left, setLeft] = useState(() => new URLSearchParams(window.location.search).get('left') || 'ai-agents')
-  const [right, setRight] = useState(() => new URLSearchParams(window.location.search).get('right') || 'retrieval-augmented-generation')
-  const first = useTopicDetail(left, atlas.topics.find(t=>t.slug===left))
-  const second = useTopicDetail(right, atlas.topics.find(t=>t.slug===right))
-  const maxValue = Math.max(1, ...[...(first.topic?.yearlyMetrics || []), ...(second.topic?.yearlyMetrics || [])].map(row=>row.works))
-  useEffect(()=>{window.history.replaceState({},'',`${window.location.pathname}?${new URLSearchParams({left,right})}`)},[left,right])
+  const [left, setLeft] = useState(
+    () => new URLSearchParams(window.location.search).get('left') || 'ai-agents',
+  )
+  const [right, setRight] = useState(
+    () => new URLSearchParams(window.location.search).get('right') || 'retrieval-augmented-generation',
+  )
+  const first = useTopicDetail(
+    left,
+    atlas.topics.find((t) => t.slug === left),
+  )
+  const second = useTopicDetail(
+    right,
+    atlas.topics.find((t) => t.slug === right),
+  )
+  const maxValue = Math.max(
+    1,
+    ...[...(first.topic?.yearlyMetrics || []), ...(second.topic?.yearlyMetrics || [])].map(
+      (row) => row.works,
+    ),
+  )
+  useEffect(() => {
+    window.history.replaceState({}, '', `${window.location.pathname}?${new URLSearchParams({ left, right })}`)
+  }, [left, right])
   const { landscape, manifest } = useResearch()
   const options = atlas.topics.map((t) => ({ value: t.slug, label: t.label }))
   return (
@@ -73,8 +100,8 @@ export function ComparePage({ atlas }: { atlas: AtlasData }) {
         <SelectField label="Second research area" value={right} onValueChange={setRight} options={options} />
       </div>
       <div className="compare-grid">
-        <Comparison atlas={atlas} slug={left} topic={first.topic} maxValue={maxValue}/>
-        <Comparison atlas={atlas} slug={right} topic={second.topic} maxValue={maxValue}/>
+        <Comparison atlas={atlas} slug={left} topic={first.topic} maxValue={maxValue} />
+        <Comparison atlas={atlas} slug={right} topic={second.topic} maxValue={maxValue} />
       </div>
       <div className="method-strip">
         <p>

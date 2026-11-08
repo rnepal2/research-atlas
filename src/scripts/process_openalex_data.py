@@ -807,38 +807,38 @@ def build_insights(
     top_institution = institutions[0] if institutions else None
     top_paper = papers[0] if papers else None
     trend_detail = (
-        f"{top_subtopic['label']} is the fastest visible subtopic, and recent work volume is "
+        f"The sampled topic assignments include {top_subtopic['label']}. Query-matched publication volume is "
         f"{metrics['worksLast3Years']:,} works across the latest three-year window."
         if top_subtopic
         else f"Recent work volume is {metrics['worksLast3Years']:,} works across the latest three-year window."
     )
     cards = [
         {
-            "label": "Why this topic is moving",
+            "label": "Publication context",
             "title": f"{round(metrics['growthRate'] * 100)}% recent growth",
             "value": f"{metrics['worksLast3Years']:,} works",
-            "description": f"{trend_detail} Trend score is {metrics['trendScore']}.",
+            "description": f"{trend_detail} Aggregate query matches and sampled entity evidence describe different populations.",
             "type": "trend",
         },
         {
-            "label": "Where activity concentrates",
+            "label": "An institution to investigate",
             "title": top_institution["name"] if top_institution else "Institution not resolved",
-            "value": f"{metrics['activeInstitutions']:,} institutions",
-            "description": f"Activity looks {concentration_label(metrics['concentrationScore'])}; the leading institution signal is based on works, citations, collaborators, and subtopic breadth.",
+            "value": f"{(top_institution or {}).get('works', 0):,} sampled works",
+            "description": f"One of {metrics['activeInstitutions']:,} institutions represented in the eligible sample. Institutional activity is full-counted across associated publications.",
             "type": "institution",
         },
         {
             "label": "Recent sampled author activity",
             "title": top_author["name"] if top_author else "Author not resolved",
-            "value": f"{round(metrics['newAuthorShare'] * 100)}% first observed in this sample",
+            "value": f"{(top_author or {}).get('recentWorks', 0)} recent sampled works",
             "description": "; ".join(top_author.get("scoreDrivers", [])[:3]) if top_author and top_author.get("scoreDrivers") else "New-author share estimates how much recent activity comes from authors not seen in the prior window.",
             "type": "author",
         },
         {
-            "label": "Highly cited work in this sample",
+            "label": "A paper to investigate",
             "title": top_paper["title"] if top_paper else "Paper not resolved",
             "value": f"{top_paper['citations']:,} citations" if top_paper else "No papers",
-            "description": f"{top_paper['year']} in {top_paper['source']}; ranked by recency, citations, and citation velocity." if top_paper else "No paper signal is available in this topic snapshot.",
+            "description": f"{top_paper['year']} in {top_paper['source']}. Citations are source-reported attention, not a measure of scientific quality." if top_paper else "No paper signal is available in this topic snapshot.",
             "type": "paper",
             "url": top_paper.get("url") if top_paper else None,
         },
@@ -854,10 +854,10 @@ def build_insights(
         cards.insert(
             1,
             {
-                "label": "Fastest visible subtopic",
+                "label": "A theme in the sample",
                 "title": subtopics[0]["label"],
-                "value": f"{round(subtopics[0]['growth'] * 100)}% growth",
-                "description": "Subtopic growth uses recent versus prior three-year work counts among OpenAlex-assigned topics.",
+                "value": f"{subtopics[0]['works']} sampled works",
+                "description": "OpenAlex-assigned topics can overlap. This is a sampled topic assignment, not a claim about the fastest-growing area of the entire field.",
                 "type": "subtopic",
             },
         )
@@ -867,9 +867,9 @@ def build_insights(
 def narrative_summary(topic: dict[str, Any], metrics: dict[str, Any], top_subtopic: str, top_institution: str) -> str:
     return (
         f"{topic['label']} is represented as a curated static OpenAlex topic profile. "
-        f"The current artifact tracks {metrics['worksLast5Years']:,} works in the last five years, "
-        f"with {metrics['activeAuthors']:,} active authors and {metrics['activeInstitutions']:,} active institutions. "
-        f"The strongest visible subtopic is {top_subtopic}, while {top_institution} appears as a leading institution in this snapshot."
+        f"Aggregate queries match {metrics['worksLast5Years']:,} works across five completed years. "
+        f"The separate eligible sample contains {metrics['activeAuthors']:,} authors and {metrics['activeInstitutions']:,} institutions. "
+        f"Sampled topic assignments include {top_subtopic}; {top_institution} is one institution to investigate."
     )
 
 

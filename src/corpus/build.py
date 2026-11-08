@@ -19,6 +19,7 @@ from sklearn.manifold import TSNE
 from src.corpus.collect import CORE_TOPICS
 from src.corpus.store import CorpusStore
 from src.corpus.relevance import title_is_ai
+from src.corpus.entities import entity_evidence
 from src.scripts.collect_openalex_data import load_config, read_jsonl
 from src.analytics.work_relevance import work_matches_topic
 
@@ -110,6 +111,8 @@ def build(db_path, output, raw_dir=Path('data/raw')):
         (directory / name).write_bytes(data)
         files[name] = {'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data)}
     write('landscape.json', payload)
+    for kind, rows in entity_evidence(ordered).items():
+        write(f'{kind}.json', rows)
     insights = []
     for topic in payload['topics']:
         eligible = [p for p in points if topic['slug'] in p['topics']]

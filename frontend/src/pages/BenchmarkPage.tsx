@@ -6,17 +6,17 @@ import type { ResearchPoint } from '../data/research'
 const clusters: [] = []
 const references: string[] = []
 const noop = () => {}
+function coordinate(index: number, salt: number) {
+  let value = Math.imul(index + salt, 374761393)
+  value = Math.imul(value ^ (value >>> 13), 1274126177)
+  return ((value ^ (value >>> 16)) >>> 0) / 4294967296
+}
 
 /** Synthetic fixtures are deliberately isolated from public research evidence. */
 export function BenchmarkPage() {
   const [count, setCount] = useState(1000)
   const [timing, setTiming] = useState(0)
   const points = useMemo(() => {
-    let seed = 42
-    const random = () => {
-      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0
-      return seed / 4294967296
-    }
     return Array.from(
       { length: count },
       (_, i): ResearchPoint => ({
@@ -26,8 +26,8 @@ export function BenchmarkPage() {
         citations: 0,
         type: 'synthetic',
         cluster: i % 12,
-        x: random() * 100,
-        y: random() * 100,
+        x: coordinate(i, 42) * 100,
+        y: coordinate(i, 31415) * 100,
         topics: [],
         shard: '',
         oa: false,

@@ -81,7 +81,9 @@ export function PaperMap({
     try {
       renderer = new Sigma(graph, container.current, {
         renderLabels: true,
-        labelColor: { color: getComputedStyle(document.documentElement).getPropertyValue('--muted-foreground').trim() },
+        labelColor: {
+          color: getComputedStyle(document.documentElement).getPropertyValue('--muted-foreground').trim(),
+        },
         labelSize: 11,
         labelDensity: 0.035,
         labelRenderedSizeThreshold: 5,

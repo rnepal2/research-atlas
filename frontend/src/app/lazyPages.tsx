@@ -1,6 +1,7 @@
 import { lazy } from 'react'
 
 export const OverviewPage = lazy(() => import('../pages/OverviewPage').then(m => ({default: m.OverviewPage})))
+export const PeoplePage = lazy(() => import('../pages/PeoplePage').then(m => ({default: m.PeoplePage})))
 export const ExplorePage = lazy(() => import('../pages/ExplorePage').then(m => ({default: m.ExplorePage})))
 export const ComparePage = lazy(() => import('../pages/ComparePage').then(m => ({default: m.ComparePage})))
 export const BenchmarkPage = lazy(() => import('../pages/BenchmarkPage').then(m => ({default: m.BenchmarkPage})))

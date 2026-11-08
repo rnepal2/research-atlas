@@ -135,9 +135,9 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
           icon={BookOpen}
         />
         <MetricCard
-          label="Momentum"
-          value={formatScore(selected.metrics.trendScore)}
-          note={`${formatPercent(selected.metrics.growthRate)} growth vs prior`}
+          label="Publication growth"
+          value={formatPercent(selected.metrics.growthRate)}
+          note="Three completed years vs the preceding three"
           icon={Activity}
         />
         <MetricCard
