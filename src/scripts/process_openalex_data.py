@@ -14,7 +14,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from src.analytics.network_metrics import betweenness_centrality, coauthor_edges, degree_centrality
+from src.analytics.network_metrics import betweenness_centrality, coauthor_edges, degree_centrality, layout_network
 from src.analytics.ranking import institution_strength_score, normalize, rising_researcher_score, topic_trend_score
 from src.analytics.topic_metrics import fragmentation_score, growth_rate, hhi, safe_divide
 from src.analytics.work_relevance import canonical_work_title, work_matches_topic
@@ -410,7 +410,7 @@ def build_authors(works: list[dict[str, Any]], current_year: int, centrality: di
         if row["recentWorks"] >= 3:
             drivers.append(f"{row['recentWorks']} recent works")
         if citation_velocity >= 50:
-            drivers.append("high citation velocity")
+            drivers.append("high cited-work impact")
         if bridge_component >= 25:
             drivers.append("bridge position")
         if focus_component >= 60:
@@ -596,7 +596,7 @@ def build_author_network(works: list[dict[str, Any]], authors: list[dict[str, An
         if source in top_author_ids and target in top_author_ids:
             edges.append({"source": short_id(source), "target": short_id(target), "weight": weight, "type": "coauthorship"})
 
-    return {"nodes": nodes, "edges": edges}
+    return layout_network({"nodes": sorted(nodes, key=lambda node: node['id']), "edges": edges})
 
 
 def build_institution_network(works: list[dict[str, Any]], institutions: list[dict[str, Any]]) -> dict[str, Any]:
@@ -636,7 +636,7 @@ def build_institution_network(works: list[dict[str, Any]], institutions: list[di
     for (source, target), weight in edge_counts.most_common(220):
         if source in top_ids and target in top_ids:
             edges.append({"source": short_id(source), "target": short_id(target), "weight": weight, "type": "institution-collaboration"})
-    return {"nodes": nodes, "edges": edges}
+    return layout_network({"nodes": sorted(nodes, key=lambda node: node['id']), "edges": edges})
 
 
 def build_network_communities(network: dict[str, Any]) -> list[dict[str, Any]]:
@@ -783,6 +783,8 @@ def build_quality(topic: dict[str, Any], works: list[dict[str, Any]], countries:
         "authorResolutionRate": round(author_rate, 3),
         "institutionResolutionRate": round(institution_rate, 3),
         "countryResolutionRate": round(country_rate, 3),
+        "authorshipAffiliationRate": round(safe_divide(sum(bool(a.get('institutions')) for a in authorships), author_slots), 3),
+        "authorshipCountryRate": round(safe_divide(sum(any(i.get('country_code') for i in a.get('institutions', [])) for a in authorships), author_slots), 3),
         "latestPublicationYear": latest_year,
         "mappedCountries": len(country_rows),
         "dataCompletenessScore": round(100 * completeness, 1),
@@ -826,14 +828,14 @@ def build_insights(
             "type": "institution",
         },
         {
-            "label": "Who is entering the field",
+            "label": "Recent sampled author activity",
             "title": top_author["name"] if top_author else "Author not resolved",
-            "value": f"{round(metrics['newAuthorShare'] * 100)}% new-author share",
+            "value": f"{round(metrics['newAuthorShare'] * 100)}% first observed in this sample",
             "description": "; ".join(top_author.get("scoreDrivers", [])[:3]) if top_author and top_author.get("scoreDrivers") else "New-author share estimates how much recent activity comes from authors not seen in the prior window.",
             "type": "author",
         },
         {
-            "label": "Which papers changed the signal",
+            "label": "Highly cited work in this sample",
             "title": top_paper["title"] if top_paper else "Paper not resolved",
             "value": f"{top_paper['citations']:,} citations" if top_paper else "No papers",
             "description": f"{top_paper['year']} in {top_paper['source']}; ranked by recency, citations, and citation velocity." if top_paper else "No paper signal is available in this topic snapshot.",
@@ -844,7 +846,7 @@ def build_insights(
             "label": "Geographic footprint",
             "title": top_country.get("name") or country_name(top_country["country"]) if top_country else "Country not resolved",
             "value": f"{quality['mappedCountries']} mapped countries",
-            "description": f"{round((top_country or {}).get('workShare', 0) * 100)}% of mapped works are attributed to the leading country; country resolution is {round(quality['countryResolutionRate'] * 100)}%.",
+            "description": f"{round((top_country or {}).get('workShare', 0) * 100)}% of country-work attributions belong to the leading country. International works contribute to multiple countries.",
             "type": "geo",
         },
     ]
@@ -1274,7 +1276,9 @@ def main() -> None:
     )
     leaderboards = build_global_leaderboards(processed_topics)
     artifact = {
-        "version": 1,
+        "version": 2,
+        "processedAt": datetime.now(timezone.utc).isoformat(),
+        "metricContractVersion": "2",
         "generatedAt": datetime.now(timezone.utc).isoformat(),
         "artifactStatus": "openalex-derived" if any(topic["papers"] for topic in processed_topics) else "sample-empty",
         "source": {

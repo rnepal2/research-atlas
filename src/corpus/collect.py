@@ -6,7 +6,7 @@ import hashlib
 import json
 import os
 import re
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 from src.corpus.store import CorpusStore
@@ -32,12 +32,14 @@ def query_for(topic):
                        for phrase in topic.get('keyword_queries', []))
 
 
-def collect(store, client, topics, max_pages=50, budget=.25, start_year=2017):
+def collect(store, client, topics, max_pages=50, budget=.25, start_year=2017, recent_days=None):
     pages = 0
     for year in range(date.today().year, start_year - 1, -1):
         for topic in topics:
             params = {'search': query_for(topic), 'filter': f'publication_year:{year}',
                       'per_page': 100, 'select': WORK_FIELDS + ',referenced_works,updated_date,is_retracted'}
+            if recent_days:
+                params['filter'] += f',from_publication_date:{date.today() - timedelta(days=recent_days)}'
             version = hashlib.sha256(json.dumps(params, sort_keys=True).encode()).hexdigest()[:16]
             partition = f'{topic["slug"]}/{year}/{version}'
             state = store.checkpoint(partition)
@@ -65,6 +67,8 @@ def main():
     parser.add_argument('--budget', type=float, default=.25)
     parser.add_argument('--start-year', type=int, default=2017)
     parser.add_argument('--reconcile', action='store_true', help='Restart completed partitions to capture late indexing and corrections.')
+    parser.add_argument('--topic', action='append', help='Restrict to named core topic slugs; repeat to select several.')
+    parser.add_argument('--recent-days', type=int, help='Overlapping publication-date refresh; does not detect every older metadata change.')
     args = parser.parse_args()
     load_local_env()
     key = os.getenv('OPENALEX_API_KEY')
@@ -76,7 +80,9 @@ def main():
             store.db.execute('DELETE FROM partitions')
     client = OpenAlexClient(key, Path('.cache/corpus/http'), min_interval=.7)
     try:
-        print(json.dumps(collect(store, client, [t for t in load_config(Path('data/config/topics.yaml')) if t['slug'] in CORE_TOPICS], args.max_pages, args.budget, args.start_year)))
+        topics = [t for t in load_config(Path('data/config/topics.yaml')) if t['slug'] in (args.topic or CORE_TOPICS)]
+        start_year = (date.today() - timedelta(days=args.recent_days)).year if args.recent_days else args.start_year
+        print(json.dumps(collect(store, client, topics, args.max_pages, args.budget, start_year, args.recent_days)))
     except OpenAlexCollectionDeferredError:
         print('Collection deferred by OpenAlex; committed pages are safe. Run again to resume.')
     finally:

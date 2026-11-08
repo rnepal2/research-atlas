@@ -30,12 +30,17 @@ export function hrefFor(path: string): string {
 }
 
 export function navigate(path: string): void {
+  const topic = path.match(/^\/topic\/([^/]+)/)?.[1]
+  if (topic) sessionStorage.setItem('atlas:topic', topic)
+  const remembered = sessionStorage.getItem('atlas:topic')
+  if (remembered && path === '/networks') path = `/topic/${remembered}/network`
   window.history.pushState({}, '', hrefFor(path))
   window.dispatchEvent(new Event('atlas:navigate'))
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 export function isActivePath(activePath: string, itemPath: string): boolean {
+  if (itemPath === '/networks' && /^\/topic\/[^/]+\/network$/.test(activePath)) return true
   if (itemPath === '/') {
     return activePath === '/'
   }

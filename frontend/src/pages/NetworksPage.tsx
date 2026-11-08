@@ -2,9 +2,7 @@ import { Building2, Globe2, Users } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { DensityMap } from '../components/DensityMap'
 import { IntelligenceNetwork } from '../components/IntelligenceNetwork'
-import { MetricCard } from '../components/MetricCard'
 import { PageHeader } from '../components/PageHeader'
-import { TopicSelector } from '../components/TopicSelector'
 import {
   Accordion,
   AccordionContent,
@@ -20,6 +18,7 @@ import {
   Tabs,
   TabsList,
   TabsTrigger,
+  SelectField,
 } from '../components/ui'
 import { useTopicDetail } from '../data/useTopicDetail'
 import type { AtlasData, NetworkCommunitySummary, TopicSummary } from '../data/types'
@@ -69,36 +68,29 @@ export function NetworksPage({ atlas, initialTopicSlug }: NetworksPageProps) {
         }
       />
 
-      <Card className="bg-[linear-gradient(135deg,color-mix(in_srgb,var(--primary)_3%,transparent),transparent_60%),var(--card)]">
-        <CardContent>
-          <TopicSelector key={(selected || initialTopic).slug} atlas={atlas} selected={selected || initialTopic} onChange={updateTopic} />
+      <div className="network-scope">
+          <SelectField label="Research area" value={initialTopic.slug} options={atlas.topics.map(t=>({value:t.slug,label:t.label}))} onValueChange={slug=>updateTopic(atlas.topics.find(t=>t.slug===slug)!)}/>
           {(topicLoading || topicError) && (
             <div className="mt-3 rounded-card border border-border bg-card-soft p-3 text-[0.78rem] text-muted-foreground">
               {topicLoading ? `Loading the ${initialTopic.label} network...` : topicError}
             </div>
           )}
-        </CardContent>
-      </Card>
+      </div>
 
-      <section className="grid grid-cols-3 gap-2 max-[900px]:grid-cols-1">
-        <MetricCard
-          label={mode === 'institutions' ? 'Institution nodes' : 'Researcher nodes'}
-          value={formatNumber(activeNetwork.nodes.length)}
-          note={`${formatNumber(activeNetwork.edges.length)} collaboration edges`}
-          icon={Users}
-          compact
-        />
-        <MetricCard compact label="Communities" value={formatNumber(activeCommunities.length)} note="Clusters in the active view" icon={Building2} />
-        <MetricCard compact label="Countries" value={formatNumber(geographicCountries.length)} note="Authorship-country activity" icon={Globe2} />
+      <section className="network-statline">
+        <span><strong>{activeNetwork.nodes.length}</strong> nodes</span>
+        <span><strong>{activeNetwork.edges.length}</strong> sampled collaboration edges</span>
+        <span><strong>{activeCommunities.length}</strong> {mode === 'institutions' ? 'country groups' : 'topic groups'}</span>
+        <span><strong>{geographicCountries.length}</strong> countries</span>
       </section>
 
       {selected && mode === 'researchers' && (
-        <section className="grid h-[clamp(25rem,calc(100dvh-19rem),44rem)] grid-cols-[minmax(0,1fr)_300px] gap-2 max-[1160px]:h-auto max-[1160px]:grid-cols-1">
+        <section className="network-stage">
           <Card className="min-h-0">
             <CardHeader>
               <div>
-                <CardTitle>Researcher Coauthorship Communities</CardTitle>
-                <CardDescription>Colors identify topic communities; node size reflects the activity score.</CardDescription>
+                <CardTitle>Researcher coauthorship</CardTitle>
+                <CardDescription>Colors group topic assignments, not detected communities. Size reflects an experimental activity score.</CardDescription>
               </div>
             </CardHeader>
             <CardContent className="min-h-0 flex-1">
@@ -114,7 +106,7 @@ export function NetworksPage({ atlas, initialTopicSlug }: NetworksPageProps) {
       )}
 
       {selected && mode === 'institutions' && (
-        <section className="grid h-[clamp(25rem,calc(100dvh-19rem),44rem)] grid-cols-[minmax(0,1fr)_300px] gap-2 max-[1160px]:h-auto max-[1160px]:grid-cols-1">
+        <section className="network-stage">
           <Card className="min-h-0">
             <CardHeader>
               <div>
@@ -176,7 +168,7 @@ function NetworkInspector({ title, rows, communities }: { title: string; rows: s
         </DataRegion>
         {topCommunity && (
           <div className="grid gap-[7px] rounded-card border border-border bg-card-soft p-3">
-            <span className="text-[0.68rem] font-bold uppercase text-muted-foreground">Dominant community</span>
+            <span className="text-[0.68rem] font-bold uppercase text-muted-foreground">Largest displayed group</span>
             <strong className="font-display text-base font-[720]">{topCommunity.label}</strong>
             <p className="m-0 text-[0.75rem] leading-[1.4] text-muted-foreground">
               {formatNumber(topCommunity.nodeCount)} nodes, {formatNumber(topCommunity.edgeCount)} internal edges, average score {formatNumber(topCommunity.avgScore)}.

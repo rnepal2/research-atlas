@@ -16,6 +16,16 @@ export function MethodologyPage({ atlas }: MethodologyPageProps) {
         description="A public research intelligence atlas for exploring topic momentum, expertise, papers, geography, and collaboration."
       />
 
+      <Card>
+        <CardHeader><CardTitle>The AI research landscape</CardTitle><CardDescription>A focused discovery surface with inspectable source evidence.</CardDescription></CardHeader>
+        <CardContent className="grid gap-3 text-sm leading-relaxed text-muted-foreground">
+          <p>The landscape shows unique OpenAlex records that pass curated topic rules and a conservative AI title filter. Coverage is partial. It is not a complete census of AI research, and title filtering can miss relevant papers.</p>
+          <p>Coordinates are computed offline from TF-IDF text features, truncated SVD and seeded t-SNE. Thematic groups use k-means in latent space. Nearby points share language; distance does not prove agreement, citation, scientific quality or a causal relationship. Global distances between t-SNE clusters should not be interpreted quantitatively.</p>
+          <p>Select a paper to inspect its authorships, affiliations and abstract. When actual reference IDs are available, the map shows references within the current view. Missing references are disclosed; related-work suggestions are not treated as citations.</p>
+          <p>Saved reading lists stay in this browser. Exports include snapshot IDs. The synthetic rendering benchmark is a development fixture and is never counted as research coverage. Bibliographic records may contain source errors; source observation dates and inclusion rules travel with the evidence.</p>
+        </CardContent>
+      </Card>
+
       <section className="grid grid-cols-[minmax(0,1.18fr)_minmax(260px,0.92fr)_minmax(260px,0.92fr)] gap-2 max-[1160px]:grid-cols-1">
         <Card className="overflow-hidden bg-[linear-gradient(140deg,color-mix(in_srgb,var(--primary)_4%,transparent),transparent_58%),var(--card)]">
           <CardHeader className="[&>svg]:size-[19px] [&>svg]:text-primary">

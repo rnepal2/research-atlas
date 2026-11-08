@@ -248,6 +248,8 @@ export interface NetworkData {
 }
 
 export interface NetworkNode {
+  x?: number
+  y?: number
   id: string
   openalexId: string
   label: string

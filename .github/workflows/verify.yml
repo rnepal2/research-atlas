@@ -20,6 +20,10 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: python -m pip install -r requirements.txt
       - run: python -m unittest discover -s tests -v
+      - run: |
+          if [ -f data/research/research-manifest.json ]; then
+            python -m src.corpus.validate
+          fi
       - run: npm ci
         working-directory: frontend
       - run: npm run lint && npm run build

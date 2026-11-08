@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import type { AtlasData } from '../data/types'
 import { findTopic } from '../lib/router'
-import { AtlasPage, MethodologyPage, NetworksPage, NotFoundPage, ResearchersPage, TrendingPage } from './lazyPages'
+import { AtlasPage, MethodologyPage, NetworksPage, NotFoundPage, ResearchersPage, TrendingPage, OverviewPage, ExplorePage, ComparePage, BenchmarkPage } from './lazyPages'
 
 interface RenderRouteParams {
   atlas: AtlasData
@@ -20,7 +20,15 @@ export function renderRoute({ atlas, path, theme, onThemeChange }: RenderRoutePa
   )
   let page
 
-  if (path === '/' || (topicMatch && matchedTopic && !topicMatch[2])) {
+  if (path === '/') {
+    page = <OverviewPage atlas={atlas} theme={theme} onThemeChange={onThemeChange}/>
+  } else if (path === '/benchmark' && import.meta.env.DEV) {
+    page = <BenchmarkPage/>
+  } else if (path === '/explore') {
+    page = <ExplorePage/>
+  } else if (path === '/compare') {
+    page = <ComparePage atlas={atlas}/>
+  } else if (path === '/atlas' || (topicMatch && matchedTopic && !topicMatch[2])) {
     page = <AtlasPage atlas={atlas} initialTopicSlug={matchedTopic?.slug} theme={theme} onThemeChange={onThemeChange} />
   } else if (path === '/trending') {
     page = <TrendingPage atlas={atlas} />

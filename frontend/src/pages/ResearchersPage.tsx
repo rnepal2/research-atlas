@@ -21,6 +21,7 @@ import {
 import { useTopicDetail } from '../data/useTopicDetail'
 import type { AtlasData } from '../data/types'
 import { formatCompact, formatScore } from '../lib/format'
+import { navigate } from '../lib/router'
 
 interface ResearchersPageProps {
   atlas: AtlasData
@@ -39,6 +40,7 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
   const [institution, setInstitution] = useState('All institutions')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [page, setPage] = useState(1)
+  const [sort, setSort] = useState('recent')
   const pageSize = 10
   const searchLabelId = useId()
   const scopedTopic = useMemo(() => atlas.topics.find((topic) => topic.slug === topicSlug), [atlas.topics, topicSlug])
@@ -55,8 +57,8 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
       .filter((author) => `${author.name} ${author.institution} ${author.topics.join(' ')}`.toLowerCase().includes(normalized))
       .filter((author) => country === 'All countries' || (author.country || 'Unknown') === country)
       .filter((author) => institution === 'All institutions' || author.institution === institution)
-      .slice(0, 50)
-  }, [source, query, country, institution])
+      .sort((a,b) => sort === 'name' ? a.name.localeCompare(b.name) : sort === 'impact' ? b.citations-a.citations : b.recentWorks-a.recentWorks || b.citations-a.citations)
+  }, [source, query, country, institution, sort])
   const pageCount = Math.max(1, Math.ceil(rows.length / pageSize))
   const currentPage = Math.min(page, pageCount)
   const pageStart = (currentPage - 1) * pageSize
@@ -139,6 +141,7 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
         </Card>
       )}
 
+      <div className="max-w-[260px]"><SelectField label="Sort researchers" value={sort} onValueChange={value=>{setSort(value);setPage(1)}} options={[{value:'recent',label:'Recent sampled works'},{value:'impact',label:'Cited-work impact'},{value:'name',label:'Name'}]}/></div>
       <section className="grid grid-cols-[minmax(0,1fr)_292px] gap-2.5 max-[1160px]:grid-cols-1">
         <Card>
           <CardHeader>
@@ -152,13 +155,13 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
               <Table className={tableClass}>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className={`${headClass} w-[22%]`}>Researcher</TableHead>
-                    <TableHead className={`${headClass} w-[22%]`}>Institution</TableHead>
-                    <TableHead className={`${headClass} w-[30%]`}>Topics</TableHead>
+                    <TableHead className={`${headClass} w-[23%]`}>Researcher</TableHead>
+                    <TableHead className={`${headClass} w-[25%]`}>Institution</TableHead>
+                    <TableHead className={`${headClass} w-[18%]`}>Topics</TableHead>
                     <TableHead className={headClass}>Recent</TableHead>
                     <TableHead className={headClass}>Cited-work impact</TableHead>
                     <TableHead className={`${headClass} max-[1380px]:hidden`}>Bridge</TableHead>
-                    <TableHead className={headClass}>Score</TableHead>
+                    <TableHead className={headClass}>Experimental score</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -256,6 +259,7 @@ export function ResearchersPage({ atlas, initialTopicSlug }: ResearchersPageProp
                 </div>
               </div>
               {selected.recentWork && <p className="m-0 text-[0.77rem] leading-[1.45] text-muted-foreground">Recent work: {selected.recentWork}</p>}
+              {selected.recentWork && <button className="text-left text-sm text-primary" onClick={()=>navigate(`/explore?q=${encodeURIComponent(selected.recentWork)}`)}>Find this work in the AI landscape →</button>}
               {selected.url && (
                 <a className="inline-flex items-center gap-1.5 text-[0.76rem] font-bold text-primary" href={selected.url} target="_blank" rel="noreferrer">
                   OpenAlex profile

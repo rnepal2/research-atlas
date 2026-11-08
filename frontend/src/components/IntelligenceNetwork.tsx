@@ -1,5 +1,4 @@
 import Graph from 'graphology'
-import forceAtlas2 from 'graphology-layout-forceatlas2'
 import { LocateFixed, Minus, Plus } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Sigma from 'sigma'
@@ -65,9 +64,9 @@ function buildGraph(network: NetworkData, mode: 'author' | 'institution') {
       ...node,
       nodeRole: node.type,
       type: 'circle',
-      x: position.x,
-      y: position.y,
-      label: '',
+      x: node.x ?? position.x,
+      y: node.y ?? position.y,
+      label: node.label,
       fullLabel: node.label,
       color,
       size: mode === 'institution' ? 5 + Math.min(13, Math.sqrt(score) * 1.45) : 4 + Math.min(11, Math.sqrt(score) * 1.22),
@@ -89,18 +88,6 @@ function buildGraph(network: NetworkData, mode: 'author' | 'institution') {
       size: Math.max(0.4, Math.min(2.4, Math.sqrt(edge.weight) * 0.55)),
       weight: edge.weight,
     })
-  })
-
-  forceAtlas2.assign(graph, {
-    iterations: 170,
-    settings: {
-      adjustSizes: true,
-      barnesHutOptimize: true,
-      edgeWeightInfluence: 0.65,
-      gravity: 1.2,
-      scalingRatio: mode === 'institution' ? 6 : 8,
-      slowDown: 4,
-    },
   })
 
   return { graph, communities, communityIndex, colors }
@@ -142,8 +129,8 @@ export function IntelligenceNetwork({ network, mode, className }: IntelligenceNe
       },
       labelColor: { color: graphBundle.colors.label },
       labelDensity: 0.08,
-      labelFont: 'Inter',
-      labelRenderedSizeThreshold: 1000,
+      labelFont: 'Geist Variable',
+      labelRenderedSizeThreshold: 10,
       minCameraRatio: 0.42,
       maxCameraRatio: 2.2,
       nodeReducer: (node, data) => {
@@ -154,8 +141,8 @@ export function IntelligenceNetwork({ network, mode, className }: IntelligenceNe
         if (node === hoveredNode) {
           return {
             ...data,
-            label: '',
-            forceLabel: false,
+            label: data.fullLabel,
+            forceLabel: true,
             color: data.originalColor || data.color,
             size: size * 1.42,
             zIndex: 10,

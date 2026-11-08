@@ -19,5 +19,6 @@ class CorpusTests(unittest.TestCase):
             self.assertEqual(store.db.execute('SELECT count(*) FROM works').fetchone()[0], 1)
             self.assertEqual(store.db.execute('SELECT count(*) FROM memberships').fetchone()[0], 1)
             self.assertEqual(store.checkpoint('p'), (None, 1))
+            self.assertEqual(store.db.execute('SELECT fetched FROM partitions WHERE id=?', ('p',)).fetchone()[0], 1)
             self.assertAlmostEqual(store.spent_today(), .002)
             store.close()

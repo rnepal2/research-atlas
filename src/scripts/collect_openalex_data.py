@@ -81,7 +81,7 @@ class OpenAlexClient:
         url = f"{BASE_URL}/{path.lstrip('/')}"
         cache_key = hashlib.sha256(f"{url}?{urlencode(sorted(params.items()))}".encode()).hexdigest()
         cache_path = self.cache_dir / f"{cache_key}.json"
-        if use_cache and cache_path.exists():
+        if use_cache and cache_path.exists() and time.time() - cache_path.stat().st_mtime < 86400:
             return json.loads(cache_path.read_text())
 
         for attempt in range(self.max_attempts):

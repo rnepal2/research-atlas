@@ -1,4 +1,4 @@
-import { Compass, Info, Network, TrendingUp, Users } from 'lucide-react'
+import { Compass, Info, Network, TrendingUp, Users, Scan, Columns2 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 export interface NavItem {
@@ -8,9 +8,11 @@ export interface NavItem {
 }
 
 export const navItems: NavItem[] = [
-  { label: 'Atlas', path: '/', icon: Compass },
+  { label: 'Overview', path: '/', icon: Compass },
+  { label: 'Explore', path: '/explore', icon: Scan },
+  { label: 'Compare', path: '/compare', icon: Columns2 },
   { label: 'Trending', path: '/trending', icon: TrendingUp },
   { label: 'Researchers', path: '/researchers', icon: Users },
   { label: 'Networks', path: '/networks', icon: Network },
-  { label: 'About', path: '/about', icon: Info },
+  { label: 'Methods & data', path: '/about', icon: Info },
 ]

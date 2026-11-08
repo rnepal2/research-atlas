@@ -42,3 +42,17 @@ def betweenness_centrality(edges: Counter, max_nodes: int = 180) -> dict[str, fl
         graph, k=min(max_nodes, graph.number_of_nodes()), seed=42,
         weight="distance", normalized=True,
     )
+
+
+def layout_network(network: dict) -> dict:
+    """Precompute a stable layout; keep categorical grouping distinct from topology."""
+    import networkx as nx
+
+    graph = nx.Graph()
+    graph.add_nodes_from(sorted(node['id'] for node in network['nodes']))
+    graph.add_weighted_edges_from((edge['source'], edge['target'], edge['weight']) for edge in network['edges'])
+    positions = nx.spring_layout(graph, seed=42, iterations=80)
+    for node in network['nodes']:
+        node['x'], node['y'] = map(float, positions[node['id']])
+    network['layout'] = {'method': 'spring', 'seed': 42, 'iterations': 80, 'computedOffline': True}
+    return network

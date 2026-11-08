@@ -55,6 +55,10 @@ export function ResearchAtlasApp() {
           description: 'Ranked research topics by completed-period publication growth and cross-topic breadth.',
         }
       }
+      if (path === '/explore' || path === '/compare') return {
+        title: `${path === '/explore' ? 'Explore the AI landscape' : 'Compare research areas'} | Research Atlas`,
+        description: 'Investigate AI research through papers, thematic landscapes, explicit coverage and source evidence.',
+      }
       if (path === '/researchers') {
         return {
           title: 'Researcher Activity | Research Atlas',

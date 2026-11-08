@@ -13,10 +13,12 @@ from pathlib import Path
 import numpy as np
 from sklearn.cluster import MiniBatchKMeans
 from sklearn.decomposition import TruncatedSVD
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer, ENGLISH_STOP_WORDS
+from sklearn.manifold import TSNE
 
 from src.corpus.collect import CORE_TOPICS
 from src.corpus.store import CorpusStore
+from src.corpus.relevance import title_is_ai
 from src.scripts.collect_openalex_data import load_config, read_jsonl
 from src.analytics.work_relevance import work_matches_topic
 
@@ -35,29 +37,32 @@ def build(db_path, output, raw_dir=Path('data/raw')):
     started = time.perf_counter()
     config = [t for t in load_config(Path('data/config/topics.yaml')) if t['slug'] in CORE_TOPICS]
     store = CorpusStore(db_path)
+    observed = dict(store.db.execute('SELECT work,max(day) FROM observations GROUP BY work'))
     works = {}
     memberships = defaultdict(set)
     allowed_types = {'article', 'review', 'preprint', 'conference-paper', 'proceedings-article', 'report'}
     for topic in config:
         for work in read_jsonl(raw_dir / topic['slug'] / 'works.jsonl'):
-            if work.get('id') and work.get('type') in allowed_types and work_matches_topic(work, topic):
+            if work.get('id') and work.get('type') in allowed_types and title_is_ai(work) and work_matches_topic(work, topic):
                 works[work['id']] = work
                 memberships[work['id']].add(topic['slug'])
     topic_lookup = {t['slug']: t for t in config}
     for slug, payload in store.db.execute('SELECT topic,payload FROM memberships JOIN works ON works.id=memberships.work ORDER BY works.id'):
         work = json.loads(payload)
-        if slug in topic_lookup and work.get('type') in allowed_types and work_matches_topic(work, topic_lookup[slug]):
+        if slug in topic_lookup and work.get('type') in allowed_types and title_is_ai(work) and work_matches_topic(work, topic_lookup[slug]):
             works[work['id']] = work
             memberships[work['id']].add(slug)
     ordered = sorted(works.values(), key=lambda w: w['id'])
     if len(ordered) < 5:
         raise ValueError('At least five eligible papers are needed to build a landscape.')
     texts = [(w.get('title') or w.get('display_name') or '') + ' ' + abstract_text(w) for w in ordered]
-    vectorizer = TfidfVectorizer(stop_words='english', max_features=12000, min_df=2, max_df=.95, sublinear_tf=True)
+    stop_words = sorted(ENGLISH_STOP_WORDS | {'model', 'models', 'language', 'large', 'based', 'using', 'paper', 'arxiv'})
+    vectorizer = TfidfVectorizer(stop_words=stop_words, token_pattern=r'(?u)\b[a-zA-Z][a-zA-Z-]{2,}\b', max_features=12000, min_df=2, max_df=.95, sublinear_tf=True)
     matrix = vectorizer.fit_transform(texts)
     dimensions = min(32, matrix.shape[0] - 1, matrix.shape[1] - 1)
     latent = TruncatedSVD(n_components=max(2, dimensions), random_state=42).fit_transform(matrix)
-    coordinates = latent[:, :2]
+    coordinates = TSNE(n_components=2, perplexity=min(30, max(2, len(ordered) // 5)),
+                       init='pca', learning_rate='auto', random_state=42).fit_transform(latent)
     coordinates = (coordinates - coordinates.mean(axis=0)) / np.maximum(coordinates.std(axis=0), 1e-8)
     count = min(12, max(2, len(ordered) // 80))
     assignments = MiniBatchKMeans(n_clusters=count, random_state=42, n_init=3, batch_size=512).fit_predict(latent)
@@ -85,14 +90,15 @@ def build(db_path, output, raw_dir=Path('data/raw')):
                  'oa': bool((work.get('open_access') or {}).get('is_oa')), 'retracted': bool(work.get('is_retracted'))}
         points.append(point)
         details[shard][identifier] = {**point, 'abstract': abstract_text(work),
+            'observedAt': observed.get(work['id']),
             'authors': [{'id': (a.get('author') or {}).get('id'), 'name': (a.get('author') or {}).get('display_name'),
                          'institutions': a.get('institutions', [])} for a in work.get('authorships', [])],
             'source': (((work.get('primary_location') or {}).get('source')) or {}).get('display_name', 'Source not resolved'),
             'url': work.get('doi') or work['id'],
             'references': [r.rsplit('/', 1)[-1] for r in work.get('referenced_works', [])],
             'referencesAvailable': 'referenced_works' in work,
-            'inclusion': 'All tokens from a curated topic query appear in the title/abstract; configured OpenAlex topic IDs are also required where present.'}
-    payload = {'schemaVersion': 2, 'method': 'TF-IDF → seeded truncated SVD (2D); k-means themes in 32D. Proximity is text similarity, not a citation relationship.',
+            'inclusion': 'AI-specific title anchor plus all tokens from a curated topic query in title/abstract. Configured OpenAlex topic IDs are also required where present. This precision gate can omit relevant papers.'}
+    payload = {'schemaVersion': 2, 'method': 'TF-IDF → 32D truncated SVD → seeded t-SNE (2D); k-means themes in latent space. Local proximity is text similarity, not citation, agreement, or a measure of global distance.',
                'points': points, 'clusters': clusters,
                'topics': [{'slug': t['slug'], 'label': t['label'], 'count': sum(t['slug'] in p['topics'] for p in points)} for t in config]}
     digest = hashlib.sha256(encode(payload) + encode(details)).hexdigest()[:16]
@@ -121,10 +127,11 @@ def build(db_path, output, raw_dir=Path('data/raw')):
                            'eligibleUniqueWorks': len(points), 'abstractsAvailable': sum(bool(abstract_text(w)) for w in ordered),
                            'referencesAvailable': sum('referenced_works' in w for w in ordered),
                            'limitation': 'Focused sample plus partial cursor backfill; not a complete field census.'})
-    manifest = {'snapshot': digest, 'schemaVersion': 2, 'corpusVersion': 'ai-curated-v1',
+    manifest = {'snapshot': digest, 'schemaVersion': 2, 'corpusVersion': 'ai-title-anchored-v2',
                 'processedAt': datetime.now(timezone.utc).isoformat(), 'uniqueWorks': len(points),
                 'files': files, 'base': f'snapshots/{digest}/', 'coverage': 'partial',
                 'buildSeconds': round(time.perf_counter() - started, 3), 'python': platform.python_version()}
+    (directory / 'manifest.json').write_bytes(encode(manifest))
     # Publish the pointer only after every file has been written and hashed.
     temporary = output / 'research-manifest.tmp'
     temporary.write_bytes(encode(manifest))

@@ -60,7 +60,7 @@ export function AppShell({ atlas, navItems, activePath, children }: AppShellProp
           </Button>
         </div>
 
-        <nav className="grid min-h-0 gap-[5px] max-[1160px]:flex max-[1160px]:max-w-[100vw] max-[1160px]:overflow-x-auto max-[1160px]:pb-0.5 max-[760px]:grid max-[760px]:grid-cols-5 max-[760px]:gap-1.5">
+        <nav className="grid min-h-0 gap-[5px] max-[1160px]:flex max-[1160px]:max-w-[100vw] max-[1160px]:overflow-x-auto max-[1160px]:pb-0.5">
           {navItems.map((item) => {
             const Icon = item.icon
             const active = isActivePath(activePath, item.path)

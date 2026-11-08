@@ -18,6 +18,7 @@ class CorpusStore:
             CREATE TABLE IF NOT EXISTS memberships(topic TEXT, work TEXT, PRIMARY KEY(topic, work));
             CREATE TABLE IF NOT EXISTS observations(work TEXT, day TEXT, citations INTEGER, PRIMARY KEY(work, day));
             CREATE TABLE IF NOT EXISTS partitions(id TEXT PRIMARY KEY, cursor TEXT, expected INTEGER, fetched INTEGER DEFAULT 0, complete INTEGER DEFAULT 0, observed TEXT);
+            CREATE TABLE IF NOT EXISTS partition_works(partition TEXT, work TEXT, PRIMARY KEY(partition, work));
             CREATE TABLE IF NOT EXISTS usage(day TEXT PRIMARY KEY, usd REAL NOT NULL);
         ''')
 
@@ -29,11 +30,12 @@ class CorpusStore:
                     continue
                 self.db.execute('INSERT OR REPLACE INTO works VALUES (?,?)', (work['id'], json.dumps(work)))
                 self.db.execute('INSERT OR IGNORE INTO memberships VALUES (?,?)', (topic, work['id']))
+                self.db.execute('INSERT OR IGNORE INTO partition_works VALUES (?,?)', (partition, work['id']))
                 self.db.execute('INSERT OR REPLACE INTO observations VALUES (?,?,?)', (work['id'], now[:10], work.get('cited_by_count', 0)))
             self.db.execute('''INSERT INTO partitions VALUES (?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET
-                cursor=excluded.cursor, expected=excluded.expected, fetched=partitions.fetched+excluded.fetched,
+                cursor=excluded.cursor, expected=excluded.expected, fetched=excluded.fetched,
                 complete=excluded.complete, observed=excluded.observed''',
-                (partition, cursor, expected, len(works), int(not cursor), now))
+                (partition, cursor, expected, self.db.execute('SELECT count(*) FROM partition_works WHERE partition=?', (partition,)).fetchone()[0], int(not cursor), now))
             self.db.execute('INSERT INTO usage VALUES (?,?) ON CONFLICT(day) DO UPDATE SET usd=usd+excluded.usd', (now[:10], cost))
 
     def checkpoint(self, partition: str):

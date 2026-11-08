@@ -28,7 +28,7 @@ interface TrendingPageProps {
 
 import { dataTableStyles } from '../components/ui/data-table-styles'
 
-const tableClass = 'min-w-[1040px] border-collapse [&_strong]:font-[650] [&_strong]:text-foreground'
+const tableClass = 'min-w-[760px] border-collapse [&_strong]:font-[650] [&_strong]:text-foreground'
 const { head: headClass, cell: cellClass, row: rowClass } = dataTableStyles
 
 const scorePillClass =
@@ -39,6 +39,7 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
   const [field, setField] = useState('All fields')
   const [workArea, setWorkArea] = useState('All work areas')
   const [page, setPage] = useState(1)
+  const [sort, setSort] = useState('growth')
   const pageSize = 6
   const domains = ['All domains', ...new Set(atlas.trending.map((topic) => topic.domain))]
   const fields = ['All fields', ...new Set(atlas.trending.filter((topic) => domain === 'All domains' || topic.domain === domain).map((topic) => topic.field).filter(Boolean))]
@@ -57,8 +58,9 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
       atlas.trending
         .filter((topic) => domain === 'All domains' || topic.domain === domain)
         .filter((topic) => field === 'All fields' || topic.field === field)
-        .filter((topic) => workArea === 'All work areas' || topic.workArea === workArea),
-    [atlas.trending, domain, field, workArea],
+        .filter((topic) => workArea === 'All work areas' || topic.workArea === workArea)
+        .sort((a,b)=>sort === 'volume' ? b.worksLast3Years-a.worksLast3Years : b.growthRate-a.growthRate),
+    [atlas.trending, domain, field, workArea, sort],
   )
   const pageCount = Math.max(1, Math.ceil(rows.length / pageSize))
   const currentPage = Math.min(page, pageCount)
@@ -69,7 +71,7 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
     <div className="grid min-w-0 gap-3">
       <PageHeader
         title="Research Momentum"
-        description="Compare topics by recent growth, participation, and research breadth, adjusted for differences in field size."
+        description="Compare query-matched publication growth over completed three-year periods. Growth, volume and sample coverage are separate measures."
         actionsClassName="min-w-[min(620px,52vw)] max-[1160px]:min-w-0 max-[760px]:w-full"
         actions={
           <div className="grid grid-cols-3 gap-2 max-[1160px]:grid-cols-1">
@@ -124,8 +126,8 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
               </div>
               <div className="flex items-end justify-between gap-3">
                 <div className="grid gap-0.5">
-                  <span className="text-[0.64rem] font-bold uppercase text-muted-foreground">Momentum score</span>
-                  <strong className="text-[1.26rem] leading-none font-[720] text-primary">{formatScore(topic.trendScore)}</strong>
+                  <span className="text-[0.64rem] font-bold uppercase text-muted-foreground">Publication growth</span>
+                  <strong className="text-[1.26rem] leading-none font-[720] text-primary">{formatPercent(topic.growthRate)}</strong>
                 </div>
                 <div className="grid justify-items-end gap-1">
                   <Badge variant="secondary">{formatNumber(topic.worksLast3Years)} works</Badge>
@@ -137,6 +139,7 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
         ))}
       </section>
 
+      <div className="max-w-[260px]"><SelectField label="Sort research areas" value={sort} onValueChange={value=>{setSort(value);setPage(1)}} options={[{value:'growth',label:'Publication growth'},{value:'volume',label:'Matched work volume'}]}/></div>
       <Card>
         <CardHeader>
           <div>
@@ -151,10 +154,10 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
                 <TableRow>
                   <TableHead className={headClass}>Rank</TableHead>
                   <TableHead className={headClass}>Topic</TableHead>
-                  <TableHead className={headClass}>Research area</TableHead>
+                  <TableHead className={`${headClass} hidden xl:table-cell`}>Research area</TableHead>
                   <TableHead className={headClass}>What is changing</TableHead>
-                  <TableHead className={headClass}>Contributing factors</TableHead>
-                  <TableHead className={headClass}>Context</TableHead>
+                  <TableHead className={`${headClass} hidden 2xl:table-cell`}>Sample factors</TableHead>
+                  <TableHead className={`${headClass} hidden 2xl:table-cell`}>Sample context</TableHead>
                   <TableHead className={headClass}>Recent works</TableHead>
                   <TableHead className={headClass}>Growth</TableHead>
                   <TableHead className={headClass}>Momentum</TableHead>
@@ -172,7 +175,7 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
                       <br />
                       <span className="text-muted-foreground">{topic.workArea}</span>
                     </TableCell>
-                    <TableCell className={cellClass}>
+                    <TableCell className={`${cellClass} hidden xl:table-cell`}>
                       {topic.domain}
                       <br />
                       <span className="text-muted-foreground">{topic.field}</span>
@@ -184,7 +187,7 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
                         {formatNumber(topic.worksLast3Years)} recent works; {formatPercent(topic.growthRate)} growth versus the prior period.
                       </span>
                     </TableCell>
-                    <TableCell className={cellClass}>
+                    <TableCell className={`${cellClass} hidden 2xl:table-cell`}>
                       <div className="flex max-w-[300px] flex-wrap gap-1.5">
                         {(topic.signalDrivers?.length ? topic.signalDrivers : [topic.topSubtopic]).slice(0, 4).map((driver) => (
                           <span className="max-w-[145px] truncate whitespace-nowrap rounded-full border border-border bg-card-soft px-2 py-1 text-[0.67rem] font-bold text-muted-foreground" title={driver} key={`${topic.slug}-${driver}`}>
@@ -193,11 +196,11 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
                         ))}
                       </div>
                     </TableCell>
-                    <TableCell className={cellClass}>
+                    <TableCell className={`${cellClass} hidden 2xl:table-cell`}>
                       {topic.topInstitution || 'Institution not resolved'}
                       <br />
                       <span className="text-muted-foreground">
-                        {topic.topCountry || 'Unknown'} / {formatPercent(topic.newAuthorShare || 0)} new authors
+                        {topic.topCountry || 'Unknown'} / {formatPercent(topic.newAuthorShare || 0)} first observed in sample
                       </span>
                       {topic.qualityLabel && <span className="mt-1 block text-[0.68rem] font-bold text-muted-foreground">{topic.qualityLabel.replace('snapshot', 'coverage')}</span>}
                     </TableCell>
