@@ -29,21 +29,16 @@ def degree_centrality(edges: Counter) -> dict[str, float]:
 
 
 def betweenness_centrality(edges: Counter, max_nodes: int = 180) -> dict[str, float]:
-    try:
-        import networkx as nx
-    except ImportError:
-        return degree_centrality(edges)
+    import networkx as nx
 
     graph = nx.Graph()
     for (source, target), weight in edges.items():
-        graph.add_edge(source, target, weight=weight)
+        graph.add_edge(source, target, weight=weight, distance=1.0 / max(weight, 1))
     if graph.number_of_nodes() == 0:
         return {}
-    if graph.number_of_nodes() > max_nodes:
-        degree = dict(graph.degree(weight="weight"))
-        keep = {
-            node
-            for node, _ in sorted(degree.items(), key=lambda item: item[1], reverse=True)[:max_nodes]
-        }
-        graph = graph.subgraph(keep).copy()
-    return nx.betweenness_centrality(graph, weight="weight", normalized=True)
+    # Sample source paths on the complete graph rather than deleting peripheral
+    # nodes, which changes the topology being measured. The seed is reproducible.
+    return nx.betweenness_centrality(
+        graph, k=min(max_nodes, graph.number_of_nodes()), seed=42,
+        weight="distance", normalized=True,
+    )

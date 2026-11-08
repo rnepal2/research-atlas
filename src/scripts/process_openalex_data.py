@@ -477,7 +477,8 @@ def build_institutions(works: list[dict[str, Any]], authors: list[dict[str, Any]
                 row["recentWorks"] += 1
             row["topics"][topic_label(work.get("primary_topic"))] += 1
             for entry in author_entries(work):
-                row["authors"].add(entry["author"]["id"])
+                if any(item.get("id") == institution_id for item in entry["authorship"].get("institutions", [])):
+                    row["authors"].add(entry["author"]["id"])
             for partner_id in ids:
                 if partner_id != institution_id:
                     row["partners"][partner_id] += 1
@@ -518,7 +519,7 @@ def build_institutions(works: list[dict[str, Any]], authors: list[dict[str, Any]
                 "url": entity_url(institution_id),
             }
         )
-    return sorted(output, key=lambda row: row["strengthScore"], reverse=True)[:30]
+    return sorted(output, key=lambda row: (-row["strengthScore"], row["id"]))
 
 
 def build_country_rows(works: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -1008,7 +1009,7 @@ def process_topic(topic: dict[str, Any], raw_dir: Path, current_year: int) -> di
         "subtopics": subtopics,
         "subtopicSeries": subtopic_series,
         "authors": authors,
-        "institutions": institutions,
+        "institutions": institutions[:100],
         "countries": countries,
         "papers": papers,
         "paperCollections": paper_collections,
