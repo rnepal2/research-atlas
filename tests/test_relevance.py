@@ -1,6 +1,7 @@
 import unittest
 from src.corpus.collect import query_for
 from src.corpus.relevance import title_is_ai
+from src.scripts.collect_openalex_data import yearly_search_query
 
 
 class QueryTests(unittest.TestCase):
@@ -12,3 +13,4 @@ class QueryTests(unittest.TestCase):
     def test_boolean_query_does_not_turn_curated_terms_into_exact_phrase(self):
         topic = {'keyword_queries': ['large language model', 'agent tool use']}
         self.assertEqual(query_for(topic), '(large AND language AND model) OR (agent AND tool AND use)')
+        self.assertEqual(yearly_search_query(topic), query_for(topic))

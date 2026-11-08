@@ -11,4 +11,17 @@
 - Publication totals: API query-matched aggregate population. Entity statistics: locally eligible sampled works. These populations must not be combined to imply corpus completeness.
 - First observed author: new to our sampled comparison period, not new to the field.
 
+The focused paper-corpus directory uses all credited authorships as the fractional
+denominator (deduplicating resolved IDs). Organizational and placeholder names are
+not listed as people; their credit is not redistributed. Legacy topic-profile
+scores retain their explicitly resolved-individual denominator. These are different
+populations and are not combined in comparisons.
+
+Curated annual search aggregates use AND between tokens within each query and OR
+between queries, scoped to source title and abstract search. Topic-assignment
+aggregates remain explicitly labeled as the broader parent-topic context. The exact
+request and observation date accompany each schema-2 profile. API stemming can
+differ from literal local eligibility; aggregate counts are never used as an eligible
+paper-corpus completeness denominator.
+
 Deferred collection is a separate workflow outcome. It never processes or republishes a checked-in snapshot. Production publication requires the main branch and a fresh validated collection.

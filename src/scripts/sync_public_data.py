@@ -40,6 +40,8 @@ def topic_summary(topic: dict) -> dict:
 def build_index(artifact: dict) -> dict:
     return {
         "version": artifact["version"],
+        "processedAt": artifact.get('processedAt'),
+        "metricContractVersion": artifact.get('metricContractVersion'),
         "generatedAt": artifact["generatedAt"],
         "artifactStatus": artifact["artifactStatus"],
         "source": artifact["source"],

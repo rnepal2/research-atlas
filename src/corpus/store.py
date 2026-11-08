@@ -25,6 +25,7 @@ class CorpusStore:
     def page(self, partition: str, topic: str, works: list[dict], cursor: str | None, expected: int, cost: float = 0):
         now = datetime.now(timezone.utc).isoformat()
         with self.db:
+            previous_count = self.db.execute('SELECT count(*) FROM partition_works WHERE partition=?', (partition,)).fetchone()[0]
             for work in works:
                 if not work.get('id'):
                     continue
@@ -33,17 +34,30 @@ class CorpusStore:
                 self.db.execute('INSERT OR IGNORE INTO partition_works VALUES (?,?)', (partition, work['id']))
                 self.db.execute('INSERT OR REPLACE INTO observations VALUES (?,?,?)', (work['id'], now[:10], work.get('cited_by_count', 0)))
             self.db.execute('''INSERT INTO partitions VALUES (?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET
-                cursor=excluded.cursor, expected=excluded.expected, fetched=excluded.fetched,
+                cursor=excluded.cursor, expected=excluded.expected, fetched=partitions.fetched+excluded.fetched,
                 complete=excluded.complete, observed=excluded.observed''',
-                (partition, cursor, expected, self.db.execute('SELECT count(*) FROM partition_works WHERE partition=?', (partition,)).fetchone()[0], int(not cursor), now))
+                (partition, cursor, expected, self.db.execute('SELECT count(*) FROM partition_works WHERE partition=?', (partition,)).fetchone()[0] - previous_count, int(not cursor), now))
             self.db.execute('INSERT INTO usage VALUES (?,?) ON CONFLICT(day) DO UPDATE SET usd=usd+excluded.usd', (now[:10], cost))
 
     def checkpoint(self, partition: str):
         return self.db.execute('SELECT cursor,complete FROM partitions WHERE id=?', (partition,)).fetchone()
 
+    def restart(self, partitions: list[str]):
+        """Reset only the explicitly selected boundaries; retain other progress."""
+        with self.db:
+            for partition in partitions:
+                self.db.execute('DELETE FROM partition_works WHERE partition=?', (partition,))
+                self.db.execute("UPDATE partitions SET cursor='*', expected=0, fetched=0, complete=0, observed=NULL WHERE id=?", (partition,))
+
     def spent_today(self):
         row = self.db.execute('SELECT usd FROM usage WHERE day=?', (datetime.now(timezone.utc).date().isoformat(),)).fetchone()
         return row[0] if row else 0
+
+    def reserve(self, cost: float):
+        """Conservatively account for a bounded request outside cursor collection."""
+        day = datetime.now(timezone.utc).date().isoformat()
+        with self.db:
+            self.db.execute('INSERT INTO usage VALUES (?,?) ON CONFLICT(day) DO UPDATE SET usd=usd+excluded.usd', (day, cost))
 
     def close(self):
         self.db.close()

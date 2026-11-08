@@ -11,6 +11,11 @@ NON_SCHOLARLY_TITLE_PREFIXES = (
     "supplementary ",
 )
 
+def boolean_search_query(queries: list[str]) -> str:
+    """Use the same all-terms semantics as local query eligibility."""
+    return ' OR '.join('(' + ' AND '.join(WORD_RE.findall(query.lower())) + ')'
+                       for query in queries if WORD_RE.findall(query.lower()))
+
 
 def short_openalex_id(value: str | None) -> str:
     return (value or "").rstrip("/").split("/")[-1]

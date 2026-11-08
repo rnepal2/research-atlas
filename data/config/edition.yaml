@@ -1,0 +1,16 @@
+version: ai-and-computing-v3
+title: AI research, in context
+purpose: Follow advances in AI and computer science, and trace their applications across the scientific domains already covered by Research Atlas.
+start_year: 2017
+labels:
+  medical-ai: Healthcare
+  materials-informatics: Materials discovery
+  protein-design: Protein design
+methods:
+  fields: [Computer Science]
+  work_areas: [AI Methods]
+applications:
+  scope: Existing topics outside the methods track, restricted to works with explicit AI methods in their title or abstract.
+  search: '"machine learning" OR "deep learning" OR "artificial intelligence" OR "neural network" OR "large language model" OR "reinforcement learning" OR "computer vision"'
+completeness:
+  definition: All cursor pages exhausted for a versioned topic/year/query boundary, followed by documented eligibility filtering. This is query completeness, not a census of the real-world field.

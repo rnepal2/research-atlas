@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from src.analytics.network_metrics import betweenness_centrality, coauthor_edges, degree_centrality, layout_network
+from src.analytics.authorship import is_credible_author
 from src.analytics.ranking import institution_strength_score, normalize, rising_researcher_score, topic_trend_score
 from src.analytics.topic_metrics import fragmentation_score, growth_rate, hhi, safe_divide
 from src.analytics.work_relevance import canonical_work_title, work_matches_topic
@@ -113,13 +114,6 @@ def short_id(value: str | None) -> str:
 
 def entity_url(openalex_id: str | None) -> str | None:
     return openalex_id if openalex_id and openalex_id.startswith("http") else None
-
-
-def is_credible_author(author: dict[str, Any]) -> bool:
-    name = str(author.get("display_name") or "").strip()
-    normalized = name.casefold()
-    non_person_markers = ("anonymous", "assignee", "research team", "research group", "working group", "consortium", "collaboration")
-    return bool(name) and "*" not in name and not any(marker in normalized for marker in non_person_markers)
 
 
 def author_entries(work: dict[str, Any]) -> list[dict[str, Any]]:
@@ -941,6 +935,8 @@ def process_topic(topic: dict[str, Any], raw_dir: Path, current_year: int) -> di
     quality = build_quality(topic, works, countries, len(raw_works))
     quality["yearlyCountSource"] = yearly_counts.get("source", "sample")
     quality["yearlyCountYears"] = len(yearly) if yearly_counts.get("source") else 0
+    quality["aggregateObservedAt"] = yearly_counts.get("generatedAt")
+    quality["aggregateQuery"] = yearly_counts.get("query")
     network = build_author_network(works, authors, edges_counter)
     institution_network = build_institution_network(works, institutions)
     network_communities = {
@@ -1212,6 +1208,8 @@ def topic_summary(topic: dict[str, Any]) -> dict[str, Any]:
 def build_index_artifact(artifact: dict[str, Any]) -> dict[str, Any]:
     return {
         "version": artifact["version"],
+        "processedAt": artifact.get('processedAt'),
+        "metricContractVersion": artifact.get('metricContractVersion'),
         "generatedAt": artifact["generatedAt"],
         "artifactStatus": artifact["artifactStatus"],
         "source": artifact["source"],

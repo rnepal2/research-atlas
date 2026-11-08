@@ -19,7 +19,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from src.analytics.work_relevance import work_matches_topic
+from src.analytics.work_relevance import work_matches_topic, boolean_search_query
 
 
 BASE_URL = "https://api.openalex.org"
@@ -282,12 +282,7 @@ def collect_works(client: OpenAlexClient, topic: dict[str, Any], output_dir: Pat
 
 
 def yearly_search_query(topic: dict[str, Any]) -> str:
-    terms = []
-    for query in topic.get("keyword_queries", []):
-        escaped = str(query).replace('"', '\\"').strip()
-        if escaped:
-            terms.append(f'"{escaped}"')
-    return " OR ".join(terms)
+    return boolean_search_query(topic.get('keyword_queries', []))
 
 
 def collect_yearly_counts(client: OpenAlexClient, topic: dict[str, Any], output_dir: Path) -> None:
@@ -309,13 +304,18 @@ def collect_yearly_counts(client: OpenAlexClient, topic: dict[str, Any], output_
         query = yearly_search_query(topic)
         if not query:
             raise RuntimeError(f"{topic['slug']} has no usable query for yearly counts")
-        params["search"] = query
+        params["search.title_and_abstract"] = query
         source = "curated-search"
 
     payload = client.get("works", params, use_cache=False)
+    groups = payload.get('group_by')
+    if not isinstance(groups, list) or (not groups and payload.get('meta', {}).get('count') != 0):
+        raise RuntimeError(f'{topic["slug"]} returned no verifiable annual aggregate payload')
+    if any(int(row.get('count', -1)) < 0 for row in groups):
+        raise RuntimeError(f'{topic["slug"]} returned invalid annual counts')
     values = {
         int(row["key"]): int(row["count"])
-        for row in payload.get("group_by", [])
+        for row in groups
         if str(row.get("key", "")).isdigit() and min_year < int(row["key"]) <= current_year
     }
     counts = [{"year": year, "works": values.get(year, 0)} for year in range(min_year + 1, current_year + 1)]
@@ -324,6 +324,8 @@ def collect_yearly_counts(client: OpenAlexClient, topic: dict[str, Any], output_
         {
             "generatedAt": datetime.now(timezone.utc).isoformat(),
             "source": source,
+            "query": params,
+            "querySemantics": "Topic assignments, or AND within curated title/abstract term sets and OR between sets. API stemming can differ from local eligibility.",
             "years": counts,
         },
     )

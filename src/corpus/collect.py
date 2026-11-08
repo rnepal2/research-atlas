@@ -2,19 +2,16 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import re
 from datetime import date, timedelta
+from collections import deque
 from pathlib import Path
 
 from src.corpus.store import CorpusStore
-from src.scripts.collect_openalex_data import OpenAlexClient, OpenAlexCollectionDeferredError, WORK_FIELDS, load_config
-
-CORE_TOPICS = ('large-language-models', 'ai-agents', 'retrieval-augmented-generation',
-               'llm-evaluation', 'ai-safety-alignment', 'multimodal-foundation-models',
-               'code-generation-ai', 'model-compression')
+from src.scripts.collect_openalex_data import OpenAlexClient, OpenAlexCollectionDeferredError
+from src.corpus.partitions import partition_plan, query_for  # query_for remains importable for callers
 
 
 def load_local_env(path=Path('.env')):
@@ -25,38 +22,37 @@ def load_local_env(path=Path('.env')):
                 os.environ.setdefault(key.strip(), value.strip().strip('\"\''))
 
 
-def query_for(topic):
-    # Same AND-of-token semantics as local eligibility. API stemming may still
-    # broaden recall; local eligibility remains a separate audited stage.
-    return ' OR '.join('(' + ' AND '.join(re.findall(r'[a-z0-9]+', phrase.lower())) + ')'
-                       for phrase in topic.get('keyword_queries', []))
-
-
 def collect(store, client, topics, max_pages=50, budget=.25, start_year=2017, recent_days=None):
     pages = 0
-    for year in range(date.today().year, start_year - 1, -1):
-        for topic in topics:
-            params = {'search': query_for(topic), 'filter': f'publication_year:{year}',
-                      'per_page': 100, 'select': WORK_FIELDS + ',referenced_works,updated_date,is_retracted'}
-            if recent_days:
-                params['filter'] += f',from_publication_date:{date.today() - timedelta(days=recent_days)}'
-            version = hashlib.sha256(json.dumps(params, sort_keys=True).encode()).hexdigest()[:16]
-            partition = f'{topic["slug"]}/{year}/{version}'
-            state = store.checkpoint(partition)
-            if state and state[1]:
-                continue
-            cursor = state[0] if state else '*'
-            while cursor:
-                # Search calls cost $0.001; reserve twice that for bounded retries.
-                if pages >= max_pages or store.spent_today() + .002 > budget:
-                    return {'outcome': 'checkpointed', 'pages': pages, 'spentToday': store.spent_today()}
-                payload = client.get('works', {**params, 'cursor': cursor}, use_cache=False)
-                rows = payload.get('results', [])
-                cursor = payload.get('meta', {}).get('next_cursor') if rows else None
-                cost = float(payload.get('meta', {}).get('cost_usd', .001))
-                store.page(partition, topic['slug'], rows, cursor, payload.get('meta', {}).get('count', 0), cost)
-                pages += 1
-                print(f'{topic["slug"]} {year}: +{len(rows)} records; page {pages}', flush=True)
+    queue = deque()
+    observed = dict(store.db.execute('SELECT id,observed FROM partitions'))
+    plan = partition_plan(topics, start_year, recent_days)
+    # Fairness must survive separate invocations, not just one queue pass.
+    # Unstarted boundaries go first, then the least recently observed page.
+    plan.sort(key=lambda item: (observed.get(item['id']) or '', -item['year']))
+    for item in plan:
+        state = store.checkpoint(item['id'])
+        if state and state[1]:
+            continue
+        cursor = state[0] if state else '*'
+        if cursor:
+            queue.append((item['topic'], item['year'], item['id'], item['params'], cursor))
+    while queue:
+        if pages >= max_pages or store.spent_today() + .002 > budget:
+            return {'outcome': 'checkpointed', 'pages': pages, 'spentToday': store.spent_today()}
+        slug, year, partition, params, cursor = queue.popleft()
+        payload = client.get('works', {**params, 'cursor': cursor}, use_cache=False)
+        rows = payload.get('results')
+        count = payload.get('meta', {}).get('count')
+        if not isinstance(rows, list) or not isinstance(count, int) or count < 0 or (not rows and count > 0 and cursor == '*'):
+            raise ValueError(f'Invalid source page for {slug}; checkpoint was not advanced.')
+        cursor = payload.get('meta', {}).get('next_cursor') if rows else None
+        cost = float(payload.get('meta', {}).get('cost_usd', .001))
+        store.page(partition, slug, rows, cursor, count, cost)
+        pages += 1
+        print(f'{slug} {year}: +{len(rows)} records; page {pages}', flush=True)
+        if cursor:
+            queue.append((slug, year, partition, params, cursor))
     return {'outcome': 'complete', 'pages': pages, 'spentToday': store.spent_today()}
 
 
@@ -67,21 +63,31 @@ def main():
     parser.add_argument('--budget', type=float, default=.25)
     parser.add_argument('--start-year', type=int, default=2017)
     parser.add_argument('--reconcile', action='store_true', help='Restart completed partitions to capture late indexing and corrections.')
-    parser.add_argument('--topic', action='append', help='Restrict to named core topic slugs; repeat to select several.')
+    parser.add_argument('--topic', action='append', help='Restrict to configured topic slugs; repeat to select several.')
     parser.add_argument('--recent-days', type=int, help='Overlapping publication-date refresh; does not detect every older metadata change.')
     args = parser.parse_args()
+    if args.max_pages < 1 or args.budget <= 0:
+        parser.error('--max-pages and --budget must be positive')
+    if not 2017 <= args.start_year <= date.today().year:
+        parser.error('--start-year must be between 2017 and the current year')
+    if args.recent_days is not None and args.recent_days < 1:
+        parser.error('--recent-days must be positive')
+    from src.corpus.scope import edition_topics
+    configured = edition_topics()
+    unknown = set(args.topic or []) - {t['slug'] for t in configured}
+    if unknown:
+        parser.error('Unknown topics: ' + ', '.join(sorted(unknown)))
+    topics = [t for t in configured if not args.topic or t['slug'] in args.topic]
+    start_year = max(2017, (date.today() - timedelta(days=args.recent_days)).year) if args.recent_days else args.start_year
     load_local_env()
     key = os.getenv('OPENALEX_API_KEY')
     if not key:
         raise SystemExit('Set OPENALEX_API_KEY in the process environment or local .env.')
     store = CorpusStore(args.db)
     if args.reconcile:
-        with store.db:
-            store.db.execute('DELETE FROM partitions')
+        store.restart([item['id'] for item in partition_plan(topics, start_year, args.recent_days)])
     client = OpenAlexClient(key, Path('.cache/corpus/http'), min_interval=.7)
     try:
-        topics = [t for t in load_config(Path('data/config/topics.yaml')) if t['slug'] in (args.topic or CORE_TOPICS)]
-        start_year = (date.today() - timedelta(days=args.recent_days)).year if args.recent_days else args.start_year
         print(json.dumps(collect(store, client, topics, args.max_pages, args.budget, start_year, args.recent_days)))
     except OpenAlexCollectionDeferredError:
         print('Collection deferred by OpenAlex; committed pages are safe. Run again to resume.')

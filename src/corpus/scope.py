@@ -1,0 +1,21 @@
+"""Edition policy: computational methods and their domain-specific applications."""
+from pathlib import Path
+import yaml
+
+from src.scripts.collect_openalex_data import load_config
+
+
+def edition_policy():
+    return yaml.safe_load(Path('data/config/edition.yaml').read_text())
+
+
+def edition_topics():
+    policy = edition_policy()
+    topics = load_config(Path('data/config/topics.yaml'))
+    for topic in topics:
+        method = topic.get('field') in policy['methods']['fields'] or topic.get('work_area') in policy['methods']['work_areas']
+        topic['editionRole'] = 'methods' if method else 'applications'
+        topic['editionLabel'] = policy.get('labels', {}).get(topic['slug'], topic['label'])
+        if not method:
+            topic['editionSearch'] = policy['applications']['search']
+    return topics
