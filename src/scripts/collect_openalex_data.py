@@ -71,13 +71,13 @@ class OpenAlexClient:
         self.max_retry_wait = max_retry_wait
         self.allow_unauthenticated = allow_unauthenticated
         self.session = requests.Session()
+        if api_key:
+            self.session.headers['Authorization'] = f'Bearer {api_key}'
         self.last_request_at = 0.0
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def get(self, path: str, params: dict[str, Any] | None = None, use_cache: bool = True) -> dict[str, Any]:
         params = dict(params or {})
-        if self.api_key:
-            params["api_key"] = self.api_key
         url = f"{BASE_URL}/{path.lstrip('/')}"
         cache_key = hashlib.sha256(f"{url}?{urlencode(sorted(params.items()))}".encode()).hexdigest()
         cache_path = self.cache_dir / f"{cache_key}.json"
@@ -88,7 +88,13 @@ class OpenAlexClient:
             elapsed = time.time() - self.last_request_at
             if elapsed < self.min_interval:
                 time.sleep(self.min_interval - elapsed)
-            response = self.session.get(url, params=params, timeout=45)
+            try:
+                response = self.session.get(url, params=params, timeout=45)
+            except requests.RequestException:
+                if attempt == self.max_attempts - 1:
+                    raise OpenAlexCollectionDeferredError('OpenAlex request failed; resume from the last checkpoint.') from None
+                time.sleep(min(self.max_retry_wait, 2 ** attempt))
+                continue
             self.last_request_at = time.time()
             if response.status_code == 429 and not self.api_key and not self.allow_unauthenticated:
                 raise RuntimeError(

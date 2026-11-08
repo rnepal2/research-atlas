@@ -16,4 +16,5 @@ __pycache__/
 /frontend/dist/
 /frontend/node_modules/
 /frontend/public/data/
+/frontend/public/research/
 data/raw/*.jsonl

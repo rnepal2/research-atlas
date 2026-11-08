@@ -1,0 +1,55 @@
+name: Develop research corpus
+on:
+  workflow_dispatch:
+    inputs:
+      max_pages:
+        description: Maximum API pages (100 records/page)
+        default: '50'
+      budget:
+        description: Maximum project spend today in USD
+        default: '0.25'
+permissions:
+  contents: write
+concurrency:
+  group: research-corpus-development
+  cancel-in-progress: false
+jobs:
+  corpus:
+    if: startsWith(github.ref, 'refs/heads/feature/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements-research.txt
+      - name: Restore durable development state
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p .cache/corpus
+          if gh release view research-corpus-development >/dev/null 2>&1; then
+            gh release download research-corpus-development --pattern atlas.sqlite --dir .cache/corpus --clobber
+          fi
+      - name: Collect with daily budget
+        env:
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+          MAX_PAGES: ${{ inputs.max_pages }}
+          BUDGET: ${{ inputs.budget }}
+        run: python -m src.corpus.collect --max-pages "$MAX_PAGES" --budget "$BUDGET"
+      - name: Preserve checkpoints even when subsequent build fails
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -f .cache/corpus/atlas.sqlite ]; then
+            gh release view research-corpus-development >/dev/null 2>&1 || gh release create research-corpus-development --target "$GITHUB_SHA" --prerelease --title "Development corpus checkpoints" --notes "Resumable bibliographic corpus state. Not a production deployment."
+            gh release upload research-corpus-development .cache/corpus/atlas.sqlite --clobber
+          fi
+      - run: python -m src.corpus.build && python -m src.corpus.validate
+      - uses: actions/upload-artifact@v4
+        with:
+          name: research-snapshot
+          path: data/research
+          retention-days: 30
