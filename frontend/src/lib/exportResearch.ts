@@ -10,7 +10,10 @@ export function downloadText(name: string, content: string, type = 'text/plain')
 }
 
 export function exportPapers(papers: ResearchPoint[], snapshot: string, format: 'csv' | 'bib') {
-  const quote = (value: unknown) => `"${String(value).replaceAll('"', '""')}"`
+  const quote = (value: unknown) => {
+    const text = typeof value === 'string' && /^[=+@\-\t\r]/.test(value) ? `'${value}` : String(value)
+    return `"${text.replaceAll('"', '""')}"`
+  }
   const escape = (value: string) => value.replace(/[{}\\]/g, ' ')
   const content =
     format === 'csv'

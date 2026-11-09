@@ -74,6 +74,7 @@ export function BenchmarkPage() {
           onSelect={noop}
           references={references}
           onCamera={noop}
+          synthetic
         />
       </div>
     </div>

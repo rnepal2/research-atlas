@@ -21,6 +21,7 @@ export function PeoplePage() {
   const [rows, setRows] = useState<EvidenceEntity[]>([])
   const [selected, setSelected] = useState('')
   const [failure, setFailure] = useState('')
+  const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   useEffect(() => {
     if (!manifest) return
@@ -29,9 +30,13 @@ export function PeoplePage() {
       .then((values) => {
         setRows(values)
         setFailure('')
+        setLoading(false)
       })
       .catch((error) => {
-        if (!controller.signal.aborted) setFailure(String(error))
+        if (!controller.signal.aborted) {
+          setFailure(String(error))
+          setLoading(false)
+        }
       })
     return () => controller.abort()
   }, [manifest, kind])
@@ -44,15 +49,15 @@ export function PeoplePage() {
       ),
     [rows, query],
   )
-  const active = visible.find((r) => r.id === selected) || visible[0]
   const pages = Math.max(1, Math.ceil(visible.length / 20))
   const currentPage = Math.min(page, pages)
+  const active = visible.find((r) => r.id === selected) || visible[(currentPage - 1) * 20]
   return (
-    <div className="grid gap-5">
+    <div className="people-page grid gap-5">
       <PageHeader
         eyebrow="RESEARCH ATLAS / PEOPLE & INSTITUTIONS"
         title="Find the people behind the papers."
-        description="Evidence from the focused AI corpus. These are sampled publication records, not a ranking of scientific quality."
+        description="People working across AI, computer science and their scientific applications. These are sampled publication records, not a ranking of scientific quality."
       />
       <div className="research-actions">
         <Tabs
@@ -60,6 +65,7 @@ export function PeoplePage() {
           onValueChange={(value) => {
             setKind(value)
             setRows([])
+            setLoading(true)
             setSelected('')
             setPage(1)
           }}
@@ -82,38 +88,49 @@ export function PeoplePage() {
       </div>
       {(error || failure) && <p role="alert">{error || failure}</p>}
       <p className="source-note">
-        {visible.length.toLocaleString()} matching {kind === 'authors' ? 'researchers' : 'institutions'} ·
-        sorted by sampled work count ·{' '}
-        {kind === 'authors'
-          ? 'citations are fractional across coauthors'
-          : 'citations use full institution counting; shared works can count for multiple institutions'}
-        .
+        {loading ? (
+          'Loading source-backed records…'
+        ) : (
+          <>
+            {visible.length.toLocaleString()} matching {kind === 'authors' ? 'researchers' : 'institutions'} ·
+            sorted by sampled work count ·{' '}
+            {kind === 'authors'
+              ? 'citations are fractional across coauthors'
+              : 'citations use full institution counting; shared works can count for multiple institutions'}
+            .
+          </>
+        )}
       </p>
       <div className="explore-workspace list-view">
-        <section className="paper-results">
-          {visible.slice((currentPage - 1) * 20, currentPage * 20).map((row) => (
-            <button
-              className={`paper-result ${active?.id === row.id ? 'selected' : ''}`}
-              key={row.id}
-              onClick={() => setSelected(row.id)}
-            >
-              <strong>{row.name}</strong>
-              <span>
-                {row.works.length} sampled works · {Math.round(row.citations).toLocaleString()} cited-work
-                impact{row.authors && ` · ${row.authors.length} affiliated authors`}
-              </span>
-              <span>
-                {row.country || row.affiliations?.slice(0, 2).join('; ') || 'Affiliation not resolved'}
-              </span>
-            </button>
-          ))}
+        <section className="paper-list-pane">
+          <div className="paper-results" key={currentPage}>
+            {visible.slice((currentPage - 1) * 20, currentPage * 20).map((row) => (
+              <button
+                className={`paper-result ${active?.id === row.id ? 'selected' : ''}`}
+                key={row.id}
+                onClick={() => setSelected(row.id)}
+              >
+                <strong>{row.name}</strong>
+                <span>
+                  {row.works.length} sampled works · {Math.round(row.citations).toLocaleString()} cited-work
+                  impact{row.authors && ` · ${row.authors.length} affiliated authors`}
+                </span>
+                <span>
+                  {row.country || row.affiliations?.slice(0, 2).join('; ') || 'Affiliation not resolved'}
+                </span>
+              </button>
+            ))}
+          </div>
           <Pagination
             page={currentPage}
             pageCount={pages}
             pageSize={20}
             totalItems={visible.length}
-            onPageChange={setPage}
-            itemLabel={kind}
+            onPageChange={(value) => {
+              setPage(value)
+              setSelected('')
+            }}
+            itemLabel={kind === 'authors' ? 'researchers' : 'institutions'}
           />
         </section>
         <aside className="evidence-panel">
@@ -148,9 +165,7 @@ export function PeoplePage() {
               </Button>
             </>
           ) : (
-            <p role="status">
-              {manifest ? 'No matching evidence or records are still loading.' : 'Loading corpus…'}
-            </p>
+            <p role="status">{loading ? 'Loading source evidence…' : 'No records match this search.'}</p>
           )}
         </aside>
       </div>

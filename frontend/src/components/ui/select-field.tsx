@@ -1,11 +1,4 @@
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from './select'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from './select'
 import { useId } from 'react'
 import { Field } from './field'
 
@@ -19,6 +12,7 @@ export interface SelectOption {
 export function SelectField({
   className,
   label,
+  ariaLabel,
   value,
   onValueChange,
   options,
@@ -26,6 +20,7 @@ export function SelectField({
 }: {
   className?: string
   label?: string
+  ariaLabel?: string
   value: string
   onValueChange: (value: string) => void
   options: SelectOption[]
@@ -39,6 +34,7 @@ export function SelectField({
       <Select value={value} onValueChange={onValueChange}>
         <SelectTrigger
           aria-labelledby={labelId}
+          aria-label={ariaLabel}
           className="h-10 w-full min-w-0 rounded-card border-border bg-input px-3 text-[0.84rem] font-semibold text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition-[border-color,box-shadow] hover:border-border-strong data-[state=open]:border-border-strong data-[state=open]:ring-3 data-[state=open]:ring-ring dark:bg-[color-mix(in_srgb,var(--card-solid)_78%,transparent)] dark:hover:bg-[color-mix(in_srgb,var(--input)_82%,var(--card-hover))]"
         >
           <SelectValue placeholder={placeholder} />
@@ -58,7 +54,9 @@ export function SelectField({
               >
                 <span className="flex min-w-0 items-baseline gap-2">
                   <span className="truncate font-semibold">{option.label}</span>
-                  {option.meta && <span className="truncate text-[0.7rem] text-muted-foreground">{option.meta}</span>}
+                  {option.meta && (
+                    <span className="truncate text-[0.7rem] text-muted-foreground">{option.meta}</span>
+                  )}
                 </span>
               </SelectItem>
             ))}

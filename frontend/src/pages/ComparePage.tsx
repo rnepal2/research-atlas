@@ -58,6 +58,22 @@ function Comparison({
       <p className="source-note">
         Source: {summary.quality.yearlyCountSource} · OpenAlex · Snapshot {atlas.generatedAt.slice(0, 10)}
       </p>
+      {summary.quality.aggregateQuery && (
+        <details className="aggregate-query">
+          <summary>Inspect the annual query</summary>
+          <p>
+            {summary.quality.aggregateQuery['search.title_and_abstract'] ||
+              summary.quality.aggregateQuery.search ||
+              'Topic-assigned OpenAlex works'}
+          </p>
+          <p>{summary.quality.aggregateQuery.filter}</p>
+          <p>
+            Observed {summary.quality.aggregateObservedAt?.slice(0, 10) || 'date not recorded'}. Counts use
+            topic assignments or the recorded title-and-abstract query. The local paper sample applies
+            additional eligibility rules.
+          </p>
+        </details>
+      )}
     </article>
   )
 }
@@ -93,7 +109,7 @@ export function ComparePage({ atlas }: { atlas: AtlasData }) {
       <PageHeader
         eyebrow="RESEARCH ATLAS / COMPARE"
         title="Put change in context."
-        description="Compare research areas over the same completed years. Publication totals and sampled entity evidence are shown separately."
+        description="Compare whole-topic publication contexts over the same completed years. For application areas, these annual totals cover the parent topic—not only its AI-related work."
       />
       <div className="compare-filters">
         <SelectField label="First research area" value={left} onValueChange={setLeft} options={options} />

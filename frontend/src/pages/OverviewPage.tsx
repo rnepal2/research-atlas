@@ -21,26 +21,38 @@ export function OverviewPage({
     'llm-evaluation',
     'multimodal-foundation-models',
     'ai-safety-alignment',
+    'graph-neural-networks',
+    'reinforcement-learning',
+    'natural-language-processing',
+    'machine-learning-systems',
+    'computer-vision',
+    'causal-inference',
+  ].flatMap((slug) => atlas.topics.filter((t) => t.slug === slug))
+  const startingPoints = [
+    'ai-agents',
+    'graph-neural-networks',
+    'medical-ai',
+    'materials-informatics',
   ].flatMap((slug) => atlas.topics.filter((t) => t.slug === slug))
   return (
     <div className="overview-page">
       <header className="research-header">
-        <span className="eyebrow">RESEARCH ATLAS / THE AI EDITION</span>
+        <span className="eyebrow">RESEARCH ATLAS / IDEAS · METHODS · APPLICATIONS</span>
         <Button variant="ghost" size="icon" onClick={onThemeChange} aria-label="Toggle theme">
           {theme === 'dark' ? <Sun /> : <Moon />}
         </Button>
       </header>
       <section className="observatory-hero">
         <div>
-          <span className="edition-label">A clearer view of a changing field</span>
+          <span className="edition-label">From computational ideas to scientific discovery</span>
           <h1>
-            Understand where
+            AI research,
             <br />
-            research is going.
+            in context.
           </h1>
           <p>
-            Follow ideas across papers, people and time. Explore the evidence behind emerging themes in AI—and
-            find your next direction.
+            Follow the ideas advancing AI and computer science, then trace their applications across
+            healthcare, physics and the wider sciences. Start with a question. Follow the evidence.
           </p>
           <div className="research-actions">
             <Button size="lg" onClick={() => navigate('/explore')}>
@@ -61,7 +73,7 @@ export function OverviewPage({
         <div className="hero-index">
           <Compass size={30} />
           <span className="eyebrow">YOUR STARTING POINTS</span>
-          {topics.slice(0, 4).map((t, i) => (
+          {startingPoints.map((t, i) => (
             <a key={t.slug} href={hrefFor(`/explore?topic=${t.slug}`)}>
               <span>0{i + 1}</span>
               <strong>{t.label}</strong>
@@ -74,7 +86,7 @@ export function OverviewPage({
         <div className="section-intro">
           <div>
             <span className="eyebrow">RESEARCH AREAS</span>
-            <h2>Go deeper, one question at a time.</h2>
+            <h2>The methods behind the change.</h2>
           </div>
           <p>
             Annual publication totals provide context. People and relationships come from bounded work
@@ -109,6 +121,43 @@ export function OverviewPage({
               </div>
             </article>
           ))}
+        </div>
+      </section>
+      <section className="overview-section">
+        <div className="section-intro">
+          <div>
+            <span className="eyebrow">IN THE SCIENCES</span>
+            <h2>Where computation meets the world.</h2>
+          </div>
+          <p>
+            These views contain AI-related works inside the existing scientific domains. Their sample counts
+            are not whole-field publication totals.
+          </p>
+        </div>
+        <div className="topic-grid">
+          {(landscape?.topics || [])
+            .filter((t) => t.role === 'applications' && t.count > 0)
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 9)
+            .map((t) => (
+              <article className="topic-story" key={t.slug}>
+                <span className="eyebrow">{t.domain}</span>
+                <h3>{t.label}</h3>
+                <p>
+                  Investigate the methods, researchers and papers connecting AI to this area. Inclusion
+                  requires explicit AI methods in the title or abstract.
+                </p>
+                <div className="story-numbers">
+                  <strong>
+                    {t.count.toLocaleString()}
+                    <span>eligible papers in this focused sample</span>
+                  </strong>
+                </div>
+                <Button variant="ghost" onClick={() => navigate(`/explore?topic=${t.slug}`)}>
+                  Follow the research <ArrowRight size={15} />
+                </Button>
+              </article>
+            ))}
         </div>
       </section>
       <section className="method-strip">

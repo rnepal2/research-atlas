@@ -35,18 +35,19 @@ const scorePillClass =
   'inline-flex h-[26px] min-w-11 items-center justify-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--primary)_18%,transparent)] px-[7px] text-[0.74rem] font-bold text-primary [&_svg]:size-4'
 
 export function TrendingPage({ atlas }: TrendingPageProps) {
+  const researchTopics = useMemo(() => atlas.trending.filter(t=>t.field === 'Computer Science' || t.workArea === 'AI Methods'), [atlas.trending])
   const [domain, setDomain] = useState('All domains')
   const [field, setField] = useState('All fields')
   const [workArea, setWorkArea] = useState('All work areas')
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState('growth')
   const pageSize = 6
-  const domains = ['All domains', ...new Set(atlas.trending.map((topic) => topic.domain))]
-  const fields = ['All fields', ...new Set(atlas.trending.filter((topic) => domain === 'All domains' || topic.domain === domain).map((topic) => topic.field).filter(Boolean))]
+  const domains = ['All domains', ...new Set(researchTopics.map((topic) => topic.domain))]
+  const fields = ['All fields', ...new Set(researchTopics.filter((topic) => domain === 'All domains' || topic.domain === domain).map((topic) => topic.field).filter(Boolean))]
   const workAreas = [
     'All work areas',
     ...new Set(
-      atlas.trending
+      researchTopics
         .filter((topic) => domain === 'All domains' || topic.domain === domain)
         .filter((topic) => field === 'All fields' || topic.field === field)
         .map((topic) => topic.workArea)
@@ -55,12 +56,12 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
   ]
   const rows = useMemo(
     () =>
-      atlas.trending
+      researchTopics
         .filter((topic) => domain === 'All domains' || topic.domain === domain)
         .filter((topic) => field === 'All fields' || topic.field === field)
         .filter((topic) => workArea === 'All work areas' || topic.workArea === workArea)
         .sort((a,b)=>sort === 'volume' ? b.worksLast3Years-a.worksLast3Years : b.growthRate-a.growthRate),
-    [atlas.trending, domain, field, workArea, sort],
+    [researchTopics, domain, field, workArea, sort],
   )
   const pageCount = Math.max(1, Math.ceil(rows.length / pageSize))
   const currentPage = Math.min(page, pageCount)
@@ -70,7 +71,7 @@ export function TrendingPage({ atlas }: TrendingPageProps) {
   return (
     <div className="grid min-w-0 gap-3">
       <PageHeader
-        title="Research Momentum"
+        title="How computational research is changing"
         description="Compare query-matched publication growth over completed three-year periods. Growth, volume and sample coverage are separate measures."
         actionsClassName="min-w-[min(620px,52vw)] max-[1160px]:min-w-0 max-[760px]:w-full"
         actions={

@@ -28,6 +28,7 @@ export function PaperMap({
   camera,
   onCamera,
   onSelection,
+  synthetic = false,
 }: {
   points: ResearchPoint[]
   clusters: ResearchLandscape['clusters']
@@ -37,6 +38,7 @@ export function PaperMap({
   camera?: { x: number; y: number; ratio: number }
   onCamera: (value: { x: number; y: number; ratio: number }) => void
   onSelection?: (ids: string[]) => void
+  synthetic?: boolean
 }) {
   const container = useRef<HTMLDivElement>(null)
   const sigma = useRef<Sigma | null>(null)
@@ -53,28 +55,49 @@ export function PaperMap({
   useEffect(() => {
     if (!container.current) return
     const graph = new Graph()
-    const strongest = new Set(
-      clusters.map(
-        (c) => points.filter((p) => p.cluster === c.id).sort((a, b) => b.citations - a.citations)[0]?.id,
-      ),
-    )
+    const palette =
+      document.documentElement.dataset.theme === 'light'
+        ? [
+            '#365f7c',
+            '#946823',
+            '#77578f',
+            '#426f62',
+            '#a55849',
+            '#536b9c',
+            '#965d7b',
+            '#747b3f',
+            '#377f80',
+            '#997044',
+            '#5b7688',
+            '#797064',
+          ]
+        : colors
     for (const point of points)
       graph.addNode(point.id, {
         x: point.x,
         y: point.y,
         size: 2 + Math.min(4, Math.log1p(point.citations) / 3),
-        label: strongest.has(point.id) ? point.title : '',
-        color: colors[point.cluster % colors.length],
+        label: null,
+        paperTitle: point.title,
+        color: palette[point.cluster % palette.length],
       })
+    const visibleThemes = new Map<number, { x: number; y: number; count: number }>()
+    for (const point of points) {
+      const group = visibleThemes.get(point.cluster) || { x: 0, y: 0, count: 0 }
+      group.x += point.x
+      group.y += point.y
+      group.count++
+      visibleThemes.set(point.cluster, group)
+    }
     for (const cluster of clusters) {
-      if (points.some((p) => p.cluster === cluster.id))
+      const group = visibleThemes.get(cluster.id)
+      if (group)
         graph.addNode(`theme:${cluster.id}`, {
-          x: cluster.x,
-          y: cluster.y,
+          x: group.x / group.count,
+          y: group.y / group.count,
           size: 0,
           label: cluster.label,
-          forceLabel: true,
-          color: colors[cluster.id % colors.length],
+          color: palette[cluster.id % palette.length],
         })
     }
     let renderer: Sigma
@@ -85,8 +108,36 @@ export function PaperMap({
           color: getComputedStyle(document.documentElement).getPropertyValue('--muted-foreground').trim(),
         },
         labelSize: 11,
-        labelDensity: 0.035,
-        labelRenderedSizeThreshold: 5,
+        labelDensity: 0.5,
+        labelGridCellSize: 120,
+        labelRenderedSizeThreshold: 0,
+        defaultDrawNodeLabel: (context, data, settings) => {
+          if (!data.label) return
+          const width = container.current?.clientWidth || 0
+          const height = container.current?.clientHeight || 0
+          // Keep annotations inside the map and away from its fixed controls.
+          if (!data.highlighted && ((data.y < 105 && data.x < 270) || data.y > height - 65)) return
+          context.font = `${settings.labelWeight} ${settings.labelSize}px ${settings.labelFont}`
+          let label = data.label.length > 65 ? `${data.label.slice(0, 62)}…` : data.label
+          const maxWidth = Math.max(80, Math.min(270, width - 24))
+          while (label.length > 4 && context.measureText(label).width > maxWidth)
+            label = `${label.slice(0, -2)}…`
+          const textWidth = context.measureText(label).width
+          const x = Math.max(8, Math.min(width - textWidth - 8, data.x + data.size + 4))
+          const y = Math.max(16, Math.min(height - 16, data.y))
+          context.save()
+          context.globalAlpha = 0.88
+          context.fillStyle = getComputedStyle(document.documentElement)
+            .getPropertyValue('--background')
+            .trim()
+          context.fillRect(x - 3, y - 10, textWidth + 6, 17)
+          context.globalAlpha = 1
+          context.fillStyle = getComputedStyle(document.documentElement)
+            .getPropertyValue('--foreground')
+            .trim()
+          context.fillText(label, x, y + 3)
+          context.restore()
+        },
         enableEdgeEvents: false,
       })
     } catch {
@@ -99,10 +150,39 @@ export function PaperMap({
     renderer.on('clickNode', ({ node }) => {
       if (!node.startsWith('theme:')) select.current(node)
     })
-    renderer
-      .getCamera()
-      .on('updated', (state) => saveCamera.current({ x: state.x, y: state.y, ratio: state.ratio }))
+    let detailZoom = false
+    let cameraTimer: ReturnType<typeof setTimeout> | undefined
+    const updateLabels = (ratio: number) => {
+      const next = ratio < 0.45
+      if (next === detailZoom) return
+      detailZoom = next
+      graph.forEachNode((id, attrs) => {
+        const theme = id.startsWith('theme:')
+        graph.setNodeAttribute(
+          id,
+          'label',
+          theme
+            ? next
+              ? null
+              : clusters.find((c) => `theme:${c.id}` === id)?.label || ''
+            : next
+              ? attrs.paperTitle
+              : null,
+        )
+      })
+    }
+    updateLabels(renderer.getCamera().getState().ratio)
+    renderer.getCamera().on('updated', (state) => {
+      updateLabels(state.ratio)
+      // Persist the settled view, not every animation frame. Frequent history
+      // writes both hurt panning and can exceed browser history rate limits.
+      clearTimeout(cameraTimer)
+      cameraTimer = setTimeout(() => {
+        saveCamera.current({ x: state.x, y: state.y, ratio: state.ratio })
+      }, 250)
+    })
     return () => {
+      clearTimeout(cameraTimer)
       initialCamera.current = renderer.getCamera().getState()
       renderer.kill()
       sigma.current = null
@@ -123,7 +203,8 @@ export function PaperMap({
       size: id === selected ? 9 : data.size,
       highlighted: id === selected,
       zIndex: id === selected ? 2 : 0,
-      label: id.startsWith('theme:') && renderer.getCamera().getState().ratio < 0.45 ? '' : data.label,
+      label: id === selected ? data.paperTitle : data.label,
+      forceLabel: id === selected,
     }))
   }, [selected, references, points])
 
@@ -189,11 +270,11 @@ export function PaperMap({
       )}
       {failed && <p className="map-fallback">WebGL is unavailable. Explore the same papers in the list.</p>}
       <div className="map-legend">
-        <span className="eyebrow">THEMATIC LANDSCAPE</span>
+        <span className="eyebrow">{synthetic ? 'SYNTHETIC RENDERING FIXTURE' : 'THEMATIC LANDSCAPE'}</span>
         <p>
-          Nearby papers share language.
+          {synthetic ? 'Generated coordinates; no research records.' : 'Nearby papers share language.'}
           <br />
-          Select a paper to inspect its evidence.
+          {synthetic ? 'Pan and zoom to test rendering.' : 'Select a paper to inspect its evidence.'}
         </p>
       </div>
       <div className="map-controls">
@@ -231,9 +312,12 @@ export function PaperMap({
         )}
       </div>
       <div className="map-caption">
-        Text similarity / t-SNE · seed 42 · {points.length.toLocaleString()} papers
+        {synthetic ? 'Synthetic fixture' : 'Text similarity / t-SNE · seed 42'} ·{' '}
+        {points.length.toLocaleString()} {synthetic ? 'points' : 'papers'}
         <br />
-        Lines show selected paper’s references within this view.
+        {synthetic
+          ? 'Point-only fixture; no edges.'
+          : 'Lines show selected paper’s references within this view.'}
       </div>
     </div>
   )

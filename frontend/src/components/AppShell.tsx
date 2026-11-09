@@ -1,5 +1,5 @@
 import type React from 'react'
-import { ChevronsLeft, ChevronsRight, Command } from 'lucide-react'
+import { ChevronsLeft, ChevronsRight, Command, Menu, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { NavItem } from '../app/navigation'
 import type { AtlasData } from '../data/types'
@@ -17,6 +17,7 @@ interface AppShellProps {
 
 export function AppShell({ atlas, navItems, activePath, children }: AppShellProps) {
   const [collapsed, setCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const mainRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
@@ -37,9 +38,38 @@ export function AppShell({ atlas, navItems, activePath, children }: AppShellProp
         )}
         aria-label="Research Atlas navigation"
       >
-        <div className={cx('flex items-start justify-between gap-2 max-[1160px]:hidden', collapsed && 'grid justify-items-center')}>
+        <div className="mobile-shell-header">
           <a
-            className={cx('flex min-w-0 items-center gap-3 py-1 pr-0 pb-[18px] pl-1.5', collapsed && 'pb-1 pl-0')}
+            href={hrefFor('/')}
+            onClick={(event) => {
+              event.preventDefault()
+              setMobileOpen(false)
+              navigate('/')
+            }}
+          >
+            Research Atlas
+          </a>
+          <Button
+            variant="ghost"
+            aria-expanded={mobileOpen}
+            aria-controls="primary-navigation"
+            onClick={() => setMobileOpen((value) => !value)}
+          >
+            {mobileOpen ? <X size={18} /> : <Menu size={18} />}
+            {mobileOpen ? 'Close' : 'Menu'}
+          </Button>
+        </div>
+        <div
+          className={cx(
+            'flex items-start justify-between gap-2 max-[1160px]:hidden',
+            collapsed && 'grid justify-items-center',
+          )}
+        >
+          <a
+            className={cx(
+              'flex min-w-0 items-center gap-3 py-1 pr-0 pb-[18px] pl-1.5',
+              collapsed && 'pb-1 pl-0',
+            )}
             href={hrefFor('/')}
             onClick={(event) => {
               event.preventDefault()
@@ -51,16 +81,31 @@ export function AppShell({ atlas, navItems, activePath, children }: AppShellProp
               <Command aria-hidden="true" />
             </span>
             <span className={cx('min-w-0', collapsed && 'hidden')}>
-              <span className="block whitespace-nowrap font-display text-[0.98rem] leading-[1.15] font-bold">Research Atlas</span>
-              <span className="mt-[3px] block text-[0.72rem] text-muted-foreground">Research discovery atlas</span>
+              <span className="block whitespace-nowrap font-display text-[0.98rem] leading-[1.15] font-bold">
+                Research Atlas
+              </span>
+              <span className="mt-[3px] block text-[0.72rem] text-muted-foreground">
+                Computation & the sciences
+              </span>
             </span>
           </a>
-          <Button variant="ghost" size="icon" onClick={() => setCollapsed((value) => !value)} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setCollapsed((value) => !value)}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
             {collapsed ? <ChevronsRight aria-hidden="true" /> : <ChevronsLeft aria-hidden="true" />}
           </Button>
         </div>
 
-        <nav className="grid min-h-0 gap-[5px] max-[1160px]:flex max-[1160px]:max-w-[100vw] max-[1160px]:overflow-x-auto max-[1160px]:pb-0.5">
+        <nav
+          id="primary-navigation"
+          className={cx(
+            'app-navigation grid min-h-0 gap-[5px] max-[1160px]:flex max-[1160px]:max-w-[100vw] max-[1160px]:overflow-x-auto max-[1160px]:pb-0.5',
+            mobileOpen && 'is-open',
+          )}
+        >
           {navItems.map((item) => {
             const Icon = item.icon
             const active = isActivePath(activePath, item.path)
@@ -71,23 +116,33 @@ export function AppShell({ atlas, navItems, activePath, children }: AppShellProp
                   'flex min-h-[38px] items-center gap-2.5 rounded-card px-[11px] py-2 text-[0.82rem] font-[640] text-muted-foreground transition-[background,color,transform] duration-150 hover:translate-x-0.5 hover:bg-secondary hover:text-foreground max-[1160px]:shrink-0 max-[760px]:min-h-[46px] max-[760px]:flex-col max-[760px]:justify-center max-[760px]:gap-1 max-[760px]:px-2 max-[760px]:text-center max-[760px]:text-[0.68rem]',
                   collapsed && 'justify-center px-0 max-[1160px]:justify-start max-[1160px]:px-[11px]',
                   active && 'bg-secondary text-foreground shadow-[inset_2px_0_0_var(--primary)]',
-                  active && collapsed && 'shadow-[inset_0_-2px_0_var(--primary)] max-[1160px]:shadow-[inset_2px_0_0_var(--primary)]',
+                  active &&
+                    collapsed &&
+                    'shadow-[inset_0_-2px_0_var(--primary)] max-[1160px]:shadow-[inset_2px_0_0_var(--primary)]',
                 )}
                 href={hrefFor(item.path)}
+                aria-current={active ? 'page' : undefined}
                 title={item.label}
                 onClick={(event) => {
                   event.preventDefault()
+                  setMobileOpen(false)
                   navigate(item.path)
                 }}
               >
                 <Icon aria-hidden="true" className="size-[18px] max-[760px]:size-4" />
-                <span className={cx('max-[760px]:whitespace-nowrap', collapsed && 'hidden max-[1160px]:inline')}>{item.label}</span>
+                <span
+                  className={cx('max-[760px]:whitespace-nowrap', collapsed && 'hidden max-[1160px]:inline')}
+                >
+                  {item.label}
+                </span>
               </a>
             )
           })}
         </nav>
 
-        <div className={cx('mt-auto grid shrink-0 gap-3 max-[1160px]:hidden', collapsed ? '-mx-2.5' : '-mx-3.5')}>
+        <div
+          className={cx('mt-auto grid shrink-0 gap-3 max-[1160px]:hidden', collapsed ? '-mx-2.5' : '-mx-3.5')}
+        >
           <Separator />
           <div className={cx('grid gap-1 px-5 py-1', collapsed && 'hidden')}>
             <span className="text-[0.7rem] font-[650] text-muted-foreground">Data Refresh</span>
@@ -96,7 +151,10 @@ export function AppShell({ atlas, navItems, activePath, children }: AppShellProp
         </div>
       </aside>
 
-      <main ref={mainRef} className="h-dvh min-w-0 max-w-[100vw] overflow-y-auto overscroll-contain px-5 pt-[26px] pb-8 max-[1160px]:h-auto max-[1160px]:max-w-full max-[1160px]:overflow-visible max-[1160px]:px-4 max-[1160px]:pt-[22px] max-[1160px]:pb-7 max-[760px]:px-3 max-[760px]:pt-[18px] max-[760px]:pb-6">
+      <main
+        ref={mainRef}
+        className="h-dvh min-w-0 max-w-[100vw] overflow-y-auto overscroll-contain px-5 pt-[26px] pb-8 max-[1160px]:h-auto max-[1160px]:max-w-full max-[1160px]:overflow-visible max-[1160px]:px-4 max-[1160px]:pt-[22px] max-[1160px]:pb-7 max-[760px]:px-3 max-[760px]:pt-[18px] max-[760px]:pb-6"
+      >
         {children}
       </main>
     </div>

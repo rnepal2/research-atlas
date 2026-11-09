@@ -1,156 +1,183 @@
+import { useEffect, useState } from 'react'
 import type { AtlasData } from '../data/types'
-import { BookOpen, Compass, Database, ExternalLink, Layers3, ShieldCheck } from 'lucide-react'
+import { researchFile, useResearch } from '../data/research'
 import { PageHeader } from '../components/PageHeader'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui'
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui'
 
-interface MethodologyPageProps {
-  atlas: AtlasData
+interface Coverage {
+  expectedPartitionCount: number
+  startedPartitionCount: number
+  exhaustedPartitionCount: number
+  eligibleUniqueWorks: number
+  abstractsAvailable: number
+  referencesAvailable: number
 }
 
-export function MethodologyPage({ atlas }: MethodologyPageProps) {
+export function MethodologyPage({ atlas }: { atlas: AtlasData }) {
+  const { manifest } = useResearch()
+  const [coverage, setCoverage] = useState<Coverage>()
+  const [coverageError, setCoverageError] = useState('')
+  useEffect(() => {
+    if (!manifest) return
+    const controller = new AbortController()
+    researchFile<Coverage>(manifest, 'coverage.json', controller.signal)
+      .then(setCoverage)
+      .catch(() => {
+        if (!controller.signal.aborted) setCoverageError('Coverage details could not be loaded.')
+      })
+    return () => controller.abort()
+  }, [manifest])
+
   return (
-    <div className="grid min-w-0 gap-3">
+    <div className="grid min-w-0 gap-5">
       <PageHeader
-        eyebrow="About Research Atlas"
-        title="About"
-        description="A public research intelligence atlas for exploring topic momentum, expertise, papers, geography, and collaboration."
+        eyebrow="Research Atlas"
+        title="Methods & data"
+        description="What is included, how the views are built, and where interpretation needs care."
       />
-
-      <Card>
-        <CardHeader><CardTitle>The AI research landscape</CardTitle><CardDescription>A focused discovery surface with inspectable source evidence.</CardDescription></CardHeader>
-        <CardContent className="grid gap-3 text-sm leading-relaxed text-muted-foreground">
-          <p>The landscape shows unique OpenAlex records that pass curated topic rules and a conservative AI title filter. Coverage is partial. It is not a complete census of AI research, and title filtering can miss relevant papers.</p>
-          <p>Coordinates are computed offline from TF-IDF text features, truncated SVD and seeded t-SNE. Thematic groups use k-means in latent space. Nearby points share language; distance does not prove agreement, citation, scientific quality or a causal relationship. Global distances between t-SNE clusters should not be interpreted quantitatively.</p>
-          <p>Select a paper to inspect its authorships, affiliations and abstract. When actual reference IDs are available, the map shows references within the current view. Missing references are disclosed; related-work suggestions are not treated as citations.</p>
-          <p>Saved reading lists stay in this browser. Exports include snapshot IDs. The synthetic rendering benchmark is a development fixture and is never counted as research coverage. Bibliographic records may contain source errors; source observation dates and inclusion rules travel with the evidence.</p>
-        </CardContent>
-      </Card>
-
-      <section className="grid grid-cols-[minmax(0,1.18fr)_minmax(260px,0.92fr)_minmax(260px,0.92fr)] gap-2 max-[1160px]:grid-cols-1">
-        <Card className="overflow-hidden bg-[linear-gradient(140deg,color-mix(in_srgb,var(--primary)_4%,transparent),transparent_58%),var(--card)]">
-          <CardHeader className="[&>svg]:size-[19px] [&>svg]:text-primary">
-            <div>
-              <CardTitle>What This Site Is</CardTitle>
-              <CardDescription>An open research atlas, not a live search engine or ranking of scientific quality.</CardDescription>
-            </div>
-            <Compass aria-hidden="true" />
-          </CardHeader>
-          <CardContent>
-            <p className="m-0 text-[0.8rem] leading-[1.6] text-muted-foreground">
-              Use it to see where research is moving, who is becoming more visible, which institutions are active, and
-              how collaboration is organized in the current snapshot.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="overflow-hidden">
-          <CardHeader className="[&>svg]:size-[19px] [&>svg]:text-primary">
-            <div>
-              <CardTitle>Data Source</CardTitle>
-              <CardDescription>{atlas.source.notes}</CardDescription>
-            </div>
-            <Database aria-hidden="true" />
-          </CardHeader>
-          <CardContent className="grid gap-3">
-            <p className="m-0 text-[0.8rem] leading-[1.6] text-muted-foreground">
-              Research Atlas uses OpenAlex works, topics, authorships, institutions, countries, and sources. Data is
-              processed offline and published as compact static artifacts. Annual trends use aggregate OpenAlex counts;
-              entity-level views use bounded, topic-relevant work samples. Researcher signals require repeated recent activity and a meaningful fractional contribution; cited-work impact is also fractionally attributed across coauthors.
-            </p>
-            <Button asChild variant="outline" size="sm" className="w-fit">
-              <a href={atlas.source.url} target="_blank" rel="noopener noreferrer">
-                OpenAlex
-                <ExternalLink aria-hidden="true" />
-              </a>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="overflow-hidden">
-          <CardHeader className="[&>svg]:size-[19px] [&>svg]:text-primary">
-            <div>
-              <CardTitle>How To Use It</CardTitle>
-              <CardDescription>Use the site as a discovery layer before deeper source-level review.</CardDescription>
-            </div>
-            <Layers3 aria-hidden="true" />
-          </CardHeader>
-          <CardContent>
-            <p className="m-0 text-[0.8rem] leading-[1.6] text-muted-foreground">
-              Use Atlas for topic profiles, Trending for momentum, Researchers for rising visibility, and Networks for
-              collaboration. Follow source links when a signal needs validation.
-            </p>
-          </CardContent>
-        </Card>
+      <section className="method-strip">
+        <div>
+          <span className="eyebrow">THE PURPOSE</span>
+          <h2>AI research, in context.</h2>
+          <p>
+            Follow advances in AI and computer science, then investigate their applications across the
+            scientific domains already covered here. This is a discovery tool, not a ranking of scientific
+            quality or a complete census of research.
+          </p>
+        </div>
+        <Button asChild variant="outline">
+          <a href={atlas.source.url} target="_blank" rel="noopener noreferrer">
+            About OpenAlex
+          </a>
+        </Button>
       </section>
-
-      <section className="grid grid-cols-[minmax(0,1fr)_minmax(280px,0.62fr)] gap-2 max-[1160px]:grid-cols-1">
+      <section className="grid gap-5 min-[1100px]:grid-cols-2">
         <Card>
-          <CardHeader className="[&>svg]:size-[19px] [&>svg]:text-primary">
-            <div>
-              <CardTitle>Important Context</CardTitle>
-              <CardDescription>Short caveats that should travel with every map, table, and graph.</CardDescription>
-            </div>
-            <ShieldCheck aria-hidden="true" />
+          <CardHeader>
+            <CardTitle>Coverage of the paper landscape</CardTitle>
+            <CardDescription>
+              Partial collection within a declared boundary—not an estimate of field size.
+            </CardDescription>
           </CardHeader>
-          <CardContent className="pt-2.5">
-            <Accordion type="single" collapsible defaultValue="static" className="border-t border-border">
-              <AccordionItem value="static" className="border-b border-border">
-                <AccordionTrigger className="text-[0.83rem] hover:no-underline">The Public Site Is Static</AccordionTrigger>
-                <AccordionContent>
-                  <p className="m-0 text-[0.78rem] leading-[1.5] text-muted-foreground">
-                    Data is collected and processed offline, then published as static JSON for GitHub Pages. A weekly
-                    refresh creates a new snapshot; the browser does not query OpenAlex live.
-                  </p>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="taxonomy" className="border-b border-border">
-                <AccordionTrigger className="text-[0.83rem] hover:no-underline">Topic Navigation Follows OpenAlex</AccordionTrigger>
-                <AccordionContent>
-                  <p className="m-0 text-[0.78rem] leading-[1.5] text-muted-foreground">
-                    Topics are organized around OpenAlex-style domain, field, subfield, and topic labels so the atlas can
-                    grow without inventing a separate taxonomy.
-                  </p>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="signals" className="border-b border-border">
-                <AccordionTrigger className="text-[0.83rem] hover:no-underline">Signals Are Directional</AccordionTrigger>
-                <AccordionContent>
-                  <p className="m-0 text-[0.78rem] leading-[1.5] text-muted-foreground">
-                    Phrases like momentum, researcher activity, and institution strength describe evidence inside the
-                    snapshot. Momentum compares completed publication years; the current year is shown separately as
-                    year to date. Researcher visibility requires at least two recent sampled works. These signals are not claims about scientific quality.
-                  </p>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="limits" className="border-b border-border">
-                <AccordionTrigger className="text-[0.83rem] hover:no-underline">Public Scholarly Data Has Limits</AccordionTrigger>
-                <AccordionContent>
-                  <p className="m-0 text-[0.78rem] leading-[1.5] text-muted-foreground">
-                    Topic assignment, citation counts, author identity resolution, and institution attribution depend on
-                    OpenAlex records. Recent papers and newly emerging areas can be underrepresented.
-                  </p>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+          <CardContent className="grid gap-4 text-sm leading-relaxed text-muted-foreground">
+            <p>
+              The edition covers 23 AI and computing areas and 77 scientific application contexts, from 2017
+              onward. A paper must match a curated query and its configured topic assignments. Application
+              papers also need explicit AI methods in the title or abstract. Computing papers do not have to
+              mention AI. Articles, reviews, preprints, conference papers and reports are eligible.
+            </p>
+            {coverage && (
+              <dl className="coverage-facts">
+                {[
+                  ['Unique papers', coverage.eligibleUniqueWorks],
+                  ['With an abstract', coverage.abstractsAvailable],
+                  ['With captured reference IDs', coverage.referencesAvailable],
+                  ['Topic/year boundaries started', coverage.startedPartitionCount],
+                  ['Topic/year boundaries exhausted', coverage.exhaustedPartitionCount],
+                  ['Topic/year boundaries declared', coverage.expectedPartitionCount],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <dt>{label}</dt>
+                    <dd>{Number(value).toLocaleString()}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+            {coverageError && <p role="status">{coverageError}</p>}
+            <p>
+              A boundary is exhausted only when its versioned query has no cursor pages left. This does not
+              prove that the query finds every relevant paper. Keywords, missing abstracts, indexing delays
+              and topic assignments can all exclude relevant research. Areas and tracks overlap; their paper
+              counts must not be added together.
+            </p>
           </CardContent>
         </Card>
-
-        <Card className="self-start bg-card-soft">
-          <CardHeader className="[&>svg]:size-[19px] [&>svg]:text-primary">
-            <div>
-              <CardTitle>What Belongs Here</CardTitle>
-              <CardDescription>The product stays useful by keeping only evidence-bearing views.</CardDescription>
-            </div>
-            <BookOpen aria-hidden="true" />
+        <Card>
+          <CardHeader>
+            <CardTitle>Reading the landscape</CardTitle>
+            <CardDescription>
+              Text similarity helps find nearby ideas; it does not establish a relationship.
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className="m-0 text-[0.8rem] leading-[1.6] text-muted-foreground">
-              Charts, maps, tables, paper lists, and networks earn space when they help explain movement, expertise, or
-              collaboration. Decorative widgets and opaque scores are intentionally kept out.
+          <CardContent className="grid gap-4 text-sm leading-relaxed text-muted-foreground">
+            <p>
+              Coordinates are computed offline from title and abstract text using TF-IDF, truncated SVD and
+              seeded t-SNE. Theme labels summarize frequent terms in k-means groups. They are navigation aids,
+              not a peer-reviewed taxonomy. Local proximity indicates shared language; global distances
+              between t-SNE groups have no quantitative meaning.
+            </p>
+            <p>
+              Points grow with recorded citation counts. Zoom in to reveal paper titles, or use the searchable
+              paper list for keyboard exploration. Selecting a paper shows its source evidence. Lines show
+              actual reference IDs present in the current view; related-work suggestions are never substituted
+              for citations.
+            </p>
+            <p>
+              Saved reading lists remain in this browser. Shared links preserve filters, the selected paper,
+              camera position and snapshot ID. Exports carry the snapshot ID. Older links require the
+              corresponding snapshot to remain available.
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Publication trends and comparisons</CardTitle>
+            <CardDescription>
+              Whole-topic counts and AI-filtered paper samples are different populations.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 text-sm leading-relaxed text-muted-foreground">
+            <p>
+              Topic profiles and comparison charts use separate annual OpenAlex aggregate queries—not counts
+              from the paper landscape. For application areas, these trends describe the broader parent topic,
+              not AI adoption within it. The chart discloses this distinction.
+            </p>
+            <p>
+              Momentum compares the latest three completed publication years with the three preceding years.
+              The current year appears separately as year to date and is excluded from completed-year growth.
+              Indexing delays and changes in OpenAlex coverage can affect these counts.
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>People, institutions and collaboration</CardTitle>
+            <CardDescription>
+              Activity inside collected publications, not lifetime rankings or career trajectories.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 text-sm leading-relaxed text-muted-foreground">
+            <p>
+              People & institutions uses the focused paper corpus. An author’s cited-work impact divides
+              citations to each collected paper across its credited authorships; it is not their lifetime
+              citation total. Institutions count distinct works carrying their affiliation. A
+              multi-institution work can count for several institutions. Authors are attributed only to their
+              own recorded affiliations. Organizational and placeholder names are excluded from the people
+              directory; their citation credit is not reassigned to other authors.
+            </p>
+            <p>
+              Networks and legacy topic profiles provide broader topic context from bounded samples. Network
+              colors group author topic assignments or institution countries—not detected communities. Edges
+              represent coauthorship or shared publications; missing edges do not prove the absence of
+              collaboration. Experimental scores are relative to the sample, not scientific merit.
+            </p>
+            <p>
+              Recent activity includes this year and the two preceding calendar years. Dividing citation
+              counts by paper age is not measured citation velocity; that requires repeated observations.
+              Missing affiliations remain unresolved rather than being guessed.
             </p>
           </CardContent>
         </Card>
       </section>
+      <p className="source-note">
+        Source: OpenAlex. Data is collected offline and delivered as versioned static files; the browser does
+        not query OpenAlex. Checksums are verified before research files are rendered. The established weekly
+        production refresh remains separate from this development corpus. Bibliographic metadata, citations,
+        identity resolution and retraction flags can contain source errors; verify consequential findings
+        against the original publication.
+        {manifest &&
+          ` Paper snapshot ${manifest.snapshot.slice(0, 8)}, built ${new Date(manifest.processedAt).toLocaleDateString()}.`}
+      </p>
     </div>
   )
 }

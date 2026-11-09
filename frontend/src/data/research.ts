@@ -16,6 +16,7 @@ export interface ResearchPoint {
 }
 export interface ResearchPaper extends ResearchPoint {
   observedAt?: string
+  matchedQueries?: string[]
   abstract: string
   source: string
   url: string
@@ -29,7 +30,7 @@ export interface ResearchLandscape {
   method: string
   points: ResearchPoint[]
   clusters: { id: number; label: string; count: number; x: number; y: number }[]
-  topics: { slug: string; label: string; count: number }[]
+  topics: { slug: string; label: string; count: number; role?: 'methods' | 'applications'; domain?: string }[]
 }
 export interface ResearchManifest {
   snapshot: string

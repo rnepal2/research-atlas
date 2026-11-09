@@ -2,12 +2,12 @@ import { useCallback, useEffect, useState } from 'react'
 
 export type Theme = 'dark' | 'light'
 
-const STORAGE_KEY = 'research-atlas-theme'
+const STORAGE_KEY = 'research-atlas-folio-theme'
 
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY)
-    return stored === 'light' ? 'light' : 'dark'
+    return stored === 'dark' ? 'dark' : 'light'
   })
 
   useEffect(() => {
