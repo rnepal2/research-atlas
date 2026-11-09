@@ -17,8 +17,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer, ENGLISH_STOP_WORDS
 from sklearn.manifold import TSNE
 
 from src.corpus.store import CorpusStore
-from src.corpus.relevance import edition_eligible
-from src.corpus.entities import entity_evidence
+from src.corpus.relevance import edition_eligible, method_tags
+from src.corpus.entities import entity_evidence, credit_divisor
 from src.corpus.scope import edition_topics, edition_policy
 from src.corpus.partitions import partition_plan, coverage_rows
 from src.corpus.validate import validate
@@ -98,6 +98,8 @@ def build(db_path, output, raw_dir=Path('data/raw')):
                  'type': work.get('type') or 'unknown', 'cluster': int(assignments[i]),
                  'x': round(float(coordinates[i, 0]), 5), 'y': round(float(coordinates[i, 1]), 5),
                  'topics': sorted(memberships[work['id']]), 'shard': shard,
+                 'methods': method_tags(texts[i]),
+                 'creditDivisor': credit_divisor(work),
                  'oa': bool((work.get('open_access') or {}).get('is_oa')), 'retracted': bool(work.get('is_retracted'))}
         points.append(point)
         details[shard][identifier] = {**point, 'abstract': abstract_text(work),
@@ -112,7 +114,8 @@ def build(db_path, output, raw_dir=Path('data/raw')):
             'inclusion': 'Curated computer-science/AI methods topic, or an existing scientific topic with explicit AI methods in its title/abstract. All terms from a curated query and configured OpenAlex topic assignments are required. Type and date boundaries apply; relevant works can still be missed.'}
     payload = {'schemaVersion': 2, 'method': 'TF-IDF → 32D truncated SVD → seeded t-SNE (2D); k-means themes in latent space. Local proximity is text similarity, not citation, agreement, or a measure of global distance.',
                'points': points, 'clusters': clusters,
-               'topics': [{'slug': t['slug'], 'label': t['editionLabel'], 'domain':t['domain'], 'role':t['editionRole'], 'count': sum(t['slug'] in p['topics'] for p in points)} for t in config]}
+               'methods': [{'id': family['id'], 'label': family['label'], 'terms': family['terms']} for family in edition_policy()['method_families']],
+               'topics': [{'slug': t['slug'], 'label': t['editionLabel'], 'domain':t['domain'], 'field':t['field'], 'subfield':t['subfield'], 'sourceTopicIds':t.get('openalex_topic_ids', []), 'role':t['editionRole'], 'count': sum(t['slug'] in p['topics'] for p in points)} for t in config]}
     files = {}
     pending = {}
     def write(name, value):
@@ -120,6 +123,20 @@ def build(db_path, output, raw_dir=Path('data/raw')):
         pending[name] = data
         files[name] = {'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data)}
     write('landscape.json', payload)
+    from src.corpus.trends import TARGET, validate_trends
+    context = None
+    if TARGET.exists():
+        context = json.loads(TARGET.read_text())
+    elif (output / 'research-manifest.json').exists():
+        previous = json.loads((output / 'research-manifest.json').read_text())
+        if 'trends.json' in previous.get('files', {}):
+            source = output / previous['base'] / 'trends.json'
+            if hashlib.sha256(source.read_bytes()).hexdigest() != previous['files']['trends.json']['sha256']:
+                raise ValueError('Previous annual context checksum mismatch')
+            context = json.loads(source.read_text())
+    if context is not None:
+        validate_trends(context, config)
+        write('trends.json', context)
     for kind, rows in entity_evidence(ordered).items():
         write(f'{kind}.json', rows)
     insights = []

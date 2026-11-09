@@ -17,6 +17,8 @@ def validate_entity_evidence(papers, authors, institutions):
     for identifier, paper in papers.items():
         entries = paper['authors']
         credited = len({a['id'] for a in entries if a.get('id')}) + sum(not a.get('id') for a in entries)
+        if 'creditDivisor' in paper and paper['creditDivisor'] != max(1, credited):
+            raise ValueError('Paper fractional credit denominator does not reconcile')
         seen = set()
         for entry in entries:
             person = bool(entry.get('id')) and is_credible_author({'display_name': entry.get('name')})
@@ -99,7 +101,26 @@ def validate(root, manifest=None):
         evidence = {identifier: paper for shard in shards.values() for identifier, paper in shard.items()}
         if set(evidence) != set(ids):
             raise ValueError('Unplotted or missing paper detail records')
+        if landscape.get('methods'):
+            methods = landscape['methods']
+            if len({m['id'] for m in methods}) != len(methods):
+                raise ValueError('Duplicate method definitions')
+            for paper in evidence.values():
+                if not set(paper.get('methods', [])) <= {m['id'] for m in methods}:
+                    raise ValueError('Unknown method tag')
+                if not all('terms' in m for m in methods):
+                    continue  # Historical snapshots predate embedded terminology definitions.
+                text = re.sub(r'[\s-]+', ' ', paper['title'] + ' ' + paper.get('abstract', '')).lower()
+                expected = {m['id'] for m in methods if any(re.search(r'\b' + re.escape(term) + r's?\b', text) for term in m['terms'])}
+                if set(paper.get('methods', [])) != expected:
+                    raise ValueError('Method tags do not reconcile to title/abstract evidence')
         validate_entity_evidence(evidence, json.loads((base / 'authors.json').read_text()), json.loads((base / 'institutions.json').read_text()))
+        if 'trends.json' in manifest['files']:
+            from src.corpus.trends import validate_trends
+            trends = json.loads((base / 'trends.json').read_text())
+            if trends.get('corpusVersion') != manifest.get('corpusVersion'):
+                raise ValueError('Annual context and paper snapshot editions differ')
+            validate_trends(trends, landscape['topics'], current_policy=False)
         for topic in landscape['topics']:
             if topic['count'] != sum(topic['slug'] in p['topics'] for p in landscape['points']):
                 raise ValueError('Topic count does not reconcile')

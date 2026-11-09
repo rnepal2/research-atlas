@@ -1,4 +1,4 @@
-version: ai-and-computing-v3
+version: ai-and-computing-v4
 title: AI research, in context
 purpose: Follow advances in AI and computer science, and trace their applications across the scientific domains already covered by Research Atlas.
 start_year: 2017
@@ -9,8 +9,69 @@ labels:
 methods:
   fields: [Computer Science]
   work_areas: [AI Methods]
+# Development-edition collections use explicit scientific context plus method evidence.
+# These do not alter the legacy production topic/profile queries.
+topic_overrides:
+  particle-physics:
+    openalex_topic_ids: []
+    keyword_queries: [particle physics, high energy physics, jet tagging, particle detector, large hadron collider]
+  condensed-matter-physics:
+    openalex_topic_ids: []
+    keyword_queries: [condensed matter, neural quantum state, many body physics, correlated electron, quantum phase transition]
+  quantum-materials:
+    openalex_topic_ids: []
+    keyword_queries: [quantum materials, spin hamiltonian, topological quantum materials]
+  fusion-plasma:
+    openalex_topic_ids: []
+    keyword_queries: [fusion plasma, tokamak, plasma turbulence, magnetic confinement, laser plasma]
+  cosmology:
+    keyword_queries: [cosmology, cosmic microwave background, cosmological parameter, large scale structure universe]
+  gravitational-waves:
+    keyword_queries: [gravitational wave, gravitational waves, LIGO]
+  superconductivity:
+    keyword_queries: [superconductivity, superconducting material, superconductor]
+  materials-informatics:
+    keyword_queries: [materials informatics, materials discovery, materials property prediction, inverse materials design]
+  ai-for-science:
+    keyword_queries: [AI for science, scientific machine learning, physics informed neural, neural operator, neural quantum state, neural posterior estimation]
 applications:
   scope: Existing topics outside the methods track, restricted to works with explicit AI methods in their title or abstract.
-  search: '"machine learning" OR "deep learning" OR "artificial intelligence" OR "neural network" OR "large language model" OR "reinforcement learning" OR "computer vision"'
+method_families:
+  - id: language-models
+    label: Language models
+    terms: [large language model, language model, llm, chatgpt]
+  - id: graph-learning
+    label: Graph learning
+    terms: [graph neural, graph convolutional, graph attention]
+  - id: neural-operators
+    label: Neural operators
+    terms: [neural operator, deeponet]
+  - id: physics-informed
+    label: Physics-informed learning
+    terms: [physics informed neural, physics informed machine learning, pinn]
+  - id: neural-quantum
+    label: Neural quantum states
+    terms: [neural quantum state, neural network quantum state]
+  - id: neural-inference
+    label: Neural simulation-based inference
+    terms: [neural posterior estimation, neural likelihood estimation, neural ratio estimation]
+  - id: reinforcement-learning
+    label: Reinforcement learning
+    terms: [reinforcement learning]
+  - id: gaussian-processes
+    label: Gaussian process regression
+    terms: [gaussian process regression]
+  - id: bayesian-optimization
+    label: Bayesian optimization
+    terms: [bayesian optimization]
+  - id: tree-models
+    label: Tree-based learning
+    terms: [random forest, gradient boosting, boosted decision tree, xgboost]
+  - id: deep-learning
+    label: Deep learning
+    terms: [deep learning, neural network, vision transformer]
+  - id: machine-learning
+    label: AI / machine learning
+    terms: [machine learning, artificial intelligence, computer vision]
 completeness:
   definition: All cursor pages exhausted for a versioned topic/year/query boundary, followed by documented eligibility filtering. This is query completeness, not a census of the real-world field.

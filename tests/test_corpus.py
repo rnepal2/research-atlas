@@ -25,7 +25,7 @@ class CorpusTests(unittest.TestCase):
             calls = []
             class Client:
                 def get(self, path, params, use_cache):
-                    calls.append(params['search'])
+                    calls.append(params['search.title_and_abstract'])
                     return {'results': [{'id': f'W{len(calls)}'}], 'meta': {'next_cursor': 'next', 'count': 1000}}
             topics = [{'slug': 'one', 'keyword_queries': ['first']}, {'slug': 'two', 'keyword_queries': ['second']}]
             for _ in range(2):
@@ -54,7 +54,7 @@ class CorpusTests(unittest.TestCase):
             calls = []
             class Client:
                 def get(self, path, params, use_cache):
-                    calls.append(params['search'])
+                    calls.append(params['search.title_and_abstract'])
                     return {'results':[{'id':f'W{len(calls)}'}], 'meta':{'next_cursor':'next','count':1000,'cost_usd':.001}}
             collect(store, Client(), [{'slug':'one','keyword_queries':['first']},{'slug':'two','keyword_queries':['second']}], max_pages=2, start_year=date.today().year)
             self.assertEqual(calls,['(first)','(second)'])

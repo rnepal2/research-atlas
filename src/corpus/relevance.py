@@ -2,6 +2,7 @@
 from __future__ import annotations
 import re
 from datetime import date
+from functools import lru_cache
 
 
 TITLE_ANCHORS = re.compile(
@@ -18,14 +19,25 @@ def title_is_ai(work: dict) -> bool:
     return bool(TITLE_ANCHORS.search(title))
 
 
-APPLICATION_METHODS = re.compile(r'\b(machine learning|deep learning|artificial intelligence|neural network\w*|large language model\w*|graph neural|reinforcement learning|computer vision)\b', re.I)
+@lru_cache(maxsize=1)
+def method_patterns():
+    from src.corpus.scope import edition_policy
+    return [(family['id'], re.compile(r'\b(?:' + '|'.join(
+        r'[\s-]+'.join(re.escape(word) for word in term.split()) + r's?'
+        for term in family['terms']) + r')\b', re.I))
+        for family in edition_policy()['method_families']]
+
+
+def method_tags(text: str) -> list[str]:
+    """Observed title/abstract terminology, not a judgment of central contribution."""
+    return [identifier for identifier, pattern in method_patterns() if pattern.search(text)]
 
 
 def edition_eligible(work: dict, topic: dict | None = None) -> bool:
     if topic and topic.get('editionRole') == 'applications':
         words = {position: word for word, positions in (work.get('abstract_inverted_index') or {}).items() for position in positions}
         text = str(work.get('title') or '') + ' ' + ' '.join(words[i] for i in sorted(words))
-        relevant = bool(APPLICATION_METHODS.search(text))
+        relevant = bool(method_tags(text))
     else:
         relevant = True if topic and topic.get('editionRole') == 'methods' else title_is_ai(work)
     return (

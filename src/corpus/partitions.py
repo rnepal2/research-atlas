@@ -6,7 +6,17 @@ import json
 from datetime import date, timedelta
 
 from src.scripts.collect_openalex_data import WORK_FIELDS
-from src.analytics.work_relevance import boolean_search_query
+from src.analytics.work_relevance import boolean_search_query, short_openalex_id
+
+WORK_TYPES = 'article|review|preprint|conference-paper|report'
+
+
+def work_filters(topic, period):
+    filters = [period, f'type:{WORK_TYPES}']
+    ids = [short_openalex_id(identifier) for identifier in topic.get('openalex_topic_ids', [])]
+    if ids:
+        filters.append('topics.id:' + '|'.join(ids))
+    return ','.join(filters)
 
 
 def query_for(topic):
@@ -24,7 +34,7 @@ def partition_plan(topics, start_year=2017, recent_days=None):
     plan = []
     for year in range(date.today().year, start_year - 1, -1):
         for topic in topics:
-            params = {'search': query_for(topic), 'filter': f'publication_year:{year}',
+            params = {'search.title_and_abstract': query_for(topic), 'filter': work_filters(topic, f'publication_year:{year}'),
                       'per_page': 100, 'select': WORK_FIELDS + ',referenced_works,updated_date,is_retracted'}
             if recent_days:
                 params['filter'] += f',from_publication_date:{date.today() - timedelta(days=recent_days)}'

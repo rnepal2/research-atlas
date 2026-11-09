@@ -8,6 +8,10 @@ on:
       budget:
         description: Maximum project spend today in USD
         default: '0.25'
+      refresh_trends:
+        description: Refresh the complete annual AI/computing query batch before collection
+        type: boolean
+        default: false
 permissions:
   contents: write
 concurrency:
@@ -32,6 +36,12 @@ jobs:
           if gh release view research-corpus-development >/dev/null 2>&1; then
             gh release download research-corpus-development --pattern atlas.sqlite --dir .cache/corpus --clobber
           fi
+      - name: Refresh edition annual context
+        if: inputs.refresh_trends
+        env:
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+          BUDGET: ${{ inputs.budget }}
+        run: python -m src.corpus.trends --budget "$BUDGET"
       - name: Collect with daily budget
         env:
           OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}

@@ -2,13 +2,18 @@
 from src.analytics.authorship import is_credible_author
 
 
+def credit_divisor(work):
+    entries = work.get('authorships', [])
+    return max(1, len({a['author']['id'] for a in entries if (a.get('author') or {}).get('id')}) + sum(not (a.get('author') or {}).get('id') for a in entries))
+
+
 def entity_evidence(works):
     authors = {}
     institutions = {}
     for work in works:
         identifier = work['id'].rsplit('/', 1)[-1]
         entries = work.get('authorships', [])
-        credited = len({a['author']['id'] for a in entries if (a.get('author') or {}).get('id')}) + sum(not (a.get('author') or {}).get('id') for a in entries)
+        credited = credit_divisor(work)
         seen_authors = set()
         seen_institutions = set()
         for entry in entries:
