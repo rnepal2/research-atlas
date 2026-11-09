@@ -26,7 +26,7 @@ jobs:
           fi
       - run: npm ci
         working-directory: frontend
-      - run: npm run lint && npm run build
+      - run: npm test && npm run lint && npm run build
         working-directory: frontend
       - uses: actions/upload-artifact@v4
         with:

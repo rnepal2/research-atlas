@@ -1,7 +1,19 @@
 import { Suspense } from 'react'
 import type { AtlasData } from '../data/types'
 import { findTopic } from '../lib/router'
-import { AtlasPage, MethodologyPage, NetworksPage, NotFoundPage, ResearchersPage, TrendingPage, OverviewPage, ExplorePage, ComparePage, BenchmarkPage, PeoplePage } from './lazyPages'
+import {
+  AtlasPage,
+  MethodologyPage,
+  NetworksPage,
+  NotFoundPage,
+  ResearchersPage,
+  TrendingPage,
+  OverviewPage,
+  ExplorePage,
+  ComparePage,
+  BenchmarkPage,
+  PeoplePage,
+} from './lazyPages'
 
 interface RenderRouteParams {
   atlas: AtlasData
@@ -21,22 +33,32 @@ export function renderRoute({ atlas, path, theme, onThemeChange }: RenderRoutePa
   let page
 
   if (path === '/') {
-    page = <OverviewPage atlas={atlas} theme={theme} onThemeChange={onThemeChange}/>
+    page = <OverviewPage atlas={atlas} theme={theme} onThemeChange={onThemeChange} />
   } else if (path === '/benchmark' && import.meta.env.DEV) {
-    page = <BenchmarkPage/>
+    page = <BenchmarkPage />
   } else if (path === '/explore') {
-    page = <ExplorePage/>
-  } else if (path === '/people') {
-    page = <PeoplePage/>
+    page = <ExplorePage atlas={atlas} />
+  } else if (path === '/people' || path === '/connections' || path === '/networks') {
+    page = <PeoplePage />
   } else if (path === '/compare') {
-    page = <ComparePage atlas={atlas}/>
+    page = <ComparePage atlas={atlas} />
   } else if (path === '/atlas' || (topicMatch && matchedTopic && !topicMatch[2])) {
-    page = <AtlasPage atlas={atlas} initialTopicSlug={matchedTopic?.slug} theme={theme} onThemeChange={onThemeChange} />
+    page = (
+      <AtlasPage
+        atlas={atlas}
+        initialTopicSlug={matchedTopic?.slug}
+        theme={theme}
+        onThemeChange={onThemeChange}
+      />
+    )
   } else if (path === '/trending') {
     page = <TrendingPage atlas={atlas} />
-  } else if (path === '/researchers' || (topicMatch && matchedTopic && topicMatch[2] === 'rising-researchers')) {
+  } else if (
+    path === '/researchers' ||
+    (topicMatch && matchedTopic && topicMatch[2] === 'rising-researchers')
+  ) {
     page = <ResearchersPage atlas={atlas} initialTopicSlug={matchedTopic?.slug} />
-  } else if (path === '/networks' || (topicMatch && matchedTopic && topicMatch[2] === 'network')) {
+  } else if (topicMatch && matchedTopic && topicMatch[2] === 'network') {
     page = <NetworksPage atlas={atlas} initialTopicSlug={matchedTopic?.slug} />
   } else if (path === '/about' || path === '/methodology') {
     page = <MethodologyPage atlas={atlas} />

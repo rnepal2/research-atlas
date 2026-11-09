@@ -6,6 +6,7 @@ import type { NetworkData, NetworkNode } from '../data/types'
 import { formatCompact, formatScore } from '../lib/format'
 import { cn } from '../lib/utils'
 import { Button } from './ui'
+import { landscapeColor } from '../lib/landscape'
 
 interface IntelligenceNetworkProps {
   network: NetworkData
@@ -23,15 +24,13 @@ interface HoverState {
   }
 }
 
-const palette = ['#23d7cf', '#d8a84a', '#e56f61', '#74d69b', '#7da4ff', '#caa7ff', '#f2c46d', '#8ee8df']
-
 function graphColors() {
   const light = document.documentElement.dataset.theme === 'light'
   return {
-    edge: light ? 'rgba(4, 123, 117, 0.34)' : 'rgba(35, 215, 207, 0.18)',
-    mutedEdge: light ? 'rgba(4, 123, 117, 0.18)' : 'rgba(35, 215, 207, 0.08)',
+    edge: light ? 'rgba(63, 91, 117, 0.26)' : 'rgba(151, 174, 196, 0.23)',
+    mutedEdge: light ? 'rgba(63, 91, 117, 0.07)' : 'rgba(151, 174, 196, 0.07)',
     fadedNode: light ? 'rgba(95, 112, 118, 0.34)' : 'rgba(155, 173, 178, 0.24)',
-    label: light ? '#11191d' : '#dff6f4',
+    label: light ? '#282d35' : '#ebe5db',
   }
 }
 
@@ -57,7 +56,7 @@ function buildGraph(network: NetworkData, mode: 'author' | 'institution') {
 
   sourceNodes.forEach((node, index) => {
     const community = node.community || 'Mixed'
-    const color = palette[(communityIndex.get(community) || 0) % palette.length]
+    const color = landscapeColor(communityIndex.get(community) || 0, document.documentElement.dataset.theme === 'dark')
     const score = Math.max(1, node.score || node.works || 1)
     const position = initialPosition(node.id, communityIndex.get(community) || 0, communities.length)
     graph.addNode(node.id, {
@@ -112,7 +111,7 @@ export function IntelligenceNetwork({ network, mode, className }: IntelligenceNe
     const renderer = new Sigma(graphBundle.graph, containerRef.current, {
       allowInvalidContainer: true,
       defaultEdgeType: 'line',
-      defaultNodeColor: '#23d7cf',
+      defaultNodeColor: '#426b8c',
       defaultDrawNodeHover: () => {},
       enableEdgeEvents: false,
       edgeReducer: (edge, data) => {
@@ -274,7 +273,7 @@ export function IntelligenceNetwork({ network, mode, className }: IntelligenceNe
       <div className="absolute top-3 left-3 z-[2] grid max-w-[210px] gap-[7px] rounded-card border border-border bg-[color-mix(in_srgb,var(--card-solid)_84%,transparent)] p-2.5 backdrop-blur-[14px]">
         {graphBundle.communities.slice(0, 6).map((community) => (
           <span className="flex items-center gap-[7px] text-[0.7rem] font-bold text-muted-foreground" key={community}>
-            <i className="size-2 rounded-full shadow-[0_0_12px_currentColor]" style={{ background: palette[(graphBundle.communityIndex.get(community) || 0) % palette.length] }} />
+            <i className="size-2 rounded-full" style={{ background: landscapeColor(graphBundle.communityIndex.get(community) || 0, document.documentElement.dataset.theme === 'dark') }} />
             {community.slice(0, 22)}
           </span>
         ))}

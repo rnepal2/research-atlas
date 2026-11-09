@@ -23,6 +23,11 @@ export function AppShell({ atlas, navItems, activePath, children }: AppShellProp
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
   }, [activePath])
+  useEffect(() => {
+    const resetScroll = () => mainRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    window.addEventListener('atlas:navigate', resetScroll)
+    return () => window.removeEventListener('atlas:navigate', resetScroll)
+  }, [])
 
   return (
     <div

@@ -37,7 +37,9 @@ export function SelectField({
           aria-label={ariaLabel}
           className="h-10 w-full min-w-0 rounded-card border-border bg-input px-3 text-[0.84rem] font-semibold text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition-[border-color,box-shadow] hover:border-border-strong data-[state=open]:border-border-strong data-[state=open]:ring-3 data-[state=open]:ring-ring dark:bg-[color-mix(in_srgb,var(--card-solid)_78%,transparent)] dark:hover:bg-[color-mix(in_srgb,var(--input)_82%,var(--card-hover))]"
         >
-          <SelectValue placeholder={placeholder} />
+          <SelectValue placeholder={placeholder}>
+            {options.find((option) => option.value === value)?.label}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent
           position="popper"

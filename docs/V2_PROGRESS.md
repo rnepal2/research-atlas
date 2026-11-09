@@ -16,8 +16,8 @@ Source reconciliation refreshed 37,234 legacy work IDs; 1,985 unresolved/merged 
 were excluded. Annual aggregate queries were refreshed for all 100 profiles.
 The resulting landscape is still partial, not complete across these boundaries.
 
-The accepted development snapshot is `45617efbce24ba11`: 7,743 unique papers,
-7,587 abstracts, and 100 of 1,000 declared extraction boundaries started. None
+The accepted development snapshot is `ee0e9de2d0f9442f`: 10,012 unique work IDs,
+9,844 abstracts, and 118 of 1,000 declared extraction boundaries started. None
 is exhausted yet. Organizational/placeholder author records are excluded from
 the people directory without reallocating their citation credit. All 100 annual
 context profiles were rebuilt with inspectable queries; curated queries now use
@@ -25,14 +25,34 @@ title/abstract AND-of-term semantics, rather than exact long phrases.
 
 The Folio milestone has shared 40px default controls, quiet underline tabs,
 mobile menu navigation, visible list pagination, and a graph-first exploration
-layout. Browser evidence and unverified checks are recorded in
-`docs/qa-2026-11-08/README.md`.
+layout. The earlier accepted `45617efbce24ba11` snapshot remains available for
+historical links. Browser evidence and unverified checks are recorded in
+`docs/qa-2026-11-08/README.md` and `docs/qa-2026-11-09/README.md`.
 
-The next first-version design pass follows the user's November 8 steering:
-reduce destination/page fragmentation; make trends supporting context; connect
-people and collaboration to the same paper evidence; improve map framing,
-visual hierarchy, focus transitions and interaction feedback. The current Folio
-milestone is a foundation, not final visual acceptance.
+## November 9 first-version candidate
+
+- Five primary destinations: Overview, Explore, Trends, People & collaboration,
+  Methods & data. People and generic Networks links resolve to the same workspace;
+  explicit topic-network routes retain their original source context.
+- Explore has a larger canvas, smaller point glyphs, restrained density shading,
+  camera-based theme focus, hover evidence, and a collection-coverage timeline.
+  Its publication-trend dialog uses annual aggregates, not sampled year counts.
+- The collaboration workspace combines a paginated directory, selected profile,
+  bounded elastic ego network and the exact papers behind each shared-work link.
+  A connection list provides an alternative to canvas input. Graph geometry is
+  not an impact measure; only the 32 strongest observed neighbors are drawn.
+- Overview research-area cards retain descriptions, two clearly scoped counts
+  and both actions, with side-by-side metrics and compact text links. At the
+  measured 1600px CSS viewport the methods grid fell from 1,702px to 911px tall.
+- Same-path navigation resets stale page state; static-host query redirects
+  preserve paper/snapshot links. Missing requested entities are not silently
+  replaced by another researcher.
+- Paper authorships independently reconcile directory memberships, fractional
+  author credit, institutional citation totals and affiliated-author sets before
+  accepting a research snapshot.
+
+This is a testable first-version candidate on the feature branch, not a production
+promotion, complete backfill or final visual acceptance.
 
 ## Delivered
 
@@ -43,7 +63,7 @@ milestone is a foundation, not final visual acceptance.
 - Development-only acquisition workflow with durable release-asset checkpoints; independent of the production refresh workflow.
 - Immutable content-addressed research snapshots; checksum-verified browser loads; lazy paper-detail shards; structural/data integrity validator.
 - Offline TF-IDF → SVD → t-SNE paper landscape, seeded thematic grouping and explicit similarity/coverage caveats. Computing topics use curated eligibility; scientific applications additionally require explicit AI methods in the title or abstract.
-- Overview, Explore and Compare routes; existing topic routes retained. Linked paper selection, paper list, year/theme/type/title filters, reading list, CSV/BibTeX exports, view sharing and camera state.
+- Overview, Explore, Trends and combined collaboration routes; comparisons and existing topic routes retained. Linked paper selection, paper list, year/theme/type/title filters, reading list, CSV/BibTeX exports, view sharing and camera state.
 - Graph-first network layout, topic context carried across navigation, visible researcher labels, quieter insight cards, responsive workspace and reduced-motion styling.
 
 ## Release gates still requiring evidence

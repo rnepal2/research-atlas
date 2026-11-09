@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { AppShell } from '../components/AppShell'
 import { DataState } from '../components/DataState'
 import { useAtlasData } from '../data/useAtlasData'
@@ -10,10 +10,14 @@ import { useTheme } from './useTheme'
 export function ResearchAtlasApp() {
   const { data, loading, error } = useAtlasData()
   const [path, setPath] = useState(() => routeFromPath(window.location.pathname, window.location.search))
+  const [navigationKey, setNavigationKey] = useState(0)
   const { theme, toggleTheme } = useTheme()
 
   useEffect(() => {
-    const handleLocation = () => setPath(routeFromPath(window.location.pathname, window.location.search))
+    const handleLocation = () => {
+      setPath(routeFromPath(window.location.pathname, window.location.search))
+      setNavigationKey((value) => value + 1)
+    }
     window.addEventListener('popstate', handleLocation)
     window.addEventListener('atlas:navigate', handleLocation)
     return () => {
@@ -22,7 +26,10 @@ export function ResearchAtlasApp() {
     }
   }, [])
 
-  const route = useMemo(() => (data ? renderRoute({ atlas: data, path, theme, onThemeChange: toggleTheme }) : null), [data, path, theme, toggleTheme])
+  const route = useMemo(
+    () => (data ? renderRoute({ atlas: data, path, theme, onThemeChange: toggleTheme }) : null),
+    [data, path, theme, toggleTheme],
+  )
 
   useEffect(() => {
     if (!data) {
@@ -52,38 +59,45 @@ export function ResearchAtlasApp() {
       if (path === '/trending') {
         return {
           title: 'Research Momentum | Research Atlas',
-          description: 'Ranked research topics by completed-period publication growth and cross-topic breadth.',
+          description:
+            'Ranked research topics by completed-period publication growth and cross-topic breadth.',
         }
       }
-      if (path === '/explore' || path === '/compare') return {
-        title: `${path === '/explore' ? 'Explore the AI landscape' : 'Compare research areas'} | Research Atlas`,
-        description: 'Investigate AI research through papers, thematic landscapes, explicit coverage and source evidence.',
-      }
+      if (path === '/explore' || path === '/compare')
+        return {
+          title: `${path === '/explore' ? 'Explore the AI landscape' : 'Compare research areas'} | Research Atlas`,
+          description:
+            'Investigate AI research through papers, thematic landscapes, explicit coverage and source evidence.',
+        }
       if (path === '/researchers') {
         return {
           title: 'Researcher Activity | Research Atlas',
           description: 'Explore researchers with increasing recent activity across curated research topics.',
         }
       }
-      if (path === '/networks') {
+      if (path === '/people' || path === '/connections' || path === '/networks')
         return {
-          title: 'Collaboration Networks | Research Atlas',
-          description: 'Explore researcher and institution networks and the geography of research activity.',
+          title: 'People & collaboration | Research Atlas',
+          description:
+            'Explore researchers, institutions and the collected papers behind observed collaboration.',
         }
-      }
       if (path === '/about' || path === '/methodology') {
         return {
           title: 'About Research Atlas',
-          description: 'What Research Atlas covers, where its OpenAlex data comes from, and how to interpret its directional signals.',
+          description:
+            'What Research Atlas covers, where its OpenAlex data comes from, and how to interpret its directional signals.',
         }
       }
       return {
         title: 'Research Atlas',
-        description: 'Explore research momentum, rising researchers, institutions, papers, geography, and collaboration networks from OpenAlex.',
+        description:
+          'Explore research momentum, rising researchers, institutions, papers, geography, and collaboration networks from OpenAlex.',
       }
     })()
     document.title = routeMeta.title
-    const meta = document.querySelector('meta[name="description"]') || document.head.appendChild(document.createElement('meta'))
+    const meta =
+      document.querySelector('meta[name="description"]') ||
+      document.head.appendChild(document.createElement('meta'))
     meta.setAttribute('name', 'description')
     meta.setAttribute('content', routeMeta.description)
     for (const [property, content] of [
@@ -91,7 +105,9 @@ export function ResearchAtlasApp() {
       ['og:description', routeMeta.description],
       ['og:type', 'website'],
     ]) {
-      const tag = document.querySelector(`meta[property="${property}"]`) || document.head.appendChild(document.createElement('meta'))
+      const tag =
+        document.querySelector(`meta[property="${property}"]`) ||
+        document.head.appendChild(document.createElement('meta'))
       tag.setAttribute('property', property)
       tag.setAttribute('content', content)
     }
@@ -100,12 +116,8 @@ export function ResearchAtlasApp() {
   return (
     <DataState loading={loading} error={error}>
       {data && (
-        <AppShell
-          atlas={data}
-          navItems={navItems}
-          activePath={path}
-        >
-          {route}
+        <AppShell atlas={data} navItems={navItems} activePath={path}>
+          <Fragment key={navigationKey}>{route}</Fragment>
         </AppShell>
       )}
     </DataState>

@@ -3,9 +3,11 @@
 ## V2 development preview
 
 The `feature/research-atlas-v2-plan` branch contains the **AI research, in context** preview:
-Overview, a text-similarity paper landscape, source evidence, People & Institutions,
-aligned topic comparisons, local reading lists and CSV/BibTeX exports. Existing topic
-routes remain available. `data/config/edition.yaml` defines the computational-methods
+Overview, a text-similarity paper landscape, publication trends, and a combined
+people/collaboration workspace with paper-backed connections. Topic trends are also
+available inside Explore; comparisons and existing topic routes remain accessible
+without separate primary navigation entries. Local reading lists, CSV/BibTeX exports
+and snapshot-aware share links support investigation. `data/config/edition.yaml` defines the computational-methods
 track and AI applications inside the existing scientific domains. Research coverage
 is partial and explicitly labeled. The Folio theme is an editorial paper-and-ink design.
 
@@ -14,6 +16,7 @@ python3 -m pip install -r requirements-research.txt
 python3 -m unittest discover -s tests -v
 python3 -m src.corpus.validate
 npm --prefix frontend ci
+npm --prefix frontend test
 npm --prefix frontend run dev
 ```
 

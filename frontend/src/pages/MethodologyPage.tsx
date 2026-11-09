@@ -64,7 +64,9 @@ export function MethodologyPage({ atlas }: { atlas: AtlasData }) {
               The edition covers 23 AI and computing areas and 77 scientific application contexts, from 2017
               onward. A paper must match a curated query and its configured topic assignments. Application
               papers also need explicit AI methods in the title or abstract. Computing papers do not have to
-              mention AI. Articles, reviews, preprints, conference papers and reports are eligible.
+              mention AI. Articles, reviews, preprints, conference papers and reports are eligible. Counts
+              distinguish OpenAlex work IDs, not unique studies; publication and preprint versions can remain
+              separate records.
             </p>
             {coverage && (
               <dl className="coverage-facts">
@@ -110,7 +112,8 @@ export function MethodologyPage({ atlas }: { atlas: AtlasData }) {
               Points grow with recorded citation counts. Zoom in to reveal paper titles, or use the searchable
               paper list for keyboard exploration. Selecting a paper shows its source evidence. Lines show
               actual reference IDs present in the current view; related-work suggestions are never substituted
-              for citations.
+              for citations. Background shading shows local record density in this projection, not confidence
+              or a geographic boundary.
             </p>
             <p>
               Saved reading lists remain in this browser. Shared links preserve filters, the selected paper,
@@ -160,6 +163,12 @@ export function MethodologyPage({ atlas }: { atlas: AtlasData }) {
               colors group author topic assignments or institution countries—not detected communities. Edges
               represent coauthorship or shared publications; missing edges do not prove the absence of
               collaboration. Experimental scores are relative to the sample, not scientific merit.
+            </p>
+            <p>
+              The people workspace uses an elastic, bounded ego view of up to 32 observed coauthors or
+              co-publishing institutions. Every link retains its shared work IDs. Neighbor size reflects
+              shared work count; layout distances and curved lines have no quantitative meaning. The adjacent
+              list provides the same connections without relying on the canvas.
             </p>
             <p>
               Recent activity includes this year and the two preceding calendar years. Dividing citation

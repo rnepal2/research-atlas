@@ -14,6 +14,7 @@ export function OverviewPage({
   theme: 'dark' | 'light'
 }) {
   const { manifest, landscape } = useResearch()
+  const contextYear = new Date(atlas.generatedAt).getFullYear()
   const topics = [
     'large-language-models',
     'ai-agents',
@@ -58,14 +59,14 @@ export function OverviewPage({
             <Button size="lg" onClick={() => navigate('/explore')}>
               Explore the landscape <ArrowRight size={17} />
             </Button>
-            <Button size="lg" variant="outline" onClick={() => navigate('/compare')}>
-              Compare research areas
+            <Button size="lg" variant="outline" onClick={() => navigate('/trending')}>
+              Follow the trends
             </Button>
           </div>
           <p className="hero-footnote">
             OpenAlex data ·{' '}
             {manifest
-              ? `${manifest.uniqueWorks.toLocaleString()} unique papers in the focused landscape`
+              ? `${manifest.uniqueWorks.toLocaleString()} indexed works in the focused landscape`
               : 'Curated topic profiles'}{' '}
             · Coverage is explicit, not assumed.
           </p>
@@ -102,22 +103,24 @@ export function OverviewPage({
               <div className="story-numbers">
                 <strong>
                   {t.metrics.worksLast3Years.toLocaleString()}
-                  <span>query-matched works · three completed years</span>
+                  <span>
+                    {t.quality.yearlyCountSource === 'openalex-topic' ? 'Topic works' : 'Query matches'}
+                    {' · '}
+                    {contextYear - 3}–{contextYear - 1}
+                  </span>
                 </strong>
                 <strong>
                   {(
                     landscape?.topics.find((p) => p.slug === t.slug)?.count ?? t.quality.worksCollected
                   ).toLocaleString()}
-                  <span>papers available for exploration</span>
+                  <span>Explorable papers</span>
                 </strong>
               </div>
-              <div className="research-actions">
-                <Button variant="ghost" onClick={() => navigate(`/explore?topic=${t.slug}`)}>
+              <div className="story-links">
+                <a href={hrefFor(`/explore?topic=${t.slug}`)}>
                   Explore papers <ArrowRight size={15} />
-                </Button>
-                <Button variant="ghost" onClick={() => navigate(`/topic/${t.slug}`)}>
-                  Topic profile
-                </Button>
+                </a>
+                <a href={hrefFor(`/topic/${t.slug}`)}>Topic profile</a>
               </div>
             </article>
           ))}
@@ -143,19 +146,18 @@ export function OverviewPage({
               <article className="topic-story" key={t.slug}>
                 <span className="eyebrow">{t.domain}</span>
                 <h3>{t.label}</h3>
-                <p>
-                  Investigate the methods, researchers and papers connecting AI to this area. Inclusion
-                  requires explicit AI methods in the title or abstract.
-                </p>
+                <p>{atlas.topics.find((topic) => topic.slug === t.slug)?.description}</p>
                 <div className="story-numbers">
                   <strong>
                     {t.count.toLocaleString()}
-                    <span>eligible papers in this focused sample</span>
+                    <span>AI-related papers in this sample</span>
                   </strong>
                 </div>
-                <Button variant="ghost" onClick={() => navigate(`/explore?topic=${t.slug}`)}>
-                  Follow the research <ArrowRight size={15} />
-                </Button>
+                <div className="story-links">
+                  <a href={hrefFor(`/explore?topic=${t.slug}`)}>
+                    Follow the research <ArrowRight size={15} />
+                  </a>
+                </div>
               </article>
             ))}
         </div>

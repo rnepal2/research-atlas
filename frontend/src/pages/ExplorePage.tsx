@@ -1,16 +1,33 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
-import { ArrowUpRight, Bookmark, Download, Search, Share2, X } from 'lucide-react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  ArrowUpRight,
+  Bookmark,
+  Download,
+  Search,
+  Share2,
+  X,
+  SlidersHorizontal,
+  PanelRightClose,
+  PanelRightOpen,
+} from 'lucide-react'
 import { useResearch, researchFile } from '../data/research'
 import type { ResearchPaper } from '../data/research'
 import { Button, Input, Pagination, SelectField } from '../components/ui'
 import { exportPapers } from '../lib/exportResearch'
+import { landscapeColor } from '../lib/landscape'
+import { PaperTimeline } from '../components/PaperTimeline'
+import { TopicTrendPanel } from '../components/TopicTrendPanel'
+import type { AtlasData } from '../data/types'
+import { navigate } from '../lib/router'
+import { formatDate } from '../lib/format'
 
 const PaperMap = lazy(() => import('../components/PaperMap').then((m) => ({ default: m.PaperMap })))
 const emptyReferences: string[] = []
 const getParams = () => new URLSearchParams(window.location.search)
 
-export function ExplorePage() {
-  const { manifest, landscape, error } = useResearch()
+export function ExplorePage({ atlas }: { atlas: AtlasData }) {
+  const evidenceRef = useRef<HTMLElement>(null)
+  const { manifest, landscape, error, notice } = useResearch()
   const [topic, setTopic] = useState(() => getParams().get('topic') || 'all')
   const [track, setTrack] = useState(() => {
     const value = getParams().get('track') || 'all'
@@ -28,14 +45,26 @@ export function ExplorePage() {
   const [detailError, setDetailError] = useState('')
   const [saved, setSaved] = useState<string[]>(() => {
     try {
-      return JSON.parse(localStorage.getItem('atlas:reading-list') || '[]')
+      const value: unknown = JSON.parse(localStorage.getItem('atlas:reading-list') || '[]')
+      return Array.isArray(value)
+        ? [...new Set(value.filter((id): id is string => typeof id === 'string'))]
+        : []
     } catch {
       return []
     }
   })
   const [savedOnly, setSavedOnly] = useState(false)
+  const savedIds = useMemo(() => new Set(saved), [saved])
+  const savedFilter = savedOnly ? savedIds : null
   const [page, setPage] = useState(1)
-  const [view, setView] = useState('map')
+  const [view, setView] = useState(() => (getParams().get('view') === 'list' ? 'list' : 'map'))
+  const [showFilters, setShowFilters] = useState(false)
+  const [inspectorOpen, setInspectorOpen] = useState(() => getParams().get('panel') !== 'closed')
+  const [focusedTheme, setFocusedTheme] = useState<number | null>(() => {
+    const value = getParams().get('focus')
+    const id = Number(value)
+    return value !== null && Number.isInteger(id) && id >= 0 && id < 12 ? id : null
+  })
   const [message, setMessage] = useState('')
   const [region, setRegion] = useState<string[]>([])
   const [camera, setCamera] = useState<{ x: number; y: number; ratio: number } | undefined>(() => {
@@ -56,29 +85,45 @@ export function ExplorePage() {
       ),
     [landscape, track],
   )
-  const points = useMemo(
+  const scopePoints = useMemo(
     () =>
       (landscape?.points || []).filter(
         (p) =>
           (topic === 'all' || p.topics.includes(topic)) &&
           (track === 'all' || p.topics.some((slug) => trackTopics.has(slug))) &&
-          p.year >= year &&
           (cluster === 'all' || p.cluster === Number(cluster)) &&
           (type === 'all' || p.type === type) &&
-          (!savedOnly || saved.includes(p.id)) &&
+          (!savedFilter || savedFilter.has(p.id)) &&
           p.title.toLowerCase().includes(query.toLowerCase()),
       ),
-    [landscape, topic, year, cluster, type, savedOnly, saved, query, track, trackTopics],
+    [landscape, topic, cluster, type, savedFilter, query, track, trackTopics],
   )
+  const points = useMemo(() => scopePoints.filter((p) => p.year >= year), [scopePoints, year])
   const ordered = useMemo(
     () => [...points].sort((a, b) => b.citations - a.citations || a.id.localeCompare(b.id)),
     [points],
   )
   const activePoint = landscape?.points.find((p) => p.id === selected)
-  const requestedSnapshot = getParams().get('snapshot')
+  const availableSaved = useMemo(
+    () => (landscape?.points || []).filter((p) => savedIds.has(p.id)),
+    [landscape, savedIds],
+  )
+  useEffect(() => {
+    if (activePoint && inspectorOpen && matchMedia('(max-width:760px)').matches)
+      evidenceRef.current?.scrollIntoView({
+        block: 'start',
+        behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      })
+  }, [activePoint, inspectorOpen])
 
   useEffect(() => {
-    localStorage.setItem('atlas:reading-list', JSON.stringify(saved))
+    try {
+      localStorage.setItem('atlas:reading-list', JSON.stringify(saved))
+    } catch {
+      queueMicrotask(() =>
+        setMessage('Browser storage is unavailable. This reading list is kept for the current session only.'),
+      )
+    }
   }, [saved])
   useEffect(() => {
     if (topic !== 'all') sessionStorage.setItem('atlas:topic', topic)
@@ -105,10 +150,26 @@ export function ExplorePage() {
     const params = new URLSearchParams({ topic, track, year: String(year), cluster, type })
     if (query) params.set('q', query)
     if (selected) params.set('paper', selected)
+    if (focusedTheme !== null) params.set('focus', String(focusedTheme))
+    if (view === 'list') params.set('view', 'list')
+    if (!inspectorOpen) params.set('panel', 'closed')
     if (manifest) params.set('snapshot', manifest.snapshot)
     if (camera) params.set('camera', JSON.stringify(camera))
     window.history.replaceState({}, '', `${window.location.pathname}?${params}`)
-  }, [topic, track, year, cluster, type, query, selected, manifest, camera])
+  }, [
+    topic,
+    track,
+    year,
+    cluster,
+    type,
+    query,
+    selected,
+    manifest,
+    camera,
+    focusedTheme,
+    view,
+    inspectorOpen,
+  ])
 
   if (error)
     return (
@@ -130,24 +191,36 @@ export function ExplorePage() {
   const updateFilter = (action: () => void) => {
     action()
     setPage(1)
+    setFocusedTheme(null)
+    setRegion([])
+    setCamera(undefined)
   }
   function toggleSave(id: string) {
     setSaved((values) => (values.includes(id) ? values.filter((value) => value !== id) : [...values, id]))
+  }
+  function selectPaper(id: string) {
+    setSelected(id)
+    if (id) setInspectorOpen(true)
   }
 
   return (
     <div className="explore-page">
       <header className="research-header">
         <div>
-          <span className="eyebrow">RESEARCH ATLAS / THE COMPUTATIONAL LANDSCAPE</span>
-          <h1>Follow the ideas.</h1>
-          <p>Trace AI and computer science from new methods to their scientific applications.</p>
+          <h1>The research landscape.</h1>
+          <p>
+            {manifest.uniqueWorks.toLocaleString()} indexed works · AI, computing & scientific applications ·
+            Partial coverage
+          </p>
         </div>
         <div className="research-actions">
+          <TopicTrendPanel atlas={atlas} defaultTopic={topic} key={topic} />
           <Button
             variant="outline"
             onClick={() => {
               setSavedOnly((v) => !v)
+              setCamera(undefined)
+              setRegion([])
               if (!savedOnly) {
                 setTopic('all')
                 setTrack('all')
@@ -181,48 +254,31 @@ export function ExplorePage() {
           </Button>
         </div>
       </header>
-      <div className="research-context">
-        <span className="status-dot" />
-        Focused corpus · {manifest.uniqueWorks.toLocaleString()} unique papers · Partial coverage{' '}
-        <span>Snapshot {manifest.snapshot.slice(0, 8)}</span>
-      </div>
-      {requestedSnapshot && requestedSnapshot !== manifest.snapshot && (
-        <p role="status">This link refers to an older snapshot. Showing the currently available release.</p>
+      {notice && (
+        <p role="status" className="snapshot-notice">
+          {notice}
+        </p>
       )}
-      <div className="research-tracks" aria-label="Research track">
-        {[
-          ['all', 'All research'],
-          ['methods', 'AI & computer science'],
-          ['applications', 'Scientific applications'],
-        ].map(([value, label]) => (
-          <Button
-            variant={track === value ? 'secondary' : 'ghost'}
-            key={value}
-            onClick={() => {
-              setTrack(value)
-              setTopic('all')
-              setPage(1)
-            }}
-            aria-pressed={track === value}
-          >
-            {label}
-          </Button>
-        ))}
-      </div>
+      {savedOnly && availableSaved.length < saved.length && (
+        <p role="status" className="snapshot-notice">
+          {saved.length - availableSaved.length} saved records are not available in this snapshot. Exports
+          contain the available records only.
+        </p>
+      )}
       <div className="explore-filters">
         <SelectField
-          label="Research area"
+          ariaLabel="Research area"
           value={topic}
           onValueChange={(value) => updateFilter(() => setTopic(value))}
           options={[
             { value: 'all', label: 'All research areas' },
             ...landscape.topics
               .filter((t) => track === 'all' || t.role === track)
-              .map((t) => ({ value: t.slug, label: t.label, meta: `${t.count} papers` })),
+              .map((t) => ({ value: t.slug, label: t.label, meta: `${t.count.toLocaleString()} collected` })),
           ]}
         />
         <label className="search-field">
-          <span>Find a paper</span>
+          <span className="sr-only">Find a paper</span>
           <div>
             <Search size={16} />
             <Input
@@ -233,29 +289,72 @@ export function ExplorePage() {
           </div>
         </label>
         <SelectField
-          label="Theme"
-          value={cluster}
-          onValueChange={(value) => updateFilter(() => setCluster(value))}
+          ariaLabel="Research track"
+          value={track}
+          onValueChange={(value) => {
+            setTrack(value)
+            setTopic('all')
+            setPage(1)
+            setFocusedTheme(null)
+            setCamera(undefined)
+            setRegion([])
+          }}
           options={[
-            { value: 'all', label: 'All themes' },
-            ...landscape.clusters.map((c) => ({ value: String(c.id), label: c.label })),
+            { value: 'all', label: 'All research' },
+            { value: 'methods', label: 'AI & computing' },
+            { value: 'applications', label: 'Scientific applications' },
           ]}
         />
-        <label className="year-filter">
-          <span>Published since {year}</span>
-          <input
-            aria-label="Earliest publication year"
-            type="range"
-            min={2017}
-            max={new Date().getFullYear()}
-            value={year}
-            onChange={(e) => updateFilter(() => setYear(Number(e.target.value)))}
-          />
-        </label>
+        <Button
+          className="filter-toggle"
+          variant="outline"
+          aria-expanded={showFilters}
+          aria-controls="explore-refinements"
+          onClick={() => setShowFilters((v) => !v)}
+        >
+          <SlidersHorizontal size={16} />
+          Filters{cluster !== 'all' || type !== 'all' ? ' · active' : ''}
+        </Button>
       </div>
+      {showFilters && (
+        <div className="explore-refinements" id="explore-refinements">
+          <SelectField
+            label="Limit to a theme"
+            value={cluster}
+            onValueChange={(value) => updateFilter(() => setCluster(value))}
+            options={[
+              { value: 'all', label: 'All themes' },
+              ...landscape.clusters.map((c) => ({ value: String(c.id), label: c.label })),
+            ]}
+          />
+          <SelectField
+            label="Work type"
+            value={type}
+            onValueChange={(value) => updateFilter(() => setType(value))}
+            options={[
+              { value: 'all', label: 'All work types' },
+              ...[...new Set(landscape.points.map((p) => p.type))]
+                .sort()
+                .map((t) => ({ value: t, label: t })),
+            ]}
+          />
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setCluster('all')
+              setType('all')
+              setYear(2017)
+              setPage(1)
+            }}
+          >
+            Reset refinements
+          </Button>
+        </div>
+      )}
       <div className="explore-toolbar">
         <span>
-          {points.length.toLocaleString()} matching papers · sorted by citations
+          {points.length.toLocaleString()} papers in this view
+          {view === 'list' ? ' · sorted by citations' : ''}
           {region.length > 0 && ` · ${region.length} in selected region`}
         </span>
         <div>
@@ -273,39 +372,50 @@ export function ExplorePage() {
               </Button>
             </>
           )}
-          <Button variant={view === 'map' ? 'secondary' : 'ghost'} size="sm" onClick={() => setView('map')}>
+          <Button
+            variant={view === 'map' ? 'secondary' : 'ghost'}
+            size="sm"
+            aria-pressed={view === 'map'}
+            onClick={() => setView('map')}
+          >
             Landscape
           </Button>
-          <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="sm" onClick={() => setView('list')}>
+          <Button
+            variant={view === 'list' ? 'secondary' : 'ghost'}
+            size="sm"
+            aria-pressed={view === 'list'}
+            onClick={() => setView('list')}
+          >
             Paper list
           </Button>
-          <SelectField
-            ariaLabel="Work type"
-            className="w-[180px]"
-            value={type}
-            onValueChange={(value) => updateFilter(() => setType(value))}
-            options={[
-              { value: 'all', label: 'All work types' },
-              ...[...new Set(landscape.points.map((p) => p.type))]
-                .sort()
-                .map((t) => ({ value: t, label: t })),
-            ]}
-          />
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={inspectorOpen ? 'Hide evidence panel' : 'Show evidence panel'}
+            onClick={() => setInspectorOpen((v) => !v)}
+          >
+            {inspectorOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
+          </Button>
         </div>
       </div>
-      <div className={`explore-workspace ${view === 'list' ? 'list-view' : ''}`}>
+      <div
+        className={`explore-workspace ${view === 'list' ? 'list-view' : ''} ${!inspectorOpen ? 'inspector-closed' : ''}`}
+      >
         <section className="explore-canvas">
           {view === 'map' && (
             <Suspense fallback={<div className="research-empty">Preparing the landscape…</div>}>
               <PaperMap
+                key={`${topic}/${track}/${year}/${cluster}/${type}/${query}/${savedOnly}`}
                 points={points}
                 clusters={landscape.clusters}
                 selected={selected}
-                onSelect={setSelected}
+                onSelect={selectPaper}
                 references={activePaper?.references || emptyReferences}
                 camera={camera}
                 onCamera={setCamera}
                 onSelection={setRegion}
+                focusCluster={focusedTheme}
+                onFocusCluster={setFocusedTheme}
               />
             </Suspense>
           )}
@@ -316,7 +426,7 @@ export function ExplorePage() {
                   <button
                     className={`paper-result ${selected === p.id ? 'selected' : ''}`}
                     key={p.id}
-                    onClick={() => setSelected(p.id)}
+                    onClick={() => selectPaper(p.id)}
                   >
                     <span className="eyebrow">
                       {p.year} · {p.type} · {p.citations.toLocaleString()} citations
@@ -336,13 +446,23 @@ export function ExplorePage() {
               />
             </div>
           )}
+          <PaperTimeline
+            points={scopePoints}
+            year={year}
+            onYear={(value) => updateFilter(() => setYear(value))}
+          />
           {points.length === 0 && (
             <div className="research-empty">
               No papers match these filters. Try another year, theme or search.
             </div>
           )}
         </section>
-        <aside className="evidence-panel" aria-label="Selected paper evidence">
+        <aside
+          ref={evidenceRef}
+          className="evidence-panel"
+          aria-label="Selected paper evidence"
+          hidden={!inspectorOpen}
+        >
           {activePoint ? (
             <>
               <div className="evidence-top">
@@ -363,6 +483,9 @@ export function ExplorePage() {
                 <span>{activePoint.type}</span>
                 {activePoint.oa && <span>Open access</span>}
               </div>
+              {!points.some((p) => p.id === selected) && (
+                <p className="snapshot-notice">This paper is outside the current filters.</p>
+              )}
               {activePoint.retracted && (
                 <p role="alert">OpenAlex marks this work as retracted. Review the source before using it.</p>
               )}
@@ -391,9 +514,42 @@ export function ExplorePage() {
                   <ul className="author-evidence">
                     {activePaper.authors.slice(0, 12).map((a, i) => (
                       <li key={a.id || i}>
-                        <strong>{a.name || 'Author not resolved'}</strong>
+                        {a.id ? (
+                          <button
+                            className="evidence-link"
+                            onClick={() =>
+                              navigate(
+                                `/connections?kind=authors&entity=${encodeURIComponent(a.id)}&snapshot=${manifest.snapshot}`,
+                              )
+                            }
+                          >
+                            {a.name || 'Author not resolved'} <ArrowUpRight size={11} />
+                          </button>
+                        ) : (
+                          <strong>{a.name || 'Author not resolved'}</strong>
+                        )}
                         <span>
-                          {a.institutions.map((i) => i.display_name).join('; ') || 'Affiliation not resolved'}
+                          {a.institutions.length
+                            ? a.institutions.map((institution, i) => (
+                                <span key={institution.id || i}>
+                                  {i > 0 ? '; ' : ''}
+                                  {institution.id ? (
+                                    <button
+                                      className="evidence-link affiliation-link"
+                                      onClick={() =>
+                                        navigate(
+                                          `/connections?kind=institutions&entity=${encodeURIComponent(institution.id)}&snapshot=${manifest.snapshot}`,
+                                        )
+                                      }
+                                    >
+                                      {institution.display_name}
+                                    </button>
+                                  ) : (
+                                    institution.display_name
+                                  )}
+                                </span>
+                              ))
+                            : 'Affiliation not resolved'}
                         </span>
                       </li>
                     ))}
@@ -420,20 +576,47 @@ export function ExplorePage() {
                   ) : null}
                   <p className="source-note">
                     {activePaper.source} · OpenAlex {selected} · Source record observed{' '}
-                    {activePaper.observedAt || 'at an unknown date in the legacy sample'} · Snapshot{' '}
-                    {manifest.snapshot.slice(0, 8)}
+                    {activePaper.observedAt
+                      ? `${activePaper.observedAt} (UTC)`
+                      : 'at an unknown date in the legacy sample'}{' '}
+                    · Snapshot {manifest.snapshot.slice(0, 8)}
                   </p>
                 </>
               )}
             </>
           ) : (
             <>
-              <span className="eyebrow">START EXPLORING</span>
-              <h2>One paper opens a new direction.</h2>
+              <span className="eyebrow">{focusedTheme !== null ? 'THEME IN FOCUS' : 'THEMES & IDEAS'}</span>
+              <h2>
+                {focusedTheme !== null
+                  ? landscape.clusters.find((c) => c.id === focusedTheme)?.label
+                  : 'Take a closer look.'}
+              </h2>
               <p>
-                Select a point or find a paper in the list to inspect its authors, abstract and references.
+                {focusedTheme !== null
+                  ? 'The highlighted papers share this computed theme. Other papers remain visible for context.'
+                  : 'Focus a theme to explore its papers, or select any point to inspect the evidence.'}
               </p>
-              <h3>Explore a theme</h3>
+              {focusedTheme !== null && (
+                <>
+                  <Button variant="outline" size="sm" onClick={() => setFocusedTheme(null)}>
+                    Back to the landscape
+                  </Button>
+                  <h3>Papers in this theme</h3>
+                  {ordered
+                    .filter((p) => p.cluster === focusedTheme)
+                    .slice(0, 4)
+                    .map((p) => (
+                      <button className="theme-paper" key={p.id} onClick={() => selectPaper(p.id)}>
+                        <strong>{p.title}</strong>
+                        <span>
+                          {p.year} · {p.citations.toLocaleString()} citations
+                        </span>
+                      </button>
+                    ))}
+                </>
+              )}
+              <h3>{focusedTheme !== null ? 'Other themes' : 'Explore a theme'}</h3>
               {landscape.clusters
                 .map((c) => ({ ...c, count: points.filter((p) => p.cluster === c.id).length }))
                 .filter((c) => c.count > 0)
@@ -442,9 +625,21 @@ export function ExplorePage() {
                   <button
                     className="theme-link"
                     key={c.id}
-                    onClick={() => updateFilter(() => setCluster(String(c.id)))}
+                    onClick={() => {
+                      setFocusedTheme(c.id)
+                      setSelected('')
+                    }}
+                    aria-pressed={focusedTheme === c.id}
                   >
-                    <span>{c.label}</span>
+                    <span>
+                      <i
+                        className="theme-key"
+                        style={{
+                          background: landscapeColor(c.id, document.documentElement.dataset.theme === 'dark'),
+                        }}
+                      />
+                      {c.label}
+                    </span>
                     <span>{c.count}</span>
                   </button>
                 ))}
@@ -456,20 +651,14 @@ export function ExplorePage() {
       <footer className="explore-footer">
         <p role="status">
           {message ||
-            'Source: OpenAlex. Text similarity is a discovery aid; it does not establish agreement or research quality.'}
+            `OpenAlex · ${formatDate(manifest.processedAt)} · ${manifest.snapshot.slice(0, 8)} · Proximity = shared language; shading = local paper density.`}
         </p>
         <div className="research-actions">
           <Button
             size="sm"
             variant="ghost"
-            onClick={() =>
-              exportPapers(
-                savedOnly ? points : landscape.points.filter((p) => saved.includes(p.id)),
-                manifest.snapshot,
-                'bib',
-              )
-            }
-            disabled={saved.length === 0}
+            onClick={() => exportPapers(availableSaved, manifest.snapshot, 'bib')}
+            disabled={availableSaved.length === 0}
           >
             Export reading list
           </Button>

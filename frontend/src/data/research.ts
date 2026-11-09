@@ -14,6 +14,15 @@ export interface ResearchPoint {
   oa: boolean
   retracted: boolean
 }
+export interface EvidenceEntity {
+  id: string
+  name: string
+  works: string[]
+  citations: number
+  affiliations?: string[]
+  authors?: string[]
+  country?: string
+}
 export interface ResearchPaper extends ResearchPoint {
   observedAt?: string
   matchedQueries?: string[]
@@ -64,6 +73,7 @@ export function useResearch() {
     manifest?: ResearchManifest
     landscape?: ResearchLandscape
     error?: string
+    notice?: string
   }>({})
   useEffect(() => {
     const controller = new AbortController()
@@ -79,15 +89,20 @@ export function useResearch() {
           )
         const manifest = (await response.json()) as ResearchManifest
         let chosen = manifest
+        let notice = ''
         const requested = new URLSearchParams(window.location.search).get('snapshot')
         if (requested && /^[a-f0-9]{16}$/.test(requested) && requested !== manifest.snapshot) {
           const historical = await fetch(`${base}snapshots/${requested}/manifest.json`, {
             signal: controller.signal,
           })
-          if (historical.ok) chosen = (await historical.json()) as ResearchManifest
+          if (historical.ok) {
+            chosen = (await historical.json()) as ResearchManifest
+            notice = `Viewing saved snapshot ${requested.slice(0, 8)}. The latest release is ${manifest.snapshot.slice(0, 8)}.`
+          } else
+            notice = `Snapshot ${requested.slice(0, 8)} is not available. Showing the current snapshot ${manifest.snapshot.slice(0, 8)} instead.`
         }
         const landscape = await researchFile<ResearchLandscape>(chosen, 'landscape.json', controller.signal)
-        setState({ manifest: chosen, landscape })
+        setState({ manifest: chosen, landscape, notice })
       } catch (error) {
         if (!controller.signal.aborted)
           setState({ error: error instanceof Error ? error.message : 'Research data could not be loaded.' })

@@ -1,23 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Graph from 'graphology'
 import Sigma from 'sigma'
 import type { ResearchPoint, ResearchLandscape } from '../data/research'
 import { Button } from './ui'
-
-const colors = [
-  '#66b8d9',
-  '#c9ac77',
-  '#b3a0df',
-  '#73b39d',
-  '#d68f86',
-  '#8da8db',
-  '#d0a4bb',
-  '#b8bf7a',
-  '#7fc6bb',
-  '#c69d68',
-  '#91afc5',
-  '#b2a7a0',
-]
+import { densityGeometry, landscapeColor } from '../lib/landscape'
 
 export function PaperMap({
   points,
@@ -29,6 +15,8 @@ export function PaperMap({
   onCamera,
   onSelection,
   synthetic = false,
+  focusCluster = null,
+  onFocusCluster,
 }: {
   points: ResearchPoint[]
   clusters: ResearchLandscape['clusters']
@@ -39,47 +27,47 @@ export function PaperMap({
   onCamera: (value: { x: number; y: number; ratio: number }) => void
   onSelection?: (ids: string[]) => void
   synthetic?: boolean
+  focusCluster?: number | null
+  onFocusCluster?: (cluster: number | null) => void
 }) {
   const container = useRef<HTMLDivElement>(null)
   const sigma = useRef<Sigma | null>(null)
   const select = useRef(onSelect)
   const saveCamera = useRef(onCamera)
   const initialCamera = useRef(camera)
+  const underlay = useRef<HTMLCanvasElement>(null)
+  const hoveredId = useRef('')
+  const selectedId = useRef(selected)
+  const previousSelected = useRef(selected)
+  const previousFocus = useRef<number | null>(focusCluster)
+  const focused = useRef(focusCluster)
+  const focusAction = useRef(onFocusCluster)
+  const density = useMemo(() => (synthetic ? null : densityGeometry(points)), [points, synthetic])
+  const [hover, setHover] = useState<{ point: ResearchPoint; x: number; y: number } | null>(null)
   const [failed, setFailed] = useState(false)
   const [selecting, setSelecting] = useState(false)
   const [box, setBox] = useState<{ x: number; y: number; endX: number; endY: number } | null>(null)
   useEffect(() => {
     select.current = onSelect
     saveCamera.current = onCamera
-  }, [onSelect, onCamera])
+    focusAction.current = onFocusCluster
+  }, [onSelect, onCamera, onFocusCluster])
   useEffect(() => {
     if (!container.current) return
     const graph = new Graph()
-    const palette =
-      document.documentElement.dataset.theme === 'light'
-        ? [
-            '#365f7c',
-            '#946823',
-            '#77578f',
-            '#426f62',
-            '#a55849',
-            '#536b9c',
-            '#965d7b',
-            '#747b3f',
-            '#377f80',
-            '#997044',
-            '#5b7688',
-            '#797064',
-          ]
-        : colors
+    const dark = document.documentElement.dataset.theme !== 'light'
+    const style = getComputedStyle(document.documentElement)
+    const neutral = style.getPropertyValue('--border').trim()
+    const pointLookup = new Map(points.map((p) => [p.id, p]))
     for (const point of points)
       graph.addNode(point.id, {
         x: point.x,
         y: point.y,
-        size: 2 + Math.min(4, Math.log1p(point.citations) / 3),
+        size: 1.6 + Math.min(3, Math.log1p(point.citations) * 0.28),
         label: null,
         paperTitle: point.title,
-        color: palette[point.cluster % palette.length],
+        color: landscapeColor(point.cluster, dark),
+        cluster: point.cluster,
       })
     const visibleThemes = new Map<number, { x: number; y: number; count: number }>()
     for (const point of points) {
@@ -97,7 +85,7 @@ export function PaperMap({
           y: group.y / group.count,
           size: 0,
           label: cluster.label,
-          color: palette[cluster.id % palette.length],
+          color: landscapeColor(cluster.id, dark),
         })
     }
     let renderer: Sigma
@@ -139,6 +127,9 @@ export function PaperMap({
           context.restore()
         },
         enableEdgeEvents: false,
+        defaultDrawNodeHover: () => {},
+        minCameraRatio: 0.04,
+        maxCameraRatio: 2.5,
       })
     } catch {
       // The adjacent searchable list remains the complete keyboard-accessible view.
@@ -149,27 +140,108 @@ export function PaperMap({
     if (initialCamera.current) renderer.getCamera().setState(initialCamera.current)
     renderer.on('clickNode', ({ node }) => {
       if (!node.startsWith('theme:')) select.current(node)
+      else focusAction.current?.(Number(node.split(':')[1]))
+    })
+    renderer.on('clickStage', () => select.current(''))
+    renderer.on('enterNode', ({ node, event }) => {
+      const point = pointLookup.get(node)
+      if (!point) return
+      hoveredId.current = node
+      setHover({
+        point,
+        x: Math.min(event.x + 18, Math.max(12, (container.current?.clientWidth || 0) - 300)),
+        y: Math.max(12, event.y - 70),
+      })
+      renderer.refresh()
+    })
+    renderer.on('leaveNode', () => {
+      hoveredId.current = ''
+      setHover(null)
+      renderer.refresh()
     })
     let detailZoom = false
+    renderer.setSetting('nodeReducer', (id, data) => {
+      const active = id === selectedId.current || id === hoveredId.current
+      const theme = id.startsWith('theme:')
+      const dim = focused.current !== null && !theme && data.cluster !== focused.current && !active
+      return {
+        ...data,
+        size: active ? 7 : dim ? 1.3 : data.size,
+        color: dim ? neutral : data.color,
+        label: active
+          ? data.paperTitle
+          : dim
+            ? null
+            : theme
+              ? detailZoom
+                ? null
+                : data.label
+              : detailZoom
+                ? data.paperTitle
+                : null,
+        forceLabel: active,
+        zIndex: active ? 5 : 0,
+      }
+    })
+    const paths = density?.paths.map((p) => ({ ...p, path: new Path2D(p.path) })) || []
+    const drawUnderlay = () => {
+      const canvas = underlay.current
+      if (!canvas || !container.current) return
+      const { width, height } = renderer.getDimensions()
+      const pixelRatio = window.devicePixelRatio || 1
+      if (
+        canvas.width !== Math.round(width * pixelRatio) ||
+        canvas.height !== Math.round(height * pixelRatio)
+      ) {
+        canvas.width = Math.round(width * pixelRatio)
+        canvas.height = Math.round(height * pixelRatio)
+      }
+      const context = canvas.getContext('2d')
+      if (!context) return
+      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
+      context.clearRect(0, 0, width, height)
+      if (density) {
+        const o = renderer.graphToViewport({ x: density.minX, y: density.minY })
+        const a = renderer.graphToViewport({ x: density.minX + density.spanX, y: density.minY })
+        const b = renderer.graphToViewport({ x: density.minX, y: density.minY + density.spanY })
+        context.save()
+        context.transform(
+          (a.x - o.x) / density.resolution,
+          (a.y - o.y) / density.resolution,
+          (b.x - o.x) / density.resolution,
+          (b.y - o.y) / density.resolution,
+          o.x,
+          o.y,
+        )
+        for (const path of paths) {
+          context.fillStyle = style.getPropertyValue('--chart-primary').trim()
+          context.globalAlpha = 0.025
+          context.fill(path.path)
+        }
+        context.restore()
+      }
+      for (const id of [selectedId.current, hoveredId.current]) {
+        if (!id || !graph.hasNode(id)) continue
+        const attrs = graph.getNodeAttributes(id)
+        const p = renderer.graphToViewport({ x: attrs.x, y: attrs.y })
+        const r = renderer.scaleSize(7) + 4
+        context.beginPath()
+        context.arc(p.x, p.y, r, 0, Math.PI * 2)
+        context.strokeStyle = style.getPropertyValue('--foreground').trim()
+        context.lineWidth = 1
+        context.globalAlpha = 0.65
+        context.stroke()
+      }
+      context.globalAlpha = 1
+    }
+    renderer.on('afterRender', drawUnderlay)
     let cameraTimer: ReturnType<typeof setTimeout> | undefined
     const updateLabels = (ratio: number) => {
       const next = ratio < 0.45
       if (next === detailZoom) return
       detailZoom = next
-      graph.forEachNode((id, attrs) => {
-        const theme = id.startsWith('theme:')
-        graph.setNodeAttribute(
-          id,
-          'label',
-          theme
-            ? next
-              ? null
-              : clusters.find((c) => `theme:${c.id}` === id)?.label || ''
-            : next
-              ? attrs.paperTitle
-              : null,
-        )
-      })
+      // One index refresh at a level-of-detail boundary, not N graph mutations.
+      renderer.refresh()
     }
     updateLabels(renderer.getCamera().getState().ratio)
     renderer.getCamera().on('updated', (state) => {
@@ -187,7 +259,7 @@ export function PaperMap({
       renderer.kill()
       sigma.current = null
     }
-  }, [points, clusters])
+  }, [points, clusters, density])
   useEffect(() => {
     const renderer = sigma.current
     if (!renderer) return
@@ -198,22 +270,70 @@ export function PaperMap({
         if (id !== selected && graph.hasNode(id) && !graph.hasEdge(selected, id))
           graph.addEdge(selected, id, { size: 1, color: '#71899c' })
     }
-    renderer.setSetting('nodeReducer', (id, data) => ({
-      ...data,
-      size: id === selected ? 9 : data.size,
-      highlighted: id === selected,
-      zIndex: id === selected ? 2 : 0,
-      label: id === selected ? data.paperTitle : data.label,
-      forceLabel: id === selected,
-    }))
+    selectedId.current = selected
+    renderer.refresh()
+    if (selected && selected !== previousSelected.current && graph.hasNode(selected)) {
+      const attrs = graph.getNodeAttributes(selected)
+      const center = renderer.viewportToFramedGraph(renderer.graphToViewport({ x: attrs.x, y: attrs.y }))
+      void renderer.getCamera().animate(
+        { ...center, ratio: Math.min(0.38, renderer.getCamera().ratio) },
+        {
+          duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 550,
+          easing: 'cubicInOut',
+        },
+      )
+    }
+    previousSelected.current = selected
   }, [selected, references, points])
+  useEffect(() => {
+    const renderer = sigma.current
+    if (!renderer) return
+    focused.current = focusCluster
+    const was = previousFocus.current
+    previousFocus.current = focusCluster
+    if (focusCluster !== null) {
+      const group = points.filter((p) => p.cluster === focusCluster)
+      if (group.length) {
+        const positions = group.map((p) => renderer.graphToViewport(p))
+        const minX = Math.min(...positions.map((p) => p.x)),
+          maxX = Math.max(...positions.map((p) => p.x))
+        const minY = Math.min(...positions.map((p) => p.y)),
+          maxY = Math.max(...positions.map((p) => p.y))
+        const center = renderer.viewportToFramedGraph({ x: (minX + maxX) / 2, y: (minY + maxY) / 2 })
+        const { width, height } = renderer.getDimensions()
+        const ratio =
+          renderer.getCamera().ratio *
+          Math.max((maxX - minX) / (width * 0.72), (maxY - minY) / (height * 0.72), 0.12)
+        void renderer.getCamera().animate(
+          { ...center, ratio: Math.max(0.12, Math.min(1.1, ratio)) },
+          {
+            duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 650,
+            easing: 'cubicInOut',
+          },
+        )
+      }
+    } else if (was !== null && !selectedId.current) {
+      void renderer.getCamera().animatedReset({ duration: 400 })
+    }
+    renderer.refresh()
+  }, [focusCluster, points])
 
   return (
     <div
       className="paper-map"
       aria-label="Text similarity landscape. Use the adjacent paper list for keyboard exploration."
     >
+      <canvas ref={underlay} className="landscape-density" aria-hidden="true" />
       <div ref={container} className="absolute inset-0" />
+      {hover && (
+        <div className="landscape-tooltip" style={{ left: hover.x, top: hover.y }}>
+          <span className="eyebrow">
+            {hover.point.year} · {hover.point.type}
+          </span>
+          <strong>{hover.point.title}</strong>
+          <span>{hover.point.citations.toLocaleString()} recorded citations · click to inspect</span>
+        </div>
+      )}
       {selecting && (
         <div
           className="absolute inset-0 z-10 cursor-crosshair"
@@ -297,7 +417,10 @@ export function PaperMap({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => sigma.current?.getCamera().animatedReset({ duration: 180 })}
+          onClick={() => {
+            onFocusCluster?.(null)
+            void sigma.current?.getCamera().animatedReset({ duration: 450 })
+          }}
         >
           Fit map
         </Button>
@@ -307,7 +430,7 @@ export function PaperMap({
             size="sm"
             onClick={() => setSelecting((value) => !value)}
           >
-            Select region
+            {selecting ? 'Draw a rectangle…' : 'Select region'}
           </Button>
         )}
       </div>
