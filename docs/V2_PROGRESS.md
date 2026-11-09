@@ -16,7 +16,7 @@ Source reconciliation refreshed 37,234 legacy work IDs; 1,985 unresolved/merged 
 were excluded. Annual aggregate queries were refreshed for all 100 profiles.
 The resulting landscape is still partial, not complete across these boundaries.
 
-The accepted development snapshot is `ee0e9de2d0f9442f`: 10,012 unique work IDs,
+The November 8 development snapshot was `ee0e9de2d0f9442f`: 10,012 unique work IDs,
 9,844 abstracts, and 118 of 1,000 declared extraction boundaries started. None
 is exhausted yet. Organizational/placeholder author records are excluded from
 the people directory without reallocating their citation credit. All 100 annual
@@ -29,7 +29,7 @@ layout. The earlier accepted `45617efbce24ba11` snapshot remains available for
 historical links. Browser evidence and unverified checks are recorded in
 `docs/qa-2026-11-08/README.md` and `docs/qa-2026-11-09/README.md`.
 
-## November 9 first-version candidate
+## November 9 first-version candidate (superseded layout)
 
 - Five primary destinations: Overview, Explore, Trends, People & collaboration,
   Methods & data. People and generic Networks links resolve to the same workspace;
@@ -54,6 +54,54 @@ historical links. Browser evidence and unverified checks are recorded in
 This is a testable first-version candidate on the feature branch, not a production
 promotion, complete backfill or final visual acceptance.
 
+## November 9 consolidated investigation workspace
+
+- Four primary destinations: Overview, Trends, People & collaboration, Methods &
+  data. Overview now contains the interactive landscape and evidence panel rather
+  than a long card catalog. Fifteen compact starting points (five per collection)
+  sit below it, with a route back to all covered topics. Old `/explore` links retain
+  their paper, camera, filters and snapshot while resolving to Overview.
+- Shared Field → Topic controls use the configured topic hierarchy. Field filters
+  form a deduplicated union of curated topic memberships, not a filter on every
+  paper's native OpenAlex primary field. Cross-disciplinary papers can belong to
+  multiple fields. Scope and snapshot carry across the three investigation pages.
+- Trends owns the permanent annual chart, optional two-topic comparison, counts
+  and indexed modes, 5/10-year ranges, exact annual values, inspectable source query,
+  CSV export and an eight-row paginated topic table. Completed three-year growth
+  excludes YTD, and missing/zero baselines do not produce invented growth.
+- The sidebar starts as an accessible icon rail; it can expand. A quiet top-right
+  Data Refresh dateline follows the selected snapshot's build date. Mobile has
+  explicit menu navigation. Light and charcoal palettes update the map together.
+- People & collaboration recomputes scoped impact from the filtered paper evidence,
+  retains unresolved authorship credit and paginates both directory and supporting
+  papers. Directory page size responds to available panel height. Historical
+  snapshots lacking a fractional denominator show unavailable scoped author impact.
+- Historical-snapshot selection is captured before asynchronous loading, preventing
+  URL synchronization from silently replacing a requested saved snapshot. A saved
+  snapshot notice offers an explicit switch to the latest release.
+
+The accepted snapshot is now `680a6307e8ea7f9a`: **16,063 distinct OpenAlex work IDs**,
+15,386 abstracts, including a 4,783-paper union of Physics and Astronomy collections.
+Edition `ai-and-computing-v4` adds explicit scientific-ML terminology (neural operators,
+physics-informed models, neural quantum states and neural inference among others).
+Method filters report title/abstract mentions, not verified central contributions.
+Quantum computing or simulation-based inference alone is not an AI inclusion signal.
+The 100 annual trend profiles use the same declared edition query definitions,
+source work types and method anchoring as acquisition, with exact request provenance.
+
+Coverage remains partial: **90/1,000 current query-plan boundaries started; 13
+exhausted**. Counts from previous query fingerprints are not counted as current
+boundary completion. Earlier accepted snapshots, including the same-day 10,376-work
+`646c9396d3a367a2` preview, remain available. Distinct IDs are not deduplicated studies.
+The development workflow optionally refreshes annual queries as a complete atomic
+batch, using its existing budget/checkpoint model. Production weekly refresh and
+deployment workflows are unchanged.
+
+Validation: 28 Python tests, seven frontend tests, corpus validation, complete
+100-profile static validation, lint/type checking and a GitHub Pages-base build.
+Desktop/mobile interaction evidence, independent scoped-impact calculations and
+remaining limitations are in [consolidation QA](qa-2026-11-09/consolidation/README.md).
+
 ## Delivered
 
 - Correct full-set institution counts and authorship-specific institution attribution, regression fixtures, inverse-strength bridge distances.
@@ -63,7 +111,7 @@ promotion, complete backfill or final visual acceptance.
 - Development-only acquisition workflow with durable release-asset checkpoints; independent of the production refresh workflow.
 - Immutable content-addressed research snapshots; checksum-verified browser loads; lazy paper-detail shards; structural/data integrity validator.
 - Offline TF-IDF → SVD → t-SNE paper landscape, seeded thematic grouping and explicit similarity/coverage caveats. Computing topics use curated eligibility; scientific applications additionally require explicit AI methods in the title or abstract.
-- Overview, Explore, Trends and combined collaboration routes; comparisons and existing topic routes retained. Linked paper selection, paper list, year/theme/type/title filters, reading list, CSV/BibTeX exports, view sharing and camera state.
+- Overview with the landscape, dedicated Trends and combined collaboration routes; legacy Explore, comparisons and existing topic links retained. Linked paper selection, paper list, field/topic/method/year/theme/type/title filters, reading list, CSV/BibTeX exports, view sharing and camera state.
 - Graph-first network layout, topic context carried across navigation, visible researcher labels, quieter insight cards, responsive workspace and reduced-motion styling.
 
 ## Release gates still requiring evidence

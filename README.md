@@ -3,9 +3,12 @@
 ## V2 development preview
 
 The `feature/research-atlas-v2-plan` branch contains the **AI research, in context** preview:
-Overview, a text-similarity paper landscape, publication trends, and a combined
-people/collaboration workspace with paper-backed connections. Topic trends are also
-available inside Explore; comparisons and existing topic routes remain accessible
+Overview opens directly into the text-similarity paper landscape, with compact
+starting-point collections below it. Trends contains annual publication charts and
+comparisons; People & collaboration combines the directory, profiles and paper-backed
+networks. Field and Topic filters carry across these workspaces. The sidebar starts
+collapsed and the snapshot build date appears at the top right. Old Explore links
+resolve to Overview; comparisons and existing topic routes remain accessible
 without separate primary navigation entries. Local reading lists, CSV/BibTeX exports
 and snapshot-aware share links support investigation. `data/config/edition.yaml` defines the computational-methods
 track and AI applications inside the existing scientific domains. Research coverage
@@ -35,6 +38,22 @@ it cannot account for unrelated use of the same API key. Curated annual queries
 use title/abstract terms rather than exact long phrases or full-text mentions.
 Each profile retains the request and observation date.
 
+The focused edition's Trends page uses its own query-matched annual batch, not
+the broader legacy parent-topic totals. Refresh it before building after changing
+edition queries (or at a year boundary):
+
+```bash
+python3 -m src.corpus.trends --budget 0.45
+python3 -m src.corpus.build
+python3 -m src.corpus.validate
+```
+
+All 100 annual profiles must validate before the staged batch replaces the previous
+one. `--reuse-today` may reuse only same-day observations with exactly unchanged
+query definitions. The build can reuse an accepted snapshot's annual data only
+when edition, query fingerprints and year coverage still match. Annual query totals
+are not a census, AI adoption rate, or the number of locally collected papers.
+
 Collection persists canonical records, memberships, citation observations, usage and
 transactional page cursors in `.cache/corpus/atlas.sqlite`. Rerunning resumes work.
 `--recent-days 90` collects an overlapping publication window; `--reconcile` restarts
@@ -45,6 +64,9 @@ The separate **Develop research corpus** workflow can be dispatched on a feature
 branch. It preserves SQLite state in a development prerelease asset and produces a
 downloadable snapshot artifact. It cannot deploy the production site. Feature pushes
 run tests, lint, type checking and a build with read-only repository permissions.
+Its optional `refresh_trends` input refreshes the full annual batch before collecting
+papers and shares the same project daily budget. The existing production weekly
+refresh schedule and workflow are unchanged by this preview.
 
 Snapshot delivery uses `research-manifest.json` → content-addressed files with SHA-256
 checksums. The browser verifies bytes before rendering. Historical snapshot links work

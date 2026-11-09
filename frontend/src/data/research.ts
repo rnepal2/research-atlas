@@ -13,12 +13,14 @@ export interface ResearchPoint {
   shard: string
   oa: boolean
   retracted: boolean
+  methods?: string[]
+  creditDivisor?: number
 }
 export interface EvidenceEntity {
   id: string
   name: string
   works: string[]
-  citations: number
+  citations: number | null
   affiliations?: string[]
   authors?: string[]
   country?: string
@@ -40,6 +42,7 @@ export interface ResearchLandscape {
   points: ResearchPoint[]
   clusters: { id: number; label: string; count: number; x: number; y: number }[]
   topics: { slug: string; label: string; count: number; role?: 'methods' | 'applications'; domain?: string }[]
+  methods?: { id: string; label: string }[]
 }
 export interface ResearchManifest {
   snapshot: string
@@ -77,6 +80,9 @@ export function useResearch() {
   }>({})
   useEffect(() => {
     const controller = new AbortController()
+    // Capture before the first await: page URL synchronization must not change
+    // which immutable snapshot this navigation requested.
+    const requested = new URLSearchParams(window.location.search).get('snapshot')
     async function load() {
       try {
         const response = await fetch(`${base}research-manifest.json`, {
@@ -90,7 +96,6 @@ export function useResearch() {
         const manifest = (await response.json()) as ResearchManifest
         let chosen = manifest
         let notice = ''
-        const requested = new URLSearchParams(window.location.search).get('snapshot')
         if (requested && /^[a-f0-9]{16}$/.test(requested) && requested !== manifest.snapshot) {
           const historical = await fetch(`${base}snapshots/${requested}/manifest.json`, {
             signal: controller.signal,

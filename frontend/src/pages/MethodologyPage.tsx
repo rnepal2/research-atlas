@@ -62,11 +62,16 @@ export function MethodologyPage({ atlas }: { atlas: AtlasData }) {
           <CardContent className="grid gap-4 text-sm leading-relaxed text-muted-foreground">
             <p>
               The edition covers 23 AI and computing areas and 77 scientific application contexts, from 2017
-              onward. A paper must match a curated query and its configured topic assignments. Application
-              papers also need explicit AI methods in the title or abstract. Computing papers do not have to
-              mention AI. Articles, reviews, preprints, conference papers and reports are eligible. Counts
-              distinguish OpenAlex work IDs, not unique studies; publication and preprint versions can remain
-              separate records.
+              onward. A paper must match a curated title/abstract query and any configured topic assignments.
+              Application papers also need explicit AI methods in the title or abstract. Computing papers do
+              not have to mention AI. Articles, reviews, preprints, conference papers and reports are
+              eligible. Counts distinguish OpenAlex work IDs, not unique studies; publication and preprint
+              versions can remain separate records. Physics collections use development-edition
+              scientific-context queries; they are not silently limited to a single source topic assignment.
+              Method filters describe terminology found in the title or abstract, not independently verified
+              use or adoption. Field labels organize the curated Atlas topic collections using the source
+              hierarchy’s terminology. They are not a restriction to each paper’s primary OpenAlex field: a
+              computer-science paper about a physics application can belong to both collections.
             </p>
             {coverage && (
               <dl className="coverage-facts">

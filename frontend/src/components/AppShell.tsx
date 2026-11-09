@@ -4,9 +4,10 @@ import { useEffect, useRef, useState } from 'react'
 import type { NavItem } from '../app/navigation'
 import type { AtlasData } from '../data/types'
 import { cx } from '../lib/cx'
-import { formatDate } from '../lib/format'
 import { hrefFor, isActivePath, navigate } from '../lib/router'
-import { Button, Separator } from './ui'
+import { Button } from './ui'
+import { carryScope, sharedScopeSearch } from '../lib/researchScope'
+import { DataRefresh } from './DataRefresh'
 
 interface AppShellProps {
   atlas: AtlasData
@@ -16,8 +17,9 @@ interface AppShellProps {
 }
 
 export function AppShell({ atlas, navItems, activePath, children }: AppShellProps) {
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [scopeSearch, setScopeSearch] = useState(() => sharedScopeSearch(location.search))
   const mainRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
@@ -25,8 +27,15 @@ export function AppShell({ atlas, navItems, activePath, children }: AppShellProp
   }, [activePath])
   useEffect(() => {
     const resetScroll = () => mainRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    const updateScope = () => setScopeSearch(sharedScopeSearch(location.search))
     window.addEventListener('atlas:navigate', resetScroll)
-    return () => window.removeEventListener('atlas:navigate', resetScroll)
+    window.addEventListener('atlas:navigate', updateScope)
+    window.addEventListener('atlas:scope', updateScope)
+    return () => {
+      window.removeEventListener('atlas:navigate', resetScroll)
+      window.removeEventListener('atlas:navigate', updateScope)
+      window.removeEventListener('atlas:scope', updateScope)
+    }
   }, [])
 
   return (
@@ -125,13 +134,14 @@ export function AppShell({ atlas, navItems, activePath, children }: AppShellProp
                     collapsed &&
                     'shadow-[inset_0_-2px_0_var(--primary)] max-[1160px]:shadow-[inset_2px_0_0_var(--primary)]',
                 )}
-                href={hrefFor(item.path)}
+                href={hrefFor(carryScope(item.path, scopeSearch))}
+                aria-label={item.label}
                 aria-current={active ? 'page' : undefined}
                 title={item.label}
                 onClick={(event) => {
                   event.preventDefault()
                   setMobileOpen(false)
-                  navigate(item.path)
+                  navigate(carryScope(item.path, location.search))
                 }}
               >
                 <Icon aria-hidden="true" className="size-[18px] max-[760px]:size-4" />
@@ -145,21 +155,13 @@ export function AppShell({ atlas, navItems, activePath, children }: AppShellProp
           })}
         </nav>
 
-        <div
-          className={cx('mt-auto grid shrink-0 gap-3 max-[1160px]:hidden', collapsed ? '-mx-2.5' : '-mx-3.5')}
-        >
-          <Separator />
-          <div className={cx('grid gap-1 px-5 py-1', collapsed && 'hidden')}>
-            <span className="text-[0.7rem] font-[650] text-muted-foreground">Data Refresh</span>
-            <span className="text-[0.72rem] text-muted-foreground">{formatDate(atlas.generatedAt)}</span>
-          </div>
-        </div>
       </aside>
 
       <main
         ref={mainRef}
-        className="h-dvh min-w-0 max-w-[100vw] overflow-y-auto overscroll-contain px-5 pt-[26px] pb-8 max-[1160px]:h-auto max-[1160px]:max-w-full max-[1160px]:overflow-visible max-[1160px]:px-4 max-[1160px]:pt-[22px] max-[1160px]:pb-7 max-[760px]:px-3 max-[760px]:pt-[18px] max-[760px]:pb-6"
+        className="workspace-main relative h-dvh min-w-0 max-w-[100vw] overflow-y-auto overscroll-contain px-5 pt-[26px] pb-8 max-[1160px]:h-auto max-[1160px]:max-w-full max-[1160px]:overflow-visible max-[1160px]:px-4 max-[1160px]:pt-[22px] max-[1160px]:pb-7 max-[760px]:px-3 max-[760px]:pt-[18px] max-[760px]:pb-6"
       >
+        <DataRefresh fallback={atlas.generatedAt} path={activePath} />
         {children}
       </main>
     </div>

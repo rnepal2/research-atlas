@@ -6,11 +6,18 @@ import { EgoNetwork } from '../components/EgoNetwork'
 import { researchFile, useResearch } from '../data/research'
 import type { EvidenceEntity } from '../data/research'
 import { sharedConnections } from '../lib/connections'
-import { navigate } from '../lib/router'
+import { navigate, replaceViewUrl } from '../lib/router'
 import { formatDate } from '../lib/format'
+import type { AtlasData } from '../data/types'
+import { ResearchScopeControls } from '../components/ResearchScopeControls'
+import { inScope, readScope, scopePath, topicSlugs } from '../lib/researchScope'
+import { scopeEntities } from '../lib/scopedEntities'
+import { SnapshotNotice } from '../components/SnapshotNotice'
 
-export function PeoplePage() {
+export function PeoplePage({ atlas }: { atlas: AtlasData }) {
   const { manifest, landscape, error, notice } = useResearch()
+  const [scope, setScope] = useState(() => readScope(atlas.topics))
+  const allowedTopics = useMemo(() => topicSlugs(atlas.topics, scope), [atlas, scope])
   const [kind, setKind] = useState(() =>
     new URLSearchParams(location.search).get('kind') === 'institutions' ? 'institutions' : 'authors',
   )
@@ -20,6 +27,8 @@ export function PeoplePage() {
   const [failure, setFailure] = useState('')
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
+  const [directoryPageSize, setDirectoryPageSize] = useState(5)
+  const directoryRef = useRef<HTMLDivElement>(null)
   const [view, setView] = useState(() =>
     new URLSearchParams(location.search).get('view') === 'papers' ? 'papers' : 'network',
   )
@@ -28,7 +37,16 @@ export function PeoplePage() {
     () => new URLSearchParams(location.search).get('connection') || '',
   )
   const [message, setMessage] = useState('')
+  const [paperPage, setPaperPage] = useState({ key: '', page: 1 })
   const profile = useRef<HTMLElement>(null)
+  useEffect(() => {
+    if (!directoryRef.current) return
+    const observer = new ResizeObserver(([entry]) =>
+      setDirectoryPageSize(Math.max(2, Math.min(12, Math.floor(entry.contentRect.height / 72)))),
+    )
+    observer.observe(directoryRef.current)
+    return () => observer.disconnect()
+  }, [])
   useEffect(() => {
     if (!manifest) return
     const controller = new AbortController()
@@ -46,25 +64,38 @@ export function PeoplePage() {
       })
     return () => controller.abort()
   }, [manifest, kind])
+  const scopedRows = useMemo(
+    () =>
+      scope.field === 'all' && scope.topic === 'all'
+        ? rows
+        : scopeEntities(
+            rows,
+            (landscape?.points || []).filter((p) => inScope(p, allowedTopics)),
+            kind,
+          ),
+    [rows, landscape, allowedTopics, scope, kind],
+  )
   const visible = useMemo(
     () =>
-      rows.filter((row) =>
+      scopedRows.filter((row) =>
         `${row.name} ${(row.affiliations || []).join(' ')} ${row.country || ''}`
           .toLowerCase()
           .includes(query.toLowerCase()),
       ),
-    [rows, query],
+    [scopedRows, query],
   )
-  const pages = Math.max(1, Math.ceil(visible.length / 20)),
+  const pages = Math.max(1, Math.ceil(visible.length / directoryPageSize)),
     currentPage = Math.min(page, pages)
-  const active = selected ? rows.find((r) => r.id === selected) : visible[(currentPage - 1) * 20]
+  const active = selected
+    ? scopedRows.find((r) => r.id === selected)
+    : visible[(currentPage - 1) * directoryPageSize]
   const activeId = active?.id
   useEffect(() => {
     if (!selected || selected !== activeId || !matchMedia('(max-width: 760px)').matches) return
     const frame = requestAnimationFrame(() => profile.current?.scrollIntoView({ block: 'start' }))
     return () => cancelAnimationFrame(frame)
   }, [selected, activeId])
-  const connections = useMemo(() => sharedConnections(active, rows), [active, rows])
+  const connections = useMemo(() => sharedConnections(active, scopedRows), [active, scopedRows])
   const chosenConnection = connections.neighbors.find((row) => row.id === connectionId)
   const paperLookup = useMemo(() => new Map((landscape?.points || []).map((p) => [p.id, p])), [landscape])
   const supporting = (chosenConnection?.sharedWorks || active?.works || [])
@@ -73,40 +104,50 @@ export function PeoplePage() {
     .sort((a, b) => b.year - a.year || b.citations - a.citations)
   useEffect(() => {
     if (!active) return
-    const params = new URLSearchParams({ kind, entity: active.id })
+    const params = new URLSearchParams({ kind, entity: active.id, field: scope.field, topic: scope.topic })
     if (connectionId) params.set('connection', connectionId)
     if (view === 'papers') params.set('view', 'papers')
     if (manifest) params.set('snapshot', manifest.snapshot)
-    history.replaceState({}, '', `${location.pathname}?${params}`)
-  }, [active, kind, manifest, connectionId, view])
+    replaceViewUrl(params)
+  }, [active, kind, manifest, connectionId, view, scope])
   function follow(id: string) {
     setSelected(id)
     setConnectionId('')
     setQuery('')
-    const index = rows.findIndex((row) => row.id === id)
-    setPage(Math.max(1, Math.floor(index / 20) + 1))
+    const index = scopedRows.findIndex((row) => row.id === id)
+    setPage(Math.max(1, Math.floor(index / directoryPageSize) + 1))
   }
+  const paperKey = `${scope.field}/${scope.topic}/${activeId}/${connectionId}`
+  const paperPages = Math.max(1, Math.ceil(supporting.length / 12))
+  const currentPaperPage = paperPage.key === paperKey ? Math.min(paperPage.page, paperPages) : 1
   const papers = (
-    <div className="connection-papers">
-      {supporting.slice(0, 100).map((p) => (
-        <button
-          key={p.id}
-          className="theme-paper"
-          onClick={() => navigate(`/explore?paper=${p.id}&snapshot=${manifest?.snapshot || ''}`)}
-        >
-          <span className="eyebrow">
-            {p.year} · {p.type} · {p.citations.toLocaleString()} citations
-          </span>
-          <strong>{p.title}</strong>
-          <ArrowUpRight size={14} />
-        </button>
-      ))}
-      {supporting.length > 100 && (
-        <p>
-          Showing 100 of {supporting.length.toLocaleString()} supporting papers. Follow the source profile for
-          the full record.
-        </p>
-      )}
+    <div className="connection-paper-stack">
+      <div className="connection-papers">
+        {supporting.slice((currentPaperPage - 1) * 12, currentPaperPage * 12).map((p) => (
+          <button
+            key={p.id}
+            className="theme-paper"
+            onClick={() =>
+              navigate(scopePath('/', scope, { paper: p.id, snapshot: manifest?.snapshot || '' }))
+            }
+          >
+            <span className="eyebrow">
+              {p.year} · {p.type} · {p.citations.toLocaleString()} citations
+            </span>
+            <strong>{p.title}</strong>
+            <ArrowUpRight size={14} />
+          </button>
+        ))}
+      </div>
+      <Pagination
+        compact
+        page={currentPaperPage}
+        pageCount={paperPages}
+        pageSize={12}
+        totalItems={supporting.length}
+        onPageChange={(page) => setPaperPage({ key: paperKey, page })}
+        itemLabel="supporting papers"
+      />
     </div>
   )
   return (
@@ -128,6 +169,17 @@ export function PeoplePage() {
             Share view
           </Button>
         }
+      />
+      <ResearchScopeControls
+        atlas={atlas}
+        topicLabels={landscape?.topics}
+        scope={scope}
+        onChange={(value) => {
+          setScope(value)
+          setSelected('')
+          setConnectionId('')
+          setPage(1)
+        }}
       />
       <div className="connections-controls">
         <Tabs
@@ -159,44 +211,42 @@ export function PeoplePage() {
         />
       </div>
       {(error || failure) && <p role="alert">{error || failure}</p>}
-      {notice && (
-        <p role="status" className="snapshot-notice">
-          {notice}
-        </p>
-      )}
+      <SnapshotNotice message={notice} />
       <div className="connections-workspace">
         <section className="connection-directory paper-list-pane" aria-label="Research directory">
           <div className="directory-caption">
             {loading
               ? 'Loading records…'
               : `${visible.length.toLocaleString()} ${kind === 'authors' ? 'researchers' : 'institutions'}`}
-            <span>By collected publication count</span>
+            <span>By collected publication count in this scope</span>
           </div>
-          <div className="paper-results" key={currentPage}>
-            {visible.slice((currentPage - 1) * 20, currentPage * 20).map((row) => (
-              <button
-                key={row.id}
-                className={`paper-result ${active?.id === row.id ? 'selected' : ''}`}
-                onClick={() => {
-                  setSelected(row.id)
-                  setConnectionId('')
-                }}
-              >
-                <strong>{row.name}</strong>
-                <span>
-                  {row.works.length} sampled {row.works.length === 1 ? 'paper' : 'papers'}
-                </span>
-                <span>
-                  {row.country || row.affiliations?.slice(0, 2).join('; ') || 'Affiliation not resolved'}
-                </span>
-              </button>
-            ))}
+          <div className="paper-results" ref={directoryRef}>
+            {visible
+              .slice((currentPage - 1) * directoryPageSize, currentPage * directoryPageSize)
+              .map((row) => (
+                <button
+                  key={row.id}
+                  className={`paper-result ${active?.id === row.id ? 'selected' : ''}`}
+                  onClick={() => {
+                    setSelected(row.id)
+                    setConnectionId('')
+                  }}
+                >
+                  <strong title={row.name}>{row.name}</strong>
+                  <span>
+                    {row.works.length} sampled {row.works.length === 1 ? 'paper' : 'papers'}
+                  </span>
+                  <span title={row.country || row.affiliations?.join('; ') || 'Affiliation not resolved'}>
+                    {row.country || row.affiliations?.slice(0, 2).join('; ') || 'Affiliation not resolved'}
+                  </span>
+                </button>
+              ))}
           </div>
           <Pagination
             compact
             page={currentPage}
             pageCount={pages}
-            pageSize={20}
+            pageSize={directoryPageSize}
             totalItems={visible.length}
             onPageChange={(value) => {
               setPage(value)
@@ -220,7 +270,9 @@ export function PeoplePage() {
                   <p>
                     {active.works.length.toLocaleString()} collected{' '}
                     {active.works.length === 1 ? 'paper' : 'papers'} ·{' '}
-                    {Math.round(active.citations).toLocaleString()}{' '}
+                    {active.citations === null
+                      ? 'Unavailable'
+                      : Math.round(active.citations).toLocaleString()}{' '}
                     {kind === 'authors' ? 'fractional' : 'full-counted'} cited-work impact
                   </p>
                 </div>
@@ -343,7 +395,7 @@ export function PeoplePage() {
                 {loading
                   ? 'Loading source evidence…'
                   : selected
-                    ? 'This entity is not in this snapshot’s directory. Group and unresolved authors are not listed as individual researchers.'
+                    ? 'This entity has no collected papers in the selected scope, or is not an individual in this snapshot’s directory.'
                     : 'No records match this search.'}
               </p>
               {selected && !loading && (

@@ -58,9 +58,9 @@ export function ResearchAtlasApp() {
       }
       if (path === '/trending') {
         return {
-          title: 'Research Momentum | Research Atlas',
+          title: 'Research Trends | Research Atlas',
           description:
-            'Ranked research topics by completed-period publication growth and cross-topic breadth.',
+            'Annual query-matched publication trends for computational methods and their scientific applications.',
         }
       }
       if (path === '/explore' || path === '/compare')
@@ -89,9 +89,9 @@ export function ResearchAtlasApp() {
         }
       }
       return {
-        title: 'Research Atlas',
+        title: 'AI research, in context | Research Atlas',
         description:
-          'Explore research momentum, rising researchers, institutions, papers, geography, and collaboration networks from OpenAlex.',
+          'Investigate AI and computing across physics, healthcare and the wider sciences through papers, trends and collaboration evidence.',
       }
     })()
     document.title = routeMeta.title

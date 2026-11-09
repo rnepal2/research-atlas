@@ -9,7 +9,6 @@ import {
   ResearchersPage,
   TrendingPage,
   OverviewPage,
-  ExplorePage,
   ComparePage,
   BenchmarkPage,
   PeoplePage,
@@ -37,9 +36,9 @@ export function renderRoute({ atlas, path, theme, onThemeChange }: RenderRoutePa
   } else if (path === '/benchmark' && import.meta.env.DEV) {
     page = <BenchmarkPage />
   } else if (path === '/explore') {
-    page = <ExplorePage atlas={atlas} />
+    page = <OverviewPage atlas={atlas} theme={theme} onThemeChange={onThemeChange} />
   } else if (path === '/people' || path === '/connections' || path === '/networks') {
-    page = <PeoplePage />
+    page = <PeoplePage atlas={atlas} />
   } else if (path === '/compare') {
     page = <ComparePage atlas={atlas} />
   } else if (path === '/atlas' || (topicMatch && matchedTopic && !topicMatch[2])) {

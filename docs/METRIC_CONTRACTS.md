@@ -25,3 +25,31 @@ differ from literal local eligibility; aggregate counts are never used as an eli
 paper-corpus completeness denominator.
 
 Deferred collection is a separate workflow outcome. It never processes or republishes a checked-in snapshot. Production publication requires the main branch and a fresh validated collection.
+
+## Focused edition investigation views
+
+- Field → Topic is the configured collection hierarchy, not each work's native
+  primary-field assignment. Field counts are a distinct-work union of its topic
+  collections; overlapping topic or field totals must not be added.
+- Method filters match declared title/abstract terminology. They do not establish
+  how centrally a paper uses a method, its quality, or population adoption rates.
+- `trends.json` contains query-matched annual source aggregates for the exact
+  edition query definitions and allowed work types. API stemming and provider
+  search semantics can differ from local literal relevance checks. Its totals are
+  not a completeness denominator for the collected landscape.
+- Completed-period change compares three completed calendar years against their
+  preceding three. YTD is dashed and excluded. Missing periods or a zero prior
+  baseline produce unavailable change. Indexed comparisons use the first common
+  positive annual baseline in the selected range; that baseline is labeled.
+- Scoped author impact sums each included paper's citations divided by its full
+  credited-authorship denominator. Scoped institution impact full-counts the same
+  selected evidence. A historical missing denominator yields unavailable author
+  impact, not zero or the unfiltered total.
+- Data Refresh is the selected snapshot build date. Per-record and per-query
+  observation timestamps remain separate; this label is not a claim that every
+  provider record was retrieved on that date.
+- Annual batches replace accepted raw context only after every profile validates.
+  Same-day reuse requires exact unchanged query fingerprints. Builds reject
+  incompatible edition/query/year context instead of mixing scopes or inventing
+  annual counts from sampled papers. Older immutable snapshots retain their own
+  definitions rather than being reinterpreted using today's query plan.

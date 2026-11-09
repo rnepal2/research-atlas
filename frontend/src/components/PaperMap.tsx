@@ -17,6 +17,7 @@ export function PaperMap({
   synthetic = false,
   focusCluster = null,
   onFocusCluster,
+  theme,
 }: {
   points: ResearchPoint[]
   clusters: ResearchLandscape['clusters']
@@ -29,6 +30,7 @@ export function PaperMap({
   synthetic?: boolean
   focusCluster?: number | null
   onFocusCluster?: (cluster: number | null) => void
+  theme?: 'dark' | 'light'
 }) {
   const container = useRef<HTMLDivElement>(null)
   const sigma = useRef<Sigma | null>(null)
@@ -55,7 +57,7 @@ export function PaperMap({
   useEffect(() => {
     if (!container.current) return
     const graph = new Graph()
-    const dark = document.documentElement.dataset.theme !== 'light'
+    const dark = theme ? theme === 'dark' : document.documentElement.dataset.theme !== 'light'
     const style = getComputedStyle(document.documentElement)
     const neutral = style.getPropertyValue('--border').trim()
     const pointLookup = new Map(points.map((p) => [p.id, p]))
@@ -259,7 +261,7 @@ export function PaperMap({
       renderer.kill()
       sigma.current = null
     }
-  }, [points, clusters, density])
+  }, [points, clusters, density, theme])
   useEffect(() => {
     const renderer = sigma.current
     if (!renderer) return

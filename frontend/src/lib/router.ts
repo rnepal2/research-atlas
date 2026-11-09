@@ -1,11 +1,16 @@
 import type { AtlasData, TopicSummary } from '../data/types'
 import { recoverStaticRoute } from './routePaths'
+import { sharedScopeSearch } from './researchScope'
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 
 export function routeFromPath(pathname: string, search: string): string {
   const { route, restoredUrl } = recoverStaticRoute(pathname, search, base)
   if (restoredUrl) window.history.replaceState({}, '', restoredUrl)
+  if (route === '/explore') {
+    window.history.replaceState({}, '', hrefFor('/') + window.location.search + window.location.hash)
+    return '/'
+  }
   return route || '/'
 }
 
@@ -23,6 +28,12 @@ export function navigate(path: string): void {
   window.history.pushState({}, '', hrefFor(path))
   window.dispatchEvent(new Event('atlas:navigate'))
   window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+export function replaceViewUrl(params: URLSearchParams) {
+  const before = sharedScopeSearch(location.search)
+  history.replaceState({}, '', `${location.pathname}?${params}`)
+  if (before !== sharedScopeSearch(location.search)) window.dispatchEvent(new Event('atlas:scope'))
 }
 
 export function isActivePath(activePath: string, itemPath: string): boolean {
