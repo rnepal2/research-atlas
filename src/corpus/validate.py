@@ -6,6 +6,47 @@ import math
 import re
 from datetime import date
 from pathlib import Path
+from collections import defaultdict
+from src.analytics.authorship import is_credible_author
+
+
+def validate_entity_evidence(papers, authors, institutions):
+    """Independently reconcile directory relationships against paper authorships."""
+    author_works, affiliation_names, institution_works, institution_authors = (defaultdict(set) for _ in range(4))
+    credits = defaultdict(float)
+    for identifier, paper in papers.items():
+        entries = paper['authors']
+        credited = len({a['id'] for a in entries if a.get('id')}) + sum(not a.get('id') for a in entries)
+        seen = set()
+        for entry in entries:
+            person = bool(entry.get('id')) and is_credible_author({'display_name': entry.get('name')})
+            author = entry.get('id')
+            if person:
+                author_works[author].add(identifier)
+                if author not in seen:
+                    credits[author] += paper['citations'] / max(1, credited)
+                seen.add(author)
+            for institution in entry.get('institutions', []):
+                key = institution.get('id')
+                if not key:
+                    continue
+                institution_works[key].add(identifier)
+                if person:
+                    affiliation_names[author].add(institution.get('display_name') or key)
+                    institution_authors[key].add(author)
+    if len({a['id'] for a in authors}) != len(authors) or {a['id'] for a in authors} != set(author_works):
+        raise ValueError('Author directory does not reconcile with paper evidence')
+    if len({i['id'] for i in institutions}) != len(institutions) or {i['id'] for i in institutions} != set(institution_works):
+        raise ValueError('Institution directory does not reconcile with paper evidence')
+    for author in authors:
+        key = author['id']
+        if set(author['works']) != author_works[key] or set(author.get('affiliations', [])) != affiliation_names[key] or not math.isclose(author['citations'], credits[key], abs_tol=.011, rel_tol=0):
+            raise ValueError('Author attribution does not reconcile with paper evidence')
+    for institution in institutions:
+        key = institution['id']
+        citations = sum(papers[w]['citations'] for w in institution_works[key])
+        if set(institution['works']) != institution_works[key] or set(institution.get('authors', [])) != institution_authors[key] or institution['citations'] != citations:
+            raise ValueError('Institution attribution does not reconcile with paper evidence')
 
 
 def validate(root, manifest=None):
@@ -55,6 +96,10 @@ def validate(root, manifest=None):
         if modern and any(papers[point['id']].get(key) != value for key, value in point.items()):
             raise ValueError('Paper detail does not match its plotted record')
     if modern:
+        evidence = {identifier: paper for shard in shards.values() for identifier, paper in shard.items()}
+        if set(evidence) != set(ids):
+            raise ValueError('Unplotted or missing paper detail records')
+        validate_entity_evidence(evidence, json.loads((base / 'authors.json').read_text()), json.loads((base / 'institutions.json').read_text()))
         for topic in landscape['topics']:
             if topic['count'] != sum(topic['slug'] in p['topics'] for p in landscape['points']):
                 raise ValueError('Topic count does not reconcile')
