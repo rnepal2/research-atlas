@@ -107,6 +107,13 @@ def main():
     if not key:
         raise SystemExit('Set OPENALEX_API_KEY in the process environment or local .env.')
     store = CorpusStore(args.db)
+    if args.focused:
+        from src.corpus.focused import validate_year_checkpoint
+        try:
+            validate_year_checkpoint(store.db, topics, start_year, args.year)
+        except ValueError:
+            store.close()
+            raise
     if args.reconcile:
         store.restart([item['id'] for item in partition_plan(topics, start_year, args.recent_days)])
     client = OpenAlexClient(key, Path('.cache/corpus/http'), min_interval=.7)

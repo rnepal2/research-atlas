@@ -14,7 +14,7 @@ The unsharded `.cache/corpus/focused.sqlite` is a pilot only. Actual backfill us
 
 The pilot on 2026-11-10 spent $0.120 to start every topic-year boundary. Run `python3 -m src.corpus.audit` to inspect that pilot's local eligibility by topic and year; use `--db .cache/corpus/focused-2026.sqlite` for a shard. These are first-page samples, not representative precision estimates; OpenAlex relevance ordering and source stemming matter. Simple plural normalization now prevents obvious false exclusions, but some older-year and application matches still need a more careful relevance audit before publication.
 
-Create an online, integrity-checked backup with `python3 -m src.corpus.checkpoint save --db .cache/corpus/focused-2026.sqlite --archive .cache/corpus/focused-2026.sqlite.gz`. To recover on another machine, use the same paths with `restore`; restoration refuses to overwrite an existing database. Keep a durable off-machine copy of each daily archive. Year shards keep release assets and runner disk use bounded, though full size must still be measured before moving the crawl into Actions.
+Create an online, integrity-checked backup with `python3 -m src.corpus.checkpoint save --db .cache/corpus/focused-2026.sqlite --archive .cache/corpus/focused-2026.sqlite.gz`. To recover on another machine, use the same paths with `restore`; restoration refuses to overwrite an existing database. Keep a durable off-machine copy of each daily archive. Year shards keep release assets and runner disk use bounded; verify actual asset size as the corpus grows.
 
 ## Promotion gates
 
@@ -24,7 +24,7 @@ Create an online, integrity-checked backup with `python3 -m src.corpus.checkpoin
 4. Build compact, versioned aggregates and a bounded interactive paper sample. The current full-record t-SNE build and static JSON export cannot be assumed to scale to hundreds of thousands of works or fit a static site. Keep the acquisition database out of the published site.
 5. Stage and validate the entire candidate snapshot before atomically switching a public pointer. Only then align the weekly refresh to the focused edition; retain the accepted snapshot on failure.
 
-GitHub Actions scheduling uses the default branch. This feature-branch candidate is deliberately manual until the checkpoint, artifact-size and promotion workflow is designed and tested; the production schedule remains unchanged.
+The **Develop focused corpus** workflow can be dispatched against `develop` after the PR promotion. It restores one year shard from the development prerelease, collects a bounded batch and uploads the validated checkpoint. It does not build or deploy the site. The production weekly refresh remains a separate `main`-branch workflow. Do not run a manual backfill concurrently with that refresh or spend the same free-key allowance through another client.
 
 ## Refresh after the historical build
 

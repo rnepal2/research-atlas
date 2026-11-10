@@ -387,13 +387,7 @@
     border-right: 0;
   }
 }
-@media (max-width: 760px) {
-  .map-legend p {
-    display: none;
-  }
-  .paper-list-pane {
-    max-height: 65dvh;
-  }
+@media (max-width: 1160px) {
   .mobile-shell-header {
     display: flex;
     align-items: center;
@@ -419,6 +413,14 @@
     text-align: left;
     font-size: 12px;
     padding: 10px;
+  }
+}
+@media (max-width: 760px) {
+  .map-legend p {
+    display: none;
+  }
+  .paper-list-pane {
+    max-height: 65dvh;
   }
   .hero-index {
     border-left: 0;

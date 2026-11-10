@@ -1,8 +1,8 @@
 # Research Atlas
 
-## V2 development preview
+## Research Atlas v2
 
-The `feature/research-atlas-v2-plan` branch contains the **AI research and applications** preview:
+The **AI research and applications** site:
 Overview introduces the research landscape and explains how to read it, with compact
 starting-point collections for AI, Physics, Health & life sciences, and Chemistry &
 materials. Advancing AI and AI in science provide two lenses on the same evidence.
@@ -79,13 +79,14 @@ transactional page cursors in `.cache/corpus/atlas.sqlite`. Rerunning resumes wo
 partitions to revisit older changes. Neither mode is OpenAlex paid change synchronization.
 Use `--topic` repeatedly to choose areas and share budget fairly between backfills.
 
-The separate **Develop research corpus** workflow can be dispatched on a feature
-branch. It preserves SQLite state in a development prerelease asset and produces a
-downloadable snapshot artifact. It cannot deploy the production site. Feature pushes
-run tests, lint, type checking and a build with read-only repository permissions.
-Its optional `refresh_trends` input refreshes the full annual batch before collecting
-papers and shares the same project daily budget. The existing production weekly
-refresh schedule and workflow are unchanged by this preview.
+The manual **Develop focused corpus** workflow runs against `develop` only. It restores
+one publication-year checkpoint from a development prerelease, collects a bounded
+OpenAlex batch and saves the checkpoint. It cannot deploy the site. The separate
+Monday **Refresh OpenAlex Data** workflow runs from `main`, refreshes the existing
+100 topic profiles and publishes only a validated, fresh result. It does not yet
+complete or weekly-refresh the focused paper corpus; that candidate remains isolated
+until its coverage, relevance and static-delivery gates pass. See
+[focused corpus acquisition](docs/focused-corpus.md).
 
 Snapshot delivery uses `research-manifest.json` → content-addressed files with SHA-256
 checksums. The browser verifies bytes before rendering. Historical snapshot links work

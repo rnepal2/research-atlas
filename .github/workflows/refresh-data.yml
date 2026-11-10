@@ -70,6 +70,10 @@ jobs:
           GITHUB_PAGES: "true"
         run: npm run build
 
+      - name: Validate publishable research snapshot
+        if: steps.refresh.outputs.outcome == 'fresh'
+        run: python -m src.corpus.validate frontend/dist/research
+
       - name: Publish gh-pages branch
         if: steps.refresh.outputs.outcome == 'fresh'
         env:

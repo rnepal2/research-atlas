@@ -27,6 +27,14 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install validation dependencies
+        run: python -m pip install -r requirements.txt
+
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
@@ -74,6 +82,9 @@ jobs:
           else:
               print("Using the newer built data snapshot")
           PY
+
+      - name: Validate publishable research snapshot
+        run: python -m src.corpus.validate frontend/dist/research
 
       - name: Publish gh-pages branch
         env:

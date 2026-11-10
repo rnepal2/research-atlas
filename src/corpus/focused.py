@@ -35,6 +35,15 @@ def focused_spent_today(directory: Path = DB.parent) -> float:
     return total
 
 
+def validate_year_checkpoint(db: sqlite3.Connection, topics: list[dict], start_year: int,
+                             year: int) -> None:
+    """Never resume a shard with another year's or another query's cursors."""
+    expected = {item['id'] for item in partition_plan(topics, start_year) if item['year'] == year}
+    stored = {row[0] for row in db.execute('SELECT id FROM partitions')}
+    if not stored <= expected:
+        raise ValueError('Focused checkpoint contains obsolete or wrong-year query boundaries')
+
+
 def signature(topics: list[dict]) -> str:
     """Fingerprint all source-side boundaries except the year itself."""
     boundaries = [

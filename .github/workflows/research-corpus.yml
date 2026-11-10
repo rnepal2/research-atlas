@@ -1,65 +1,82 @@
-name: Develop research corpus
+name: Develop focused corpus
+
 on:
   workflow_dispatch:
     inputs:
+      year:
+        description: Publication year to backfill (one year shard per run)
+        required: true
+        default: '2026'
       max_pages:
-        description: Maximum API pages (100 records/page)
-        default: '50'
+        description: Maximum OpenAlex cursor pages
+        required: true
+        default: '200'
       budget:
-        description: Maximum project spend today in USD
+        description: Maximum recorded spend in this shard today (USD)
+        required: true
         default: '0.25'
-      refresh_trends:
-        description: Refresh the complete annual batch before collection (set budget to 0.45 or higher)
-        type: boolean
-        default: false
+
 permissions:
   contents: write
+
 concurrency:
-  group: research-corpus-development
+  group: focused-corpus-backfill
   cancel-in-progress: false
+
 jobs:
-  corpus:
-    if: startsWith(github.ref, 'refs/heads/feature/')
+  backfill:
+    if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
-      - run: pip install -r requirements-research.txt
-      - name: Restore durable development state
+      - run: python -m pip install -r requirements.txt
+      - name: Validate candidate and inputs
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          mkdir -p .cache/corpus
-          if gh release view research-corpus-development >/dev/null 2>&1; then
-            gh release download research-corpus-development --pattern atlas.sqlite --dir .cache/corpus --clobber
-          fi
-      - name: Refresh edition annual context
-        if: inputs.refresh_trends
-        env:
-          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
-          BUDGET: ${{ inputs.budget }}
-        run: python -m src.corpus.trends --budget "$BUDGET"
-      - name: Collect with daily budget
-        env:
-          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+          YEAR: ${{ inputs.year }}
           MAX_PAGES: ${{ inputs.max_pages }}
           BUDGET: ${{ inputs.budget }}
-        run: python -m src.corpus.collect --max-pages "$MAX_PAGES" --budget "$BUDGET"
-      - name: Preserve checkpoints even when subsequent build fails
-        if: always()
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+        run: |
+          test -n "$OPENALEX_API_KEY"
+          python -m src.corpus.focused plan >/dev/null
+          python - "$YEAR" "$MAX_PAGES" "$BUDGET" <<'PY'
+          import sys
+          from datetime import datetime, timezone
+          year, pages, budget = int(sys.argv[1]), int(sys.argv[2]), float(sys.argv[3])
+          if not 2017 <= year <= datetime.now(timezone.utc).year or not 1 <= pages <= 250 or not 0 < budget <= 0.25:
+              raise SystemExit('Year, pages or budget exceeds the safe manual backfill bounds')
+          PY
+      - name: Restore year checkpoint
         env:
           GH_TOKEN: ${{ github.token }}
+          YEAR: ${{ inputs.year }}
         run: |
-          if [ -f .cache/corpus/atlas.sqlite ]; then
-            gh release view research-corpus-development >/dev/null 2>&1 || gh release create research-corpus-development --target "$GITHUB_SHA" --prerelease --title "Development corpus checkpoints" --notes "Resumable bibliographic corpus state. Not a production deployment."
-            gh release upload research-corpus-development .cache/corpus/atlas.sqlite --clobber
+          mkdir -p .cache/corpus
+          gh release view focused-corpus-v1-checkpoint >/dev/null
+          if gh release view focused-corpus-v1-checkpoint --json assets --jq '.assets[].name' | grep -Fxq "focused-${YEAR}.sqlite.gz"; then
+            gh release download focused-corpus-v1-checkpoint --pattern "focused-${YEAR}.sqlite.gz" --dir .cache/corpus
+            python -m src.corpus.checkpoint restore --db ".cache/corpus/focused-${YEAR}.sqlite" --archive ".cache/corpus/focused-${YEAR}.sqlite.gz"
           fi
-      - run: python -m src.corpus.build && python -m src.corpus.validate
-      - uses: actions/upload-artifact@v4
-        with:
-          name: research-snapshot
-          path: data/research
-          retention-days: 30
+      - name: Collect bounded pages
+        id: collect
+        env:
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+          YEAR: ${{ inputs.year }}
+          MAX_PAGES: ${{ inputs.max_pages }}
+          BUDGET: ${{ inputs.budget }}
+        run: python -m src.corpus.collect --focused --year "$YEAR" --max-pages "$MAX_PAGES" --budget "$BUDGET"
+      - name: Preserve checkpoint after any collection outcome
+        if: always() && steps.collect.outcome != 'skipped'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          YEAR: ${{ inputs.year }}
+        run: |
+          if [ -f ".cache/corpus/focused-${YEAR}.sqlite" ]; then
+            python -m src.corpus.checkpoint save --db ".cache/corpus/focused-${YEAR}.sqlite" --archive ".cache/corpus/focused-${YEAR}.sqlite.gz"
+            gh release upload focused-corpus-v1-checkpoint ".cache/corpus/focused-${YEAR}.sqlite.gz" --clobber
+            python -m src.corpus.focused status --db ".cache/corpus/focused-${YEAR}.sqlite"
+          fi

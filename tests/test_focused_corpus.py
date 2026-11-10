@@ -5,7 +5,7 @@ import unittest
 from datetime import date
 from pathlib import Path
 
-from src.corpus.focused import annual_estimate, checkpoint_status, focused_spent_today, focused_topics, signature
+from src.corpus.focused import annual_estimate, checkpoint_status, focused_spent_today, focused_topics, signature, validate_year_checkpoint
 from src.corpus.partitions import partition_plan
 from src.corpus.store import CorpusStore
 from src.corpus.checkpoint import save, restore
@@ -73,6 +73,15 @@ class FocusedCorpusTests(unittest.TestCase):
                 store.reserve(.01)
                 store.close()
             self.assertAlmostEqual(focused_spent_today(root), .02)
+
+    def test_year_shard_rejects_other_query_boundaries(self):
+        policy, topics = focused_topics()
+        with tempfile.TemporaryDirectory() as directory:
+            store = CorpusStore(Path(directory) / 'focused.sqlite')
+            store.page('obsolete/2026/query', topics[0]['slug'], [], None, 0)
+            with self.assertRaisesRegex(ValueError, 'obsolete or wrong-year'):
+                validate_year_checkpoint(store.db, topics, policy['start_year'], date.today().year)
+            store.close()
 
 
 if __name__ == '__main__':

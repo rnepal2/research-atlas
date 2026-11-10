@@ -1,6 +1,6 @@
 # V2 engineering ledger
 
-Feature branch: `feature/research-atlas-v2-plan`. Production is not promoted by any of this work.
+This ledger records the feature-branch implementation and its release gates. The focused complete-corpus backfill remains an isolated candidate even after the website code is promoted.
 
 ## November 8 direction
 
@@ -147,6 +147,6 @@ remaining limitations are in [consolidation QA](qa-2026-11-09/consolidation/READ
 - Historical citation velocity requires future observations; no historical observations are invented.
 - Million-point rendering, multiresolution viewport tiling, polygon lasso selection, a renderer comparison benchmark and topology-derived communities are not delivered in the initial explorer. Rectangular region selection is implemented. Synthetic 50k/100k point fixtures rendered in the in-app browser; reported frame cadence is not a comprehensive GPU or device benchmark.
 - Browser task tests, responsive/keyboard checks and external user sessions must be reported individually; a passing build is not user testing.
-- No merge to main, production promotion, paid service or external notification is implied.
+- Promotion of the website code does not promote the unfinished complete-corpus candidate or imply paid service.
 
 This ledger deliberately separates shipped code from the ambitions in the assessment. It is not a declaration that every V2 acceptance gate has passed.
