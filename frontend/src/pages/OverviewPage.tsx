@@ -410,7 +410,7 @@ export function OverviewPage({
         )}
         <div className="explore-toolbar">
           <span>
-            {points.length.toLocaleString()} papers in this view · Partial coverage
+            {points.length.toLocaleString()} collected papers in this view · Backfill in progress
             {view === 'list' ? ' · sorted by citations' : ''}
             {region.length > 0 && ` · ${region.length} in selected region`}
           </span>

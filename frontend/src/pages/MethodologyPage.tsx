@@ -2,203 +2,110 @@ import { useEffect, useState } from 'react'
 import type { AtlasData } from '../data/types'
 import { researchFile, useResearch } from '../data/research'
 import { PageHeader } from '../components/PageHeader'
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui'
 
 interface Coverage {
   expectedPartitionCount: number
   startedPartitionCount: number
   exhaustedPartitionCount: number
-  eligibleUniqueWorks: number
-  abstractsAvailable: number
-  referencesAvailable: number
 }
 
 export function MethodologyPage({ atlas }: { atlas: AtlasData }) {
   const { manifest } = useResearch()
   const [coverage, setCoverage] = useState<Coverage>()
   const [coverageError, setCoverageError] = useState('')
+
   useEffect(() => {
     if (!manifest) return
     const controller = new AbortController()
     researchFile<Coverage>(manifest, 'coverage.json', controller.signal)
       .then(setCoverage)
       .catch(() => {
-        if (!controller.signal.aborted) setCoverageError('Coverage details could not be loaded.')
+        if (!controller.signal.aborted) setCoverageError('Collection status is unavailable.')
       })
     return () => controller.abort()
   }, [manifest])
 
   return (
-    <div className="grid min-w-0 gap-5">
-      <PageHeader
-        eyebrow="Research Atlas"
-        title="Methods & data"
-        description="What is included, how the views are built, and where interpretation needs care."
-      />
-      <section className="method-strip">
-        <div>
-          <span className="eyebrow">THE PURPOSE</span>
-          <h2>AI research, in context.</h2>
-          <p>
-            Follow advances in AI and computer science, then investigate their applications across the
-            scientific domains already covered here. This is a discovery tool, not a ranking of scientific
-            quality or a complete census of research.
-          </p>
-        </div>
-        <Button asChild variant="outline">
-          <a href={atlas.source.url} target="_blank" rel="noopener noreferrer">
-            About OpenAlex
-          </a>
-        </Button>
-      </section>
-      <section className="grid gap-5 min-[1100px]:grid-cols-2">
+    <div className="methodology-page grid min-w-0 gap-5">
+      <PageHeader title="Methods & data" description="The scope of the data and how to read each view." />
+      <section className="methodology-grid grid gap-4 min-[1100px]:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Coverage of the paper landscape</CardTitle>
-            <CardDescription>
-              Partial collection within a declared boundary—not an estimate of field size.
-            </CardDescription>
+            <CardTitle>Coverage</CardTitle>
+            <CardDescription>Curated topics, with an ongoing paper-level backfill.</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 text-sm leading-relaxed text-muted-foreground">
+          <CardContent className="grid gap-2 text-sm leading-relaxed text-muted-foreground">
             <p>
-              The edition covers 23 AI and computing areas and 77 scientific application contexts, from 2017
-              onward. A paper must match a curated title/abstract query and any configured topic assignments.
-              Application papers also need explicit AI methods in the title or abstract. Computing papers do
-              not have to mention AI. Articles, reviews, preprints, conference papers and reports are
-              eligible. Counts distinguish OpenAlex work IDs, not unique studies; publication and preprint
-              versions can remain separate records. Physics collections use development-edition
-              scientific-context queries; they are not silently limited to a single source topic assignment.
-              Method filters describe terminology found in the title or abstract, not independently verified
-              use or adoption. Field labels organize the curated Atlas topic collections using the source
-              hierarchy’s terminology. They are not a restriction to each paper’s primary OpenAlex field: a
-              computer-science paper about a physics application can belong to both collections.
+              The edition tracks 23 AI and computing areas and 77 scientific application contexts from 2017
+              onward.
+              Papers match declared title-and-abstract terms and, where specified, OpenAlex topic assignments.
+              Application queries also require AI-method terms.
             </p>
             <p>
-              Advancing AI follows AI methods and related computing research. AI in science follows
-              their use in scientific research, including medicine, biology, physics, chemistry and
-              materials. These lenses can share papers; they are not additive populations or evidence
-              of real-world deployment. Field-wide publication trends query the union of the declared
-              topic rules directly in OpenAlex, so overlapping matches count once. They do not sum
-              topic totals or use the collected map sample as publication history.
+              The paper map is incomplete even within these topics. Fields and research focuses can share
+              papers; their counts should not be added.
             </p>
             {coverage && (
-              <dl className="coverage-facts">
-                {[
-                  ['Unique papers', coverage.eligibleUniqueWorks],
-                  ['With an abstract', coverage.abstractsAvailable],
-                  ['With captured reference IDs', coverage.referencesAvailable],
-                  ['Topic/year boundaries started', coverage.startedPartitionCount],
-                  ['Topic/year boundaries exhausted', coverage.exhaustedPartitionCount],
-                  ['Topic/year boundaries declared', coverage.expectedPartitionCount],
-                ].map(([label, value]) => (
-                  <div key={label}>
-                    <dt>{label}</dt>
-                    <dd>{Number(value).toLocaleString()}</dd>
-                  </div>
-                ))}
-              </dl>
+              <p className="methodology-status">
+                Backfill: {coverage.startedPartitionCount.toLocaleString()} of{' '}
+                {coverage.expectedPartitionCount.toLocaleString()} topic-year queries started;{' '}
+                {coverage.exhaustedPartitionCount.toLocaleString()} fully paged.
+              </p>
             )}
             {coverageError && <p role="status">{coverageError}</p>}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Paper landscape</CardTitle>
+            <CardDescription>Nearby points share language, not necessarily a research link.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-2 text-sm leading-relaxed text-muted-foreground">
             <p>
-              A boundary is exhausted only when its versioned query has no cursor pages left. This does not
-              prove that the query finds every relevant paper. Keywords, missing abstracts, indexing delays
-              and topic assignments can all exclude relevant research. Areas and tracks overlap; their paper
-              counts must not be added together.
+              Positions and themes come from paper titles and abstracts. Distance between groups is not a
+              quantitative measure. Point size reflects recorded citations; connecting lines represent
+              captured references, not inferred relationships.
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Reading the landscape</CardTitle>
-            <CardDescription>
-              Text similarity helps find nearby ideas; it does not establish a relationship.
-            </CardDescription>
+            <CardTitle>Publication trends</CardTitle>
+            <CardDescription>Source query totals, separate from the collected paper map.</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 text-sm leading-relaxed text-muted-foreground">
+          <CardContent className="grid gap-2 text-sm leading-relaxed text-muted-foreground">
             <p>
-              Coordinates are computed offline from title and abstract text using TF-IDF, truncated SVD and
-              seeded t-SNE. Theme labels summarize frequent terms in k-means groups. They are navigation aids,
-              not a peer-reviewed taxonomy. Local proximity indicates shared language; global distances
-              between t-SNE groups have no quantitative meaning.
+              Annual counts cover indexed OpenAlex works matching each declared query at refresh; field
+              totals count overlapping matches once. They do not count every relevant paper in a field.
             </p>
-            <p>
-              Points grow with recorded citation counts. Zoom in to reveal paper titles, or use the searchable
-              paper list for keyboard exploration. Selecting a paper shows its source evidence. Lines show
-              actual reference IDs present in the current view; related-work suggestions are never substituted
-              for citations. Background shading shows local record density in this projection, not confidence
-              or a geographic boundary.
-            </p>
-            <p>
-              Saved reading lists remain in this browser. Shared links preserve filters, the selected paper,
-              camera position and snapshot ID. Exports carry the snapshot ID. Older links require the
-              corresponding snapshot to remain available.
-            </p>
+            <p>The current year is shown separately and excluded from completed-year growth.</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Publication trends and comparisons</CardTitle>
-            <CardDescription>
-              Whole-topic counts and AI-filtered paper samples are different populations.
-            </CardDescription>
+            <CardTitle>People & collaboration</CardTitle>
+            <CardDescription>Observed activity within the collected papers.</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 text-sm leading-relaxed text-muted-foreground">
+          <CardContent className="grid gap-2 text-sm leading-relaxed text-muted-foreground">
             <p>
-              Topic profiles and comparison charts use separate annual OpenAlex aggregate queries—not counts
-              from the paper landscape. For application areas, these trends describe the broader parent topic,
-              not AI adoption within it. The chart discloses this distinction.
+              Author impact divides a paper’s citations across its credited authors; it is not a career total.
+              Institutions count works carrying their affiliation, so one paper may appear under several
+              institutions.
             </p>
             <p>
-              Momentum compares the latest three completed publication years with the three preceding years.
-              The current year appears separately as year to date and is excluded from completed-year growth.
-              Indexing delays and changes in OpenAlex coverage can affect these counts.
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>People, institutions and collaboration</CardTitle>
-            <CardDescription>
-              Activity inside collected publications, not lifetime rankings or career trajectories.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 text-sm leading-relaxed text-muted-foreground">
-            <p>
-              People & institutions uses the focused paper corpus. An author’s cited-work impact divides
-              citations to each collected paper across its credited authorships; it is not their lifetime
-              citation total. Institutions count distinct works carrying their affiliation. A
-              multi-institution work can count for several institutions. Authors are attributed only to their
-              own recorded affiliations. Organizational and placeholder names are excluded from the people
-              directory; their citation credit is not reassigned to other authors.
-            </p>
-            <p>
-              Networks and legacy topic profiles provide broader topic context from bounded samples. Network
-              colors group author topic assignments or institution countries—not detected communities. Edges
-              represent coauthorship or shared publications; missing edges do not prove the absence of
-              collaboration. Experimental scores are relative to the sample, not scientific merit.
-            </p>
-            <p>
-              The people workspace uses an elastic, bounded ego view of up to 32 observed coauthors or
-              co-publishing institutions. Every link retains its shared work IDs. Neighbor size reflects
-              shared work count; layout distances and curved lines have no quantitative meaning. The adjacent
-              list provides the same connections without relying on the canvas.
-            </p>
-            <p>
-              Recent activity includes this year and the two preceding calendar years. Dividing citation
-              counts by paper age is not measured citation velocity; that requires repeated observations.
-              Missing affiliations remain unresolved rather than being guessed.
+              Network links reflect recorded coauthorship or shared publications. Layout distance is not a
+              measure of collaboration strength; missing affiliations remain unresolved.
             </p>
           </CardContent>
         </Card>
       </section>
-      <p className="source-note">
-        Source: OpenAlex. Data is collected offline and delivered as versioned static files; the browser does
-        not query OpenAlex. Checksums are verified before research files are rendered. The established weekly
-        production refresh remains separate from this development corpus. Bibliographic metadata, citations,
-        identity resolution and retraction flags can contain source errors; verify consequential findings
-        against the original publication.
-        {manifest &&
-          ` Paper snapshot ${manifest.snapshot.slice(0, 8)}, built ${new Date(manifest.processedAt).toLocaleDateString()}.`}
+      <p className="source-note methodology-source">
+        Source:{' '}
+        <a href={atlas.source.url} target="_blank" rel="noopener noreferrer">
+          OpenAlex
+        </a>
+        .
       </p>
     </div>
   )

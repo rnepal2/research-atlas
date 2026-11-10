@@ -13,11 +13,11 @@ export function FeaturedResearch({
   onSelect: (slug: string) => void
 }) {
   return (
-    <section className="featured-research" aria-label="Featured research collections">
+    <section className="featured-research" aria-label="Selected topics across fields">
       <header>
         <div>
-          <h2>Find a starting point.</h2>
-          <p>Featured collections—not a ranking of scientific importance.</p>
+          <h2>Topics across fields.</h2>
+          <p>Selected areas to explore—not a trend ranking.</p>
         </div>
         <button className="featured-browse" onClick={() => onSelect('all')}>
           Browse all covered topics <ArrowUpRight size={14} />

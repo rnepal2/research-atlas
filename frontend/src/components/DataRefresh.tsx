@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { formatDate } from '../lib/format'
 
 export function DataRefresh({ fallback, path }: { fallback: string; path: string }) {
-  const focused = ['/', '/explore', '/trending', '/connections', '/people', '/networks'].includes(path)
+  const focused = ['/', '/explore', '/trending', '/connections', '/people', '/networks', '/about'].includes(path)
   const requested = new URLSearchParams(location.search).get('snapshot')
   const snapshot = requested && /^[a-f0-9]{16}$/.test(requested) ? requested : ''
   const key = focused ? snapshot || 'latest' : 'profiles'

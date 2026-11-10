@@ -93,7 +93,6 @@ export const featuredCollections = [
       'ai-agents',
       'graph-neural-networks',
       'reinforcement-learning',
-      'computer-vision',
     ],
   },
   {
@@ -104,7 +103,6 @@ export const featuredCollections = [
       'cosmology',
       'gravitational-waves',
       'condensed-matter-physics',
-      'fusion-plasma',
     ],
   },
   {
@@ -115,7 +113,6 @@ export const featuredCollections = [
       'protein-design',
       'precision-oncology',
       'single-cell-rna-sequencing',
-      'spatial-transcriptomics',
     ],
   },
   {
@@ -126,7 +123,6 @@ export const featuredCollections = [
       'materials-informatics',
       'battery-materials',
       'solid-state-batteries',
-      'two-dimensional-materials',
     ],
   },
 ]
