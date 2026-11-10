@@ -21,6 +21,20 @@ MANIFEST = Path('data/research/research-manifest.json')
 SELECT_FIELDS = WORK_FIELDS + ',referenced_works,updated_date,is_retracted'
 
 
+def year_db(year: int) -> Path:
+    return DB.with_name(f'focused-{year}.sqlite')
+
+
+def focused_spent_today(directory: Path = DB.parent) -> float:
+    """Sum local usage across pilot and year shards to bound one project's calls."""
+    total = 0.0
+    for path in directory.glob('focused*.sqlite'):
+        with sqlite3.connect(f'file:{path}?mode=ro', uri=True) as db:
+            row = db.execute("SELECT usd FROM usage WHERE day=date('now')").fetchone()
+            total += row[0] if row else 0.0
+    return total
+
+
 def signature(topics: list[dict]) -> str:
     """Fingerprint all source-side boundaries except the year itself."""
     boundaries = [
@@ -98,13 +112,35 @@ def checkpoint_status(policy: dict, topics: list[dict], db_path: Path = DB) -> d
             'note': 'Cursor completion is only source-query coverage; local relevance, deduplication, quality and publication checks remain.'}
 
 
+def sharded_status(policy: dict, topics: list[dict]) -> dict:
+    """Report only year-sharded production-candidate checkpoints, excluding pilot."""
+    plan = partition_plan(topics, policy['start_year'])
+    states = {}
+    for year in range(policy['start_year'], date.today().year + 1):
+        path = year_db(year)
+        if path.exists():
+            with sqlite3.connect(f'file:{path}?mode=ro', uri=True) as db:
+                states.update({row[0]: row[1:] for row in db.execute(
+                    'SELECT id, expected, fetched, complete FROM partitions')})
+    planned = [states.get(item['id']) for item in plan]
+    return {'version': policy['version'], 'querySignature': policy['query_signature'],
+            'boundaries': len(plan), 'started': sum(row is not None for row in planned),
+            'complete': sum(bool(row and row[2]) for row in planned),
+            'countMismatch': sum(bool(row and row[2] and row[0] != row[1]) for row in planned),
+            'fetchedTopicMemberships': sum(row[1] for row in planned if row),
+            'spentTodayAcrossLocalShards': round(focused_spent_today(), 6),
+            'readyForRelevanceAudit': bool(planned) and all(row and row[2] and row[0] == row[1] for row in planned),
+            'note': 'Year-sharded candidate only; the unsharded pilot is excluded from coverage but included in today\'s local usage.'}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=('plan', 'status'))
-    parser.add_argument('--db', type=Path, default=DB)
+    parser.add_argument('--db', type=Path, help='Inspect one explicit database, including the unsharded pilot.')
     args = parser.parse_args()
     policy, topics = focused_topics()
-    report = annual_estimate(policy, topics) if args.command == 'plan' else checkpoint_status(policy, topics, args.db)
+    report = annual_estimate(policy, topics) if args.command == 'plan' else (
+        checkpoint_status(policy, topics, args.db) if args.db else sharded_status(policy, topics))
     print(json.dumps(report, indent=2))
 
 

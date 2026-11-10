@@ -5,7 +5,7 @@ import unittest
 from datetime import date
 from pathlib import Path
 
-from src.corpus.focused import annual_estimate, checkpoint_status, focused_topics, signature
+from src.corpus.focused import annual_estimate, checkpoint_status, focused_spent_today, focused_topics, signature
 from src.corpus.partitions import partition_plan
 from src.corpus.store import CorpusStore
 from src.corpus.checkpoint import save, restore
@@ -63,6 +63,15 @@ class FocusedCorpusTests(unittest.TestCase):
                 self.assertEqual(db.execute('SELECT count(*) FROM works').fetchone()[0], 1)
             with self.assertRaises(FileExistsError):
                 restore(archive, recovered)
+
+    def test_project_budget_sums_all_local_shards(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for year in (2025, 2026):
+                store = CorpusStore(root / f'focused-{year}.sqlite')
+                store.reserve(.01)
+                store.close()
+            self.assertAlmostEqual(focused_spent_today(root), .02)
 
 
 if __name__ == '__main__':

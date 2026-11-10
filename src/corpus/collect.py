@@ -22,11 +22,15 @@ def load_local_env(path=Path('.env')):
                 os.environ.setdefault(key.strip(), value.strip().strip('\"\''))
 
 
-def collect(store, client, topics, max_pages=50, budget=.25, start_year=2017, recent_days=None):
+def collect(store, client, topics, max_pages=50, budget=.25, start_year=2017, recent_days=None,
+            year=None, daily_spend=None):
     pages = 0
     queue = deque()
+    spent = daily_spend or store.spent_today
     observed = dict(store.db.execute('SELECT id,observed FROM partitions'))
     plan = partition_plan(topics, start_year, recent_days)
+    if year is not None:
+        plan = [item for item in plan if item['year'] == year]
     # Fairness must survive separate invocations, not just one queue pass.
     # Unstarted boundaries go first, then the least recently observed page.
     plan.sort(key=lambda item: (observed.get(item['id']) or '', -item['year']))
@@ -38,8 +42,8 @@ def collect(store, client, topics, max_pages=50, budget=.25, start_year=2017, re
         if cursor:
             queue.append((item['topic'], item['year'], item['id'], item['params'], cursor))
     while queue:
-        if pages >= max_pages or store.spent_today() + .002 > budget:
-            return {'outcome': 'checkpointed', 'pages': pages, 'spentToday': store.spent_today()}
+        if pages >= max_pages or spent() + .002 > budget:
+            return {'outcome': 'checkpointed', 'pages': pages, 'spentToday': spent()}
         slug, year, partition, params, cursor = queue.popleft()
         payload = client.get('works', {**params, 'cursor': cursor}, use_cache=False)
         rows = payload.get('results')
@@ -53,13 +57,14 @@ def collect(store, client, topics, max_pages=50, budget=.25, start_year=2017, re
         print(f'{slug} {year}: +{len(rows)} records; page {pages}', flush=True)
         if cursor:
             queue.append((slug, year, partition, params, cursor))
-    return {'outcome': 'complete', 'pages': pages, 'spentToday': store.spent_today()}
+    return {'outcome': 'complete', 'pages': pages, 'spentToday': spent()}
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--db', type=Path, help='Checkpoint database; defaults to the selected edition database.')
     parser.add_argument('--focused', action='store_true', help='Collect the isolated, query-locked focused candidate.')
+    parser.add_argument('--year', type=int, help='Focused backfill year; uses a separate checkpoint file.')
     parser.add_argument('--max-pages', type=int, default=50)
     parser.add_argument('--budget', type=float, default=.25)
     parser.add_argument('--start-year', type=int, default=2017)
@@ -73,16 +78,21 @@ def main():
         parser.error('--start-year must be between 2017 and the current year')
     if args.recent_days is not None and args.recent_days < 1:
         parser.error('--recent-days must be positive')
+    if args.focused and (args.year is None or not args.start_year <= args.year <= date.today().year):
+        parser.error('--focused requires --year between its start year and the current year')
+    if args.year is not None and not args.focused:
+        parser.error('--year is only supported with --focused')
     if args.focused and (args.topic or args.recent_days or args.reconcile):
         parser.error('--focused cannot be combined with --topic, --recent-days or --reconcile')
     if args.focused:
-        from src.corpus.focused import DB, focused_topics
+        from src.corpus.focused import focused_topics, focused_spent_today, year_db
         policy, configured = focused_topics()
         if args.start_year != policy['start_year']:
             parser.error('--focused start year must match its locked configuration')
-        args.db = args.db or DB
-        if args.db.resolve() == Path('.cache/corpus/atlas.sqlite').resolve():
-            parser.error('The focused candidate cannot use the existing edition database')
+        shard = year_db(args.year)
+        if args.db and args.db.resolve() != shard.resolve():
+            parser.error('The focused candidate must use its year-specific checkpoint database')
+        args.db = shard
     else:
         from src.corpus.scope import edition_topics
         configured = edition_topics()
@@ -101,7 +111,9 @@ def main():
         store.restart([item['id'] for item in partition_plan(topics, start_year, args.recent_days)])
     client = OpenAlexClient(key, Path('.cache/corpus/http'), min_interval=.7)
     try:
-        print(json.dumps(collect(store, client, topics, args.max_pages, args.budget, start_year, args.recent_days)))
+        print(json.dumps(collect(store, client, topics, args.max_pages, args.budget,
+                                 start_year, args.recent_days, args.year,
+                                 focused_spent_today if args.focused else None)))
     except OpenAlexCollectionDeferredError:
         print('Collection deferred by OpenAlex; committed pages are safe. Run again to resume.')
     finally:

@@ -59,6 +59,18 @@ class CorpusTests(unittest.TestCase):
             collect(store, Client(), [{'slug':'one','keyword_queries':['first']},{'slug':'two','keyword_queries':['second']}], max_pages=2, start_year=date.today().year)
             self.assertEqual(calls,['(first)','(second)'])
             store.close()
+
+    def test_year_restriction_never_advances_other_years(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = CorpusStore(Path(directory) / 'corpus.sqlite')
+            class Client:
+                def get(self, path, params, use_cache):
+                    return {'results': [{'id': 'W1'}], 'meta': {'next_cursor': None, 'count': 1}}
+            topic = {'slug': 'one', 'keyword_queries': ['first']}
+            result = collect(store, Client(), [topic], year=date.today().year - 1)
+            self.assertEqual(result['pages'], 1)
+            self.assertEqual(store.db.execute('SELECT count(*) FROM partitions').fetchone()[0], 1)
+            store.close()
     def test_replay_restart_and_observations(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'corpus.sqlite'
