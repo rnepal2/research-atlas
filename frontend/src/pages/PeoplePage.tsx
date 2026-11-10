@@ -158,7 +158,10 @@ export function PeoplePage({ atlas }: { atlas: AtlasData }) {
         description="People, institutions and the papers behind their observed collaborations."
         actions={
           <Button
-            variant="outline"
+            variant="ghost"
+            size="icon"
+            aria-label="Share view"
+            title="Share view"
             onClick={() =>
               void navigator.clipboard.writeText(location.href).then(
                 () => setMessage('Profile view copied.'),
@@ -166,8 +169,7 @@ export function PeoplePage({ atlas }: { atlas: AtlasData }) {
               )
             }
           >
-            <Share2 size={15} />
-            Share view
+            <Share2 size={18} />
           </Button>
         }
       />

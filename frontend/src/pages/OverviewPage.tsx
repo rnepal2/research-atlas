@@ -248,7 +248,7 @@ export function OverviewPage({
       >
         <header className="research-header">
           <div>
-            <h1>AI research, in context.</h1>
+            <h1>AI research and applications</h1>
             <p>
               Follow advances in AI and the computing research behind them—and explore how these
               methods are applied in medicine, biology, physics and chemistry.
@@ -285,11 +285,11 @@ export function OverviewPage({
               <Bookmark size={15} />
               {savedOnly ? 'All papers' : `Reading list (${saved.length})`}
             </Button>
-            <Button variant="ghost" size="icon" onClick={onThemeChange} aria-label="Toggle theme">
-              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            </Button>
             <Button
-              variant="outline"
+              variant="ghost"
+              size="icon"
+              aria-label="Share view"
+              title="Share view"
               onClick={() => {
                 if (savedOnly) {
                   setMessage('Reading lists stay in this browser. Export the list to share it.')
@@ -301,8 +301,16 @@ export function OverviewPage({
                 )
               }}
             >
-              <Share2 size={15} />
-              Share view
+              <Share2 size={18} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onThemeChange}
+              aria-label="Toggle theme"
+              title="Change theme"
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </Button>
           </div>
         </header>

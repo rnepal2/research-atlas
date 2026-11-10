@@ -58,7 +58,7 @@ export function ResearchAtlasApp() {
       }
       if (path === '/trending') {
         return {
-          title: 'Research Trends | Research Atlas',
+          title: 'Publication trends | Research Atlas',
           description:
             'Annual query-matched publication trends for computational methods and their scientific applications.',
         }
@@ -89,7 +89,7 @@ export function ResearchAtlasApp() {
         }
       }
       return {
-        title: 'AI research, in context | Research Atlas',
+        title: 'AI research and applications | Research Atlas',
         description:
           'Investigate AI and computing across physics, healthcare and the wider sciences through papers, trends and collaboration evidence.',
       }

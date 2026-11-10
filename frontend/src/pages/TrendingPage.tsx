@@ -92,7 +92,7 @@ export function TrendingPage({ atlas }: { atlas: AtlasData }) {
   return (
     <div className="trends-page">
       <PageHeader
-        title="Research over time."
+        title="Publication trends"
         description="Follow publication trends in AI research and its scientific applications."
         actions={
           <Button

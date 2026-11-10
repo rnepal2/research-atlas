@@ -2,7 +2,7 @@
 
 ## V2 development preview
 
-The `feature/research-atlas-v2-plan` branch contains the **AI research, in context** preview:
+The `feature/research-atlas-v2-plan` branch contains the **AI research and applications** preview:
 Overview introduces the research landscape and explains how to read it, with compact
 starting-point collections for AI, Physics, Health & life sciences, and Chemistry &
 materials. Advancing AI and AI in science provide two lenses on the same evidence.
