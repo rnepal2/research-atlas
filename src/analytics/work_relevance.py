@@ -31,7 +31,20 @@ def work_text_tokens(work: dict[str, Any]) -> set[str]:
     abstract = work.get("abstract_inverted_index") or {}
     if isinstance(abstract, dict):
         parts.extend(str(token) for token in abstract)
-    return set(WORD_RE.findall(" ".join(parts).lower()))
+    return {normalize_token(token) for token in WORD_RE.findall(" ".join(parts).lower())}
+
+
+def normalize_token(token: str) -> str:
+    """Handle common English plurals that OpenAlex search stems automatically."""
+    if len(token) < 5 or token.endswith(("ics", "ss", "us", "is")):
+        return token
+    if token.endswith("ies"):
+        return token[:-3] + "y"
+    if token.endswith(("sses", "xes", "ches", "shes", "zes")):
+        return token[:-2]
+    if token.endswith("s"):
+        return token[:-1]
+    return token
 
 
 def canonical_work_title(work: dict[str, Any]) -> str:
@@ -44,7 +57,7 @@ def is_scholarly_work(work: dict[str, Any]) -> bool:
 
 
 def query_matches_work(work: dict[str, Any], query: str) -> bool:
-    query_tokens = set(WORD_RE.findall(query.lower()))
+    query_tokens = {normalize_token(token) for token in WORD_RE.findall(query.lower())}
     return bool(query_tokens) and query_tokens.issubset(work_text_tokens(work))
 
 

@@ -58,7 +58,8 @@ def collect(store, client, topics, max_pages=50, budget=.25, start_year=2017, re
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--db', type=Path, default=Path('.cache/corpus/atlas.sqlite'))
+    parser.add_argument('--db', type=Path, help='Checkpoint database; defaults to the selected edition database.')
+    parser.add_argument('--focused', action='store_true', help='Collect the isolated, query-locked focused candidate.')
     parser.add_argument('--max-pages', type=int, default=50)
     parser.add_argument('--budget', type=float, default=.25)
     parser.add_argument('--start-year', type=int, default=2017)
@@ -72,8 +73,20 @@ def main():
         parser.error('--start-year must be between 2017 and the current year')
     if args.recent_days is not None and args.recent_days < 1:
         parser.error('--recent-days must be positive')
-    from src.corpus.scope import edition_topics
-    configured = edition_topics()
+    if args.focused and (args.topic or args.recent_days or args.reconcile):
+        parser.error('--focused cannot be combined with --topic, --recent-days or --reconcile')
+    if args.focused:
+        from src.corpus.focused import DB, focused_topics
+        policy, configured = focused_topics()
+        if args.start_year != policy['start_year']:
+            parser.error('--focused start year must match its locked configuration')
+        args.db = args.db or DB
+        if args.db.resolve() == Path('.cache/corpus/atlas.sqlite').resolve():
+            parser.error('The focused candidate cannot use the existing edition database')
+    else:
+        from src.corpus.scope import edition_topics
+        configured = edition_topics()
+        args.db = args.db or Path('.cache/corpus/atlas.sqlite')
     unknown = set(args.topic or []) - {t['slug'] for t in configured}
     if unknown:
         parser.error('Unknown topics: ' + ', '.join(sorted(unknown)))

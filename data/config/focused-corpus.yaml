@@ -1,0 +1,19 @@
+version: ai-science-focus-v1
+status: candidate
+start_year: 2017
+# This is an acquisition candidate, not the published edition. Query changes
+# require a new version and a deliberate reconciliation of affected partitions.
+query_signature: bf634f8aa7295fbbd569
+topics:
+  - large-language-models
+  - ai-agents
+  - retrieval-augmented-generation
+  - llm-evaluation
+  - multimodal-foundation-models
+  - ai-safety-alignment
+  - medical-ai
+  - protein-design
+  - particle-physics
+  - condensed-matter-physics
+  - materials-informatics
+  - catalysis
