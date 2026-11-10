@@ -1,6 +1,7 @@
 """Audit acquired candidate records before spending the rest of the backfill budget."""
 from __future__ import annotations
 
+import argparse
 import json
 import sqlite3
 from pathlib import Path
@@ -50,4 +51,7 @@ def audit(db_path: Path = DB) -> dict:
 
 
 if __name__ == '__main__':
-    print(json.dumps(audit(), indent=2))
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--db', type=Path, default=DB)
+    args = parser.parse_args()
+    print(json.dumps(audit(args.db), indent=2))

@@ -102,13 +102,27 @@ def checkpoint_status(policy: dict, topics: list[dict], db_path: Path = DB) -> d
         with sqlite3.connect(f'file:{db_path}?mode=ro', uri=True) as db:
             states = {row[0]: row[1:] for row in db.execute(
                 'SELECT id, expected, fetched, complete FROM partitions')}
-    planned = [states.get(item['id']) for item in plan]
+    return _coverage_summary(policy, plan, states)
+
+
+def _coverage_summary(policy: dict, plan: list[dict], states: dict) -> dict:
+    by_year = {}
+    for item in plan:
+        row = states.get(item['id'])
+        tally = by_year.setdefault(item['year'], {'boundaries': 0, 'started': 0,
+                                                  'complete': 0, 'countMismatch': 0,
+                                                  'fetchedTopicMemberships': 0})
+        tally['boundaries'] += 1
+        tally['started'] += row is not None
+        tally['complete'] += bool(row and row[2])
+        tally['countMismatch'] += bool(row and row[2] and row[0] != row[1])
+        tally['fetchedTopicMemberships'] += row[1] if row else 0
     return {'version': policy['version'], 'querySignature': policy['query_signature'],
-            'boundaries': len(plan), 'started': sum(row is not None for row in planned),
-            'complete': sum(bool(row and row[2]) for row in planned),
-            'countMismatch': sum(bool(row and row[2] and row[0] != row[1]) for row in planned),
-            'fetchedTopicMemberships': sum(row[1] for row in planned if row),
-            'readyForRelevanceAudit': bool(planned) and all(row and row[2] and row[0] == row[1] for row in planned),
+            **{key: sum(tally[key] for tally in by_year.values())
+               for key in ('boundaries', 'started', 'complete', 'countMismatch', 'fetchedTopicMemberships')},
+            'byYear': dict(sorted(by_year.items())),
+            'readyForRelevanceAudit': bool(plan) and all(
+                (row := states.get(item['id'])) and row[2] and row[0] == row[1] for item in plan),
             'note': 'Cursor completion is only source-query coverage; local relevance, deduplication, quality and publication checks remain.'}
 
 
@@ -122,15 +136,9 @@ def sharded_status(policy: dict, topics: list[dict]) -> dict:
             with sqlite3.connect(f'file:{path}?mode=ro', uri=True) as db:
                 states.update({row[0]: row[1:] for row in db.execute(
                     'SELECT id, expected, fetched, complete FROM partitions')})
-    planned = [states.get(item['id']) for item in plan]
-    return {'version': policy['version'], 'querySignature': policy['query_signature'],
-            'boundaries': len(plan), 'started': sum(row is not None for row in planned),
-            'complete': sum(bool(row and row[2]) for row in planned),
-            'countMismatch': sum(bool(row and row[2] and row[0] != row[1]) for row in planned),
-            'fetchedTopicMemberships': sum(row[1] for row in planned if row),
+    return {**_coverage_summary(policy, plan, states),
             'spentTodayAcrossLocalShards': round(focused_spent_today(), 6),
-            'readyForRelevanceAudit': bool(planned) and all(row and row[2] and row[0] == row[1] for row in planned),
-            'note': 'Year-sharded candidate only; the unsharded pilot is excluded from coverage but included in today\'s local usage.'}
+            'scope': 'Year-sharded candidate only; the unsharded pilot is excluded from coverage but included in local usage.'}
 
 
 def main() -> None:

@@ -45,6 +45,7 @@ class FocusedCorpusTests(unittest.TestCase):
             status = checkpoint_status(policy, topics, db_path)
             self.assertEqual(status['complete'], 1)
             self.assertEqual(status['countMismatch'], 1)
+            self.assertEqual(status['byYear'][first['year']]['fetchedTopicMemberships'], 1)
             self.assertFalse(status['readyForRelevanceAudit'])
 
     def test_checkpoint_round_trip_is_integrity_checked_and_no_overwrite(self):
