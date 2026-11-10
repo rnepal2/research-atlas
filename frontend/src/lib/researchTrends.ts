@@ -8,7 +8,7 @@ export interface ResearchTrend {
   field: string
   role: string
   observedAt: string
-  query: Record<string, string | number>
+  query: Record<string, unknown>
   years: AnnualCount[]
 }
 export interface ResearchTrends {
@@ -17,6 +17,41 @@ export interface ResearchTrends {
   generatedAt: string
   definition: string
   topics: ResearchTrend[]
+  scopes?: {
+    id: string
+    field: string
+    track: string
+    topicSlugs: string[]
+    observedAt: string
+    query: Record<string, unknown>
+    years: AnnualCount[]
+  }[]
+}
+
+/** The selected population is authoritative; no representative-topic fallback. */
+export function selectedTrend(
+  context: ResearchTrends,
+  scope: { field: string; topic: string; track?: string },
+): ResearchTrend | undefined {
+  if (scope.topic !== 'all') return context.topics.find((row) => row.slug === scope.topic)
+  const union = context.scopes?.find(
+    (row) => row.field === scope.field && row.track === (scope.track || 'all'),
+  )
+  if (!union) return undefined
+  const roles = new Set(
+    context.topics.filter((row) => union.topicSlugs.includes(row.slug)).map((row) => row.role),
+  )
+  const label =
+    scope.field === 'all'
+      ? scope.track === 'methods'
+        ? 'Advancing AI'
+        : scope.track === 'applications'
+          ? 'AI in science'
+          : 'AI research and scientific applications'
+      : roles.size === 1 && roles.has('applications')
+        ? `AI-related research in ${scope.field}`
+        : `${scope.field}: AI & computing research`
+  return { ...union, slug: union.id, label, role: roles.size === 1 ? [...roles][0] : 'all' }
 }
 
 export function completedPeriod(rows: AnnualCount[], throughYear: number) {

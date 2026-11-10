@@ -99,7 +99,7 @@ export function AppShell({ atlas, navItems, activePath, children }: AppShellProp
                 Research Atlas
               </span>
               <span className="mt-[3px] block text-[0.72rem] text-muted-foreground">
-                Computation & the sciences
+                AI research & its applications
               </span>
             </span>
           </a>

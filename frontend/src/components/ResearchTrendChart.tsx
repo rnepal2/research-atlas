@@ -62,7 +62,7 @@ export function ResearchTrendChart({
         <Tabs value={mode} onValueChange={setMode}>
           <TabsList>
             <TabsTrigger value="counts">Publication counts</TabsTrigger>
-            <TabsTrigger value="index">Indexed growth</TabsTrigger>
+            {series.length > 1 && <TabsTrigger value="index">Indexed growth</TabsTrigger>}
           </TabsList>
         </Tabs>
         <div>

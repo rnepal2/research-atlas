@@ -66,7 +66,7 @@ export function PeoplePage({ atlas }: { atlas: AtlasData }) {
   }, [manifest, kind])
   const scopedRows = useMemo(
     () =>
-      scope.field === 'all' && scope.topic === 'all'
+      scope.field === 'all' && scope.topic === 'all' && !scope.track
         ? rows
         : scopeEntities(
             rows,
@@ -105,6 +105,7 @@ export function PeoplePage({ atlas }: { atlas: AtlasData }) {
   useEffect(() => {
     if (!active) return
     const params = new URLSearchParams({ kind, entity: active.id, field: scope.field, topic: scope.topic })
+    if (scope.track) params.set('track', scope.track)
     if (connectionId) params.set('connection', connectionId)
     if (view === 'papers') params.set('view', 'papers')
     if (manifest) params.set('snapshot', manifest.snapshot)
@@ -117,7 +118,7 @@ export function PeoplePage({ atlas }: { atlas: AtlasData }) {
     const index = scopedRows.findIndex((row) => row.id === id)
     setPage(Math.max(1, Math.floor(index / directoryPageSize) + 1))
   }
-  const paperKey = `${scope.field}/${scope.topic}/${activeId}/${connectionId}`
+  const paperKey = `${scope.field}/${scope.topic}/${scope.track}/${activeId}/${connectionId}`
   const paperPages = Math.max(1, Math.ceil(supporting.length / 12))
   const currentPaperPage = paperPage.key === paperKey ? Math.min(paperPage.page, paperPages) : 1
   const papers = (
@@ -171,6 +172,7 @@ export function PeoplePage({ atlas }: { atlas: AtlasData }) {
         }
       />
       <ResearchScopeControls
+        includeLens
         atlas={atlas}
         topicLabels={landscape?.topics}
         scope={scope}

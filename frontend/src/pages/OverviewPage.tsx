@@ -22,6 +22,7 @@ import { PaperTimeline } from '../components/PaperTimeline'
 import { ResearchScopeControls } from '../components/ResearchScopeControls'
 import { FeaturedResearch } from '../components/FeaturedResearch'
 import { SnapshotNotice } from '../components/SnapshotNotice'
+import { ResearchLens } from '../components/ResearchLens'
 import { inScope, normalizeScope, readScope, scopePath, topicSlugs } from '../lib/researchScope'
 import type { AtlasData } from '../data/types'
 import { navigate, replaceViewUrl } from '../lib/router'
@@ -46,14 +47,15 @@ export function OverviewPage({
   const { field, topic } = scope
   const [method, setMethod] = useState(() => getParams().get('method') || 'all')
   const allowedTopics = useMemo(() => topicSlugs(atlas.topics, scope), [atlas, scope])
-  const [track, setTrack] = useState(() => {
-    const value = getParams().get('track') || 'all'
-    return ['all', 'methods', 'applications'].includes(value) ? value : 'all'
-  })
+  const track = scope.track || 'all'
+  const setTrack = (value: string) =>
+    setScope((current) => normalizeScope(atlas.topics, current.field, current.topic, value))
   const [query, setQuery] = useState(() => getParams().get('q') || '')
   const [year, setYear] = useState(() => {
     const value = Number(getParams().get('year'))
-    return Number.isInteger(value) && value >= 2017 && value <= new Date().getFullYear() ? value : 2017
+    return Number.isInteger(value) && value >= 2017 && value <= new Date().getFullYear()
+      ? value
+      : 2017
   })
   const [cluster, setCluster] = useState(() => getParams().get('cluster') || 'all')
   const [type, setType] = useState(() => getParams().get('type') || 'all')
@@ -98,7 +100,9 @@ export function OverviewPage({
   const trackTopics = useMemo(
     () =>
       new Set(
-        (landscape?.topics || []).filter((t) => track === 'all' || t.role === track).map((t) => t.slug),
+        (landscape?.topics || [])
+          .filter((t) => track === 'all' || t.role === track)
+          .map((t) => t.slug),
       ),
     [landscape, track],
   )
@@ -139,7 +143,9 @@ export function OverviewPage({
       localStorage.setItem('atlas:reading-list', JSON.stringify(saved))
     } catch {
       queueMicrotask(() =>
-        setMessage('Browser storage is unavailable. This reading list is kept for the current session only.'),
+        setMessage(
+          'Browser storage is unavailable. This reading list is kept for the current session only.',
+        ),
       )
     }
   }, [saved])
@@ -166,7 +172,15 @@ export function OverviewPage({
   }, [manifest, activePoint])
   useEffect(() => {
     if (!manifest) return
-    const params = new URLSearchParams({ field, topic, track, method, year: String(year), cluster, type })
+    const params = new URLSearchParams({
+      field,
+      topic,
+      track,
+      method,
+      year: String(year),
+      cluster,
+      type,
+    })
     if (query) params.set('q', query)
     if (selected) params.set('paper', selected)
     if (focusedTheme !== null) params.set('focus', String(focusedTheme))
@@ -217,7 +231,9 @@ export function OverviewPage({
     setCamera(undefined)
   }
   function toggleSave(id: string) {
-    setSaved((values) => (values.includes(id) ? values.filter((value) => value !== id) : [...values, id]))
+    setSaved((values) =>
+      values.includes(id) ? values.filter((value) => value !== id) : [...values, id],
+    )
   }
   function selectPaper(id: string) {
     setSelected(id)
@@ -226,16 +242,24 @@ export function OverviewPage({
 
   return (
     <div className="overview-page">
-      <section className="explore-page overview-landscape" aria-label="Research overview and landscape">
+      <section
+        className="explore-page overview-landscape"
+        aria-label="Research overview and landscape"
+      >
         <header className="research-header">
           <div>
             <h1>AI research, in context.</h1>
-            <p>Explore AI and computing across physics, healthcare and the wider sciences.</p>
+            <p>
+              Follow advances in AI and the computing research behind them—and explore how these
+              methods are applied in medicine, biology, physics and chemistry.
+            </p>
           </div>
           <div className="research-actions">
             <Button
               variant="outline"
-              onClick={() => navigate(scopePath('/trending', scope, { snapshot: manifest.snapshot }))}
+              onClick={() =>
+                navigate(scopePath('/trending', scope, { snapshot: manifest.snapshot }))
+              }
             >
               <ChartNoAxesCombined size={15} /> View trends
             </Button>
@@ -282,17 +306,26 @@ export function OverviewPage({
             </Button>
           </div>
         </header>
+        <ResearchLens
+          value={scope.track}
+          onChange={(value) =>
+            updateFilter(() => {
+              setTrack(value)
+              setSelected('')
+            })
+          }
+        />
         <SnapshotNotice message={notice} />
         {selected && !activePoint && (
           <p className="snapshot-notice" role="status">
-            The requested paper is not available in this snapshot. Select another paper or view the latest
-            release.
+            The requested paper is not available in this snapshot. Select another paper or view the
+            latest release.
           </p>
         )}
         {savedOnly && availableSaved.length < saved.length && (
           <p role="status" className="snapshot-notice">
-            {saved.length - availableSaved.length} saved records are not available in this snapshot. Exports
-            contain the available records only.
+            {saved.length - availableSaved.length} saved records are not available in this snapshot.
+            Exports contain the available records only.
           </p>
         )}
         <div className="explore-filters">
@@ -322,7 +355,9 @@ export function OverviewPage({
           >
             <SlidersHorizontal size={16} />
             Filters
-            {cluster !== 'all' || type !== 'all' || track !== 'all' || method !== 'all' ? ' · active' : ''}
+            {cluster !== 'all' || type !== 'all' || method !== 'all'
+              ? ' · active'
+              : ''}
           </Button>
         </div>
         {showFilters && (
@@ -334,16 +369,6 @@ export function OverviewPage({
               options={[
                 { value: 'all', label: 'Any method' },
                 ...(landscape.methods || []).map((m) => ({ value: m.id, label: m.label })),
-              ]}
-            />
-            <SelectField
-              label="Research role"
-              value={track}
-              onValueChange={(value) => updateFilter(() => setTrack(value))}
-              options={[
-                { value: 'all', label: 'Methods & applications' },
-                { value: 'methods', label: 'Computational methods' },
-                { value: 'applications', label: 'Scientific applications' },
               ]}
             />
             <SelectField
@@ -373,7 +398,6 @@ export function OverviewPage({
                 setType('all')
                 setYear(2017)
                 setMethod('all')
-                setTrack('all')
                 setFocusedTheme(null)
                 setCamera(undefined)
                 setRegion([])
@@ -431,6 +455,10 @@ export function OverviewPage({
             </Button>
           </div>
         </div>
+        <p className="landscape-introduction">
+          Each dot is a collected paper. Nearby papers share language in their titles and abstracts;
+          colours identify text-derived themes. Select a paper to inspect its evidence.
+        </p>
         <div
           className={`explore-workspace ${view === 'list' ? 'list-view' : ''} ${!inspectorOpen ? 'inspector-closed' : ''}`}
         >
@@ -599,10 +627,15 @@ export function OverviewPage({
                       ))}
                     </ul>
                     {activePaper.authors.length > 12 && (
-                      <p>{activePaper.authors.length - 12} additional coauthors in the source record.</p>
+                      <p>
+                        {activePaper.authors.length - 12} additional coauthors in the source record.
+                      </p>
                     )}
                     <h3>Abstract</h3>
-                    <p>{activePaper.abstract || 'An abstract is not available in this OpenAlex record.'}</p>
+                    <p>
+                      {activePaper.abstract ||
+                        'An abstract is not available in this OpenAlex record.'}
+                    </p>
                     <h3>Citation context</h3>
                     <p>
                       {activePaper.referencesAvailable
@@ -617,8 +650,8 @@ export function OverviewPage({
                         {activePaper.methods
                           .map((id) => landscape.methods?.find((m) => m.id === id)?.label || id)
                           .join('; ')}
-                        . These are title/abstract mentions, not a determination of the paper’s central
-                        contribution.
+                        . These are title/abstract mentions, not a determination of the paper’s
+                        central contribution.
                       </p>
                     )}
                     {activePaper.matchedQueries?.length ? (
@@ -640,7 +673,9 @@ export function OverviewPage({
               </>
             ) : (
               <>
-                <span className="eyebrow">{focusedTheme !== null ? 'THEME IN FOCUS' : 'THEMES & IDEAS'}</span>
+                <span className="eyebrow">
+                  {focusedTheme !== null ? 'THEME IN FOCUS' : 'THEMES & IDEAS'}
+                </span>
                 <h2>
                   {focusedTheme !== null
                     ? landscape.clusters.find((c) => c.id === focusedTheme)?.label
@@ -661,7 +696,11 @@ export function OverviewPage({
                       .filter((p) => p.cluster === focusedTheme)
                       .slice(0, 4)
                       .map((p) => (
-                        <button className="theme-paper" key={p.id} onClick={() => selectPaper(p.id)}>
+                        <button
+                          className="theme-paper"
+                          key={p.id}
+                          onClick={() => selectPaper(p.id)}
+                        >
                           <strong>{p.title}</strong>
                           <span>
                             {p.year} · {p.citations.toLocaleString()} citations
@@ -732,8 +771,14 @@ export function OverviewPage({
         landscape={landscape}
         onSelect={(slug) => {
           updateFilter(() => {
-            setScope(normalizeScope(atlas.topics, 'all', slug))
-            setTrack('all')
+            setScope(
+              normalizeScope(
+                atlas.topics,
+                'all',
+                slug,
+                landscape.topics.find((t) => t.slug === slug)?.role,
+              ),
+            )
             setMethod('all')
             setQuery('')
             setYear(2017)

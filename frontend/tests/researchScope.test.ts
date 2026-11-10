@@ -8,7 +8,8 @@ import {
   readScope,
   sharedScopeSearch,
 } from '../src/lib/researchScope.ts'
-import { completedPeriod, indexedSeries } from '../src/lib/researchTrends.ts'
+import { completedPeriod, indexedSeries, selectedTrend } from '../src/lib/researchTrends.ts'
+import type { ResearchTrends } from '../src/lib/researchTrends.ts'
 import { scopeEntities } from '../src/lib/scopedEntities.ts'
 import type { ResearchPoint } from '../src/data/research.ts'
 
@@ -17,7 +18,10 @@ const topics = [
   { slug: 'physics', label: 'Physics', field: 'Physics and Astronomy' },
 ]
 test('legacy topic links infer their field; field and topic changes cannot conflict', () => {
-  assert.deepEqual(readScope(topics, '?topic=physics'), { field: 'Physics and Astronomy', topic: 'physics' })
+  assert.deepEqual(readScope(topics, '?topic=physics'), {
+    field: 'Physics and Astronomy',
+    topic: 'physics',
+  })
   assert.deepEqual(normalizeScope(topics, 'invalid', 'bad'), { field: 'all', topic: 'all' })
   assert.deepEqual(normalizeScope(topics, 'Physics and Astronomy', 'all'), {
     field: 'Physics and Astronomy',
@@ -70,6 +74,42 @@ test('completed-period growth excludes YTD and does not invent zero baselines or
   ])
   assert.equal(index?.baseline, 2021)
   assert.equal(index?.series[1].rows[0].works, 100)
+})
+test('research lenses preserve scope across routes and remove incompatible topics', () => {
+  assert.deepEqual(readScope(topics, '?field=all&topic=llm&track=applications'), {
+    field: 'all',
+    topic: 'all',
+    track: 'applications',
+  })
+  assert.deepEqual(
+    [...topicSlugs(topics, { field: 'all', topic: 'all', track: 'applications' })],
+    ['physics'],
+  )
+  assert.equal(
+    carryScope('/trending', '?track=applications&snapshot=abc&camera=discard'),
+    '/trending?track=applications&snapshot=abc',
+  )
+})
+test('broad selection requires its exact union and never falls back to an arbitrary topic', () => {
+  const context = {
+    topics: [{ slug: 'llm', label: 'LLM', field: 'Computer Science', role: 'methods', years: [] }],
+    scopes: [
+      {
+        id: 'all/all',
+        field: 'all',
+        track: 'all',
+        topicSlugs: ['llm'],
+        years: [{ year: 2025, works: 7 }],
+      },
+    ],
+  } as unknown as ResearchTrends
+  assert.equal(selectedTrend(context, { field: 'all', topic: 'all' })?.years[0].works, 7)
+  assert.equal(selectedTrend(context, { field: 'Physics', topic: 'all' }), undefined)
+  assert.equal(
+    selectedTrend({ ...context, scopes: undefined }, { field: 'all', topic: 'all' }),
+    undefined,
+  )
+  assert.equal(selectedTrend(context, { field: 'Computer Science', topic: 'llm' })?.label, 'LLM')
 })
 test('scoped author and institution impact is recomputed from paper evidence, retaining unresolved credit', () => {
   const papers = [{ id: 'W1', citations: 120, creditDivisor: 3 }] as ResearchPoint[]

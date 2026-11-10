@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowRight, Download } from 'lucide-react'
+import { ArrowRight, Download, Plus, X } from 'lucide-react'
 import type { AtlasData } from '../data/types'
 import { useResearch, researchFile } from '../data/research'
 import { ResearchScopeControls } from '../components/ResearchScopeControls'
 import { ResearchTrendChart } from '../components/ResearchTrendChart'
 import { Button, Pagination, SelectField } from '../components/ui'
 import { PageHeader } from '../components/PageHeader'
-import { completedPeriod } from '../lib/researchTrends'
+import { completedPeriod, selectedTrend } from '../lib/researchTrends'
 import type { ResearchTrends } from '../lib/researchTrends'
-import { readScope, scopePath, topicSlugs } from '../lib/researchScope'
+import { normalizeScope, readScope, scopePath, topicSlugs } from '../lib/researchScope'
 import { navigate, replaceViewUrl } from '../lib/router'
 import { downloadText } from '../lib/exportResearch'
 import { SnapshotNotice } from '../components/SnapshotNotice'
+import { ResearchLens } from '../components/ResearchLens'
 
 const growthLabel = (value: number | null) =>
   value === null
@@ -23,10 +24,12 @@ export function TrendingPage({ atlas }: { atlas: AtlasData }) {
   const [scope, setScope] = useState(() => readScope(atlas.topics))
   const [context, setContext] = useState<ResearchTrends | null>(null)
   const [failure, setFailure] = useState('')
-  const [plot, setPlot] = useState(
-    () => new URLSearchParams(location.search).get('plot') || 'large-language-models',
+  const [compare, setCompare] = useState(
+    () => new URLSearchParams(location.search).get('compare') || 'none',
   )
-  const [compare, setCompare] = useState(() => new URLSearchParams(location.search).get('compare') || 'none')
+  const [showComparison, setShowComparison] = useState(() =>
+    new URLSearchParams(location.search).has('compare'),
+  )
   const [sort, setSort] = useState('volume'),
     [page, setPage] = useState(1)
   useEffect(() => {
@@ -53,43 +56,61 @@ export function TrendingPage({ atlas }: { atlas: AtlasData }) {
         ),
     [context, allowed, sort],
   )
-  const defaultPlot =
-    scope.field === 'Physics and Astronomy'
-      ? 'particle-physics'
-      : scope.field === 'Medicine'
-        ? 'medical-ai'
-        : 'large-language-models'
-  const active =
-    rows.find((r) => r.slug === plot) ||
-    rows.find((r) => r.slug === defaultPlot) ||
-    [...rows].sort((a, b) => a.slug.localeCompare(b.slug))[0]
-  const second = context?.topics.find((r) => r.slug === compare && r.slug !== active?.slug)
+  const selected = context ? selectedTrend(context, scope) : undefined
+  const active = selected && {
+    ...selected,
+    ...completedPeriod(selected.years, context!.throughYear),
+  }
+  const comparisonScope = context?.scopes?.find((r) => r.id === compare)
+  const comparison =
+    context?.topics.find((r) => r.slug === compare) ||
+    (context && comparisonScope
+      ? selectedTrend(context, {
+          field: comparisonScope.field,
+          topic: 'all',
+          ...(comparisonScope.track !== 'all' ? { track: comparisonScope.track } : {}),
+        })
+      : undefined)
+  const second = comparison?.slug !== active?.slug ? comparison : undefined
   useEffect(() => {
     if (!manifest) return
-    const params = new URLSearchParams({ field: scope.field, topic: scope.topic, plot: active?.slug || plot })
+    const params = new URLSearchParams({ field: scope.field, topic: scope.topic })
+    if (scope.track) params.set('track', scope.track)
     if (second) params.set('compare', second.slug)
     if (manifest) params.set('snapshot', manifest.snapshot)
     replaceViewUrl(params)
-  }, [scope, active?.slug, plot, second, manifest])
+  }, [scope, second, manifest])
   const year = context?.throughYear
   const series = active
-    ? [active, ...(second ? [{ ...second, ...completedPeriod(second.years, context!.throughYear) }] : [])]
+    ? [
+        active,
+        ...(second ? [{ ...second, ...completedPeriod(second.years, context!.throughYear) }] : []),
+      ]
     : []
   const pageCount = Math.max(1, Math.ceil(rows.length / 8)),
     currentPage = Math.min(page, pageCount)
   return (
     <div className="trends-page">
       <PageHeader
-        title="How research is changing."
-        description="Follow AI and computing methods—and their applications across the sciences."
+        title="Research over time."
+        description="Follow publication trends in AI research and its scientific applications."
         actions={
           <Button
             variant="outline"
-            onClick={() => navigate(scopePath('/', scope, manifest ? { snapshot: manifest.snapshot } : {}))}
+            onClick={() =>
+              navigate(scopePath('/', scope, manifest ? { snapshot: manifest.snapshot } : {}))
+            }
           >
             Investigate the papers <ArrowRight size={15} />
           </Button>
         }
+      />
+      <ResearchLens
+        value={scope.track}
+        onChange={(value) => {
+          setScope(normalizeScope(atlas.topics, scope.field, scope.topic, value))
+          setPage(1)
+        }}
       />
       <ResearchScopeControls
         atlas={atlas}
@@ -106,83 +127,152 @@ export function TrendingPage({ atlas }: { atlas: AtlasData }) {
         <div className="research-empty">
           <h2>Annual context is unavailable for this saved snapshot.</h2>
           <p>We do not substitute broader field totals for AI-related activity.</p>
-          <Button onClick={() => navigate(scopePath('/trending', scope))}>Use the latest release</Button>
+          <Button onClick={() => navigate(scopePath('/trending', scope))}>
+            Use the latest release
+          </Button>
         </div>
       ) : !context ? (
         <p role="status">Loading verified annual query context…</p>
-      ) : active ? (
+      ) : (
         <>
-          <section className="trend-analysis" aria-label="Annual research publication analysis">
-            <header>
-              <div>
-                <span className="eyebrow">ANNUAL PUBLICATION CONTEXT</span>
-                <h2>{active.label}</h2>
+          {active ? (
+            <section className="trend-analysis" aria-label="Annual research publication analysis">
+              <header>
+                <div>
+                  <span className="eyebrow">PUBLICATIONS OVER TIME</span>
+                  <h2>{active.label}</h2>
+                </div>
+                {showComparison ? (
+                  <div className="trend-comparison-controls">
+                    <SelectField
+                      label="Compare with"
+                      value={second?.slug || 'none'}
+                      onValueChange={setCompare}
+                      options={[
+                        { value: 'none', label: 'No comparison' },
+                        ...(context.scopes || [])
+                          .filter((r) => r.track === (scope.track || 'all') && r.id !== active.slug)
+                          .map((r) => ({
+                            value: r.id,
+                            label: selectedTrend(context, {
+                              field: r.field,
+                              topic: 'all',
+                              track: scope.track,
+                            })!.label,
+                            meta: 'Covered field total',
+                          })),
+                        ...context.topics
+                          .filter((r) => r.slug !== active.slug)
+                          .map((r) => ({ value: r.slug, label: r.label, meta: r.field })),
+                      ]}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Remove comparison"
+                      onClick={() => {
+                        setCompare('none')
+                        setShowComparison(false)
+                      }}
+                    >
+                      <X size={16} />
+                    </Button>
+                  </div>
+                ) : (
+                  <Button variant="ghost" size="sm" onClick={() => setShowComparison(true)}>
+                    <Plus size={14} /> Add comparison
+                  </Button>
+                )}
+              </header>
+              <div className="trend-analysis-main">
+                <div className="trend-period-summary">
+                  {series.map((r) => (
+                    <div key={r.slug}>
+                      {series.length > 1 && <span className="period-series-name">{r.label}</span>}
+                      <div className="period-volume">
+                        <strong>{r.recent?.toLocaleString() ?? 'Unavailable'}</strong>
+                        <span>
+                          query matches · {year! - 3}–{year! - 1}
+                        </span>
+                      </div>
+                      <div className="period-growth">
+                        <strong>{growthLabel(r.growth)}</strong>
+                        <span>
+                          vs {year! - 6}–{year! - 4}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <ResearchTrendChart
+                  key={active.slug + '/' + second?.slug}
+                  series={series.map((r) => ({ label: r.label, rows: r.years }))}
+                  throughYear={year!}
+                />
               </div>
-              <SelectField
-                label="Compare with"
-                value={second?.slug || 'none'}
-                onValueChange={setCompare}
-                options={[
-                  { value: 'none', label: 'No comparison' },
-                  ...context.topics
-                    .filter((r) => r.slug !== active.slug)
-                    .map((r) => ({ value: r.slug, label: r.label, meta: r.field })),
-                ]}
-              />
-            </header>
-            <div className="trend-analysis-main">
-              <div className="trend-period-summary">
+              <p className="source-note">
+                {scope.topic === 'all'
+                  ? 'Distinct OpenAlex works matching the covered topic queries; overlapping matches count once.'
+                  : active.role === 'applications'
+                    ? 'AI/ML-method query matches within this application topic.'
+                    : 'Matches to the declared computational-method query.'}{' '}
+                Not a field census, verified adoption rate or measure of research quality.
+                Current-year data is excluded from completed-period growth.
+              </p>
+              <details className="aggregate-query">
+                <summary>Source and query definition</summary>
+                <p>{context.definition}</p>
                 {series.map((r) => (
                   <div key={r.slug}>
-                    {series.length > 1 && <span className="period-series-name">{r.label}</span>}
-                    <div className="period-volume">
-                      <strong>{r.recent?.toLocaleString() ?? 'Unavailable'}</strong>
-                      <span>
-                        query matches · {year! - 3}–{year! - 1}
-                      </span>
-                    </div>
-                    <div className="period-growth">
-                      <strong>{growthLabel(r.growth)}</strong>
-                      <span>
-                        vs {year! - 6}–{year! - 4}
-                      </span>
-                    </div>
+                    <strong>{r.label}</strong>
+                    <p>Observed {r.observedAt.slice(0, 10)} (UTC)</p>
+                    <pre>{JSON.stringify(r.query, null, 2)}</pre>
                   </div>
                 ))}
-              </div>
-              <ResearchTrendChart
-                key={active.slug + '/' + second?.slug}
-                series={series.map((r) => ({ label: r.label, rows: r.years }))}
-                throughYear={year!}
-              />
+              </details>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() =>
+                  downloadText(
+                    'selected-research-trend.csv',
+                    [
+                      'series,year,query_matches,observed_at,snapshot',
+                      ...series.flatMap((r) =>
+                        r.years.map((y) =>
+                          [
+                            JSON.stringify(r.label),
+                            y.year,
+                            y.works,
+                            r.observedAt,
+                            manifest?.snapshot,
+                          ].join(','),
+                        ),
+                      ),
+                    ].join('\n'),
+                    'text/csv',
+                  )
+                }
+              >
+                <Download size={14} /> Export this trend
+              </Button>
+            </section>
+          ) : (
+            <div className="research-empty">
+              <h2>Annual totals are unavailable for this scope.</h2>
+              <p>
+                This saved snapshot does not include a deduplicated field total. Select a topic to
+                view its trend, or use the latest release. We do not add overlapping topic counts.
+              </p>
             </div>
-            <p className="source-note">
-              {active.role === 'applications'
-                ? 'AI/ML-method query matches within this application topic.'
-                : 'Matches to the declared computational-method query.'}{' '}
-              Not a field census, verified adoption rate or measure of research quality. Current-year data is
-              excluded from completed-period growth.
-            </p>
-            <details className="aggregate-query">
-              <summary>Source and query definition</summary>
-              <p>{context.definition}</p>
-              {series.map((r) => (
-                <div key={r.slug}>
-                  <strong>{r.label}</strong>
-                  <p>Observed {r.observedAt.slice(0, 10)} (UTC)</p>
-                  <code>{r.query['search.title_and_abstract']}</code>
-                  <p>{r.query.filter}</p>
-                </div>
-              ))}
-            </details>
-          </section>
+          )}
           <section className="trend-ranking" aria-label="Research topic publication ranking">
             <header>
               <div>
                 <h2>Topics in this view</h2>
                 <p>
-                  Declared query matches over the same completed periods. Topic collections overlap; their
-                  counts are not additive.
+                  Declared query matches over the same completed periods. Topic collections overlap;
+                  their counts are not additive.
                 </p>
               </div>
               <SelectField
@@ -215,7 +305,7 @@ export function TrendingPage({ atlas }: { atlas: AtlasData }) {
                 </thead>
                 <tbody>
                   {rows.slice((currentPage - 1) * 8, currentPage * 8).map((r) => (
-                    <tr key={r.slug} className={active.slug === r.slug ? 'is-plotted' : ''}>
+                    <tr key={r.slug} className={active?.slug === r.slug ? 'is-plotted' : ''}>
                       <td>
                         <strong>{r.label}</strong>
                         <span>
@@ -232,8 +322,10 @@ export function TrendingPage({ atlas }: { atlas: AtlasData }) {
                           size="sm"
                           variant="ghost"
                           onClick={() => {
-                            setPlot(r.slug)
-                            document.querySelector('.trend-analysis')?.scrollIntoView({ block: 'start' })
+                            setScope(normalizeScope(atlas.topics, scope.field, r.slug, scope.track))
+                            document
+                              .querySelector('.trend-analysis')
+                              ?.scrollIntoView({ block: 'start' })
                           }}
                         >
                           Show trend <ArrowRight size={14} />
@@ -262,9 +354,13 @@ export function TrendingPage({ atlas }: { atlas: AtlasData }) {
                     'topic,year,query_matches,observed_at,snapshot',
                     ...rows.flatMap((r) =>
                       r.years.map((y) =>
-                        [JSON.stringify(r.label), y.year, y.works, r.observedAt, manifest?.snapshot].join(
-                          ',',
-                        ),
+                        [
+                          JSON.stringify(r.label),
+                          y.year,
+                          y.works,
+                          r.observedAt,
+                          manifest?.snapshot,
+                        ].join(','),
                       ),
                     ),
                   ].join('\n'),
@@ -273,12 +369,10 @@ export function TrendingPage({ atlas }: { atlas: AtlasData }) {
               }
             >
               <Download size={14} />
-              Export annual counts
+              Export topic annual counts
             </Button>
           </section>
         </>
-      ) : (
-        <p>No annual queries match this field and topic.</p>
       )}
     </div>
   )

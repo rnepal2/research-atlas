@@ -73,6 +73,14 @@ export function MethodologyPage({ atlas }: { atlas: AtlasData }) {
               hierarchy’s terminology. They are not a restriction to each paper’s primary OpenAlex field: a
               computer-science paper about a physics application can belong to both collections.
             </p>
+            <p>
+              Advancing AI follows AI methods and related computing research. AI in science follows
+              their use in scientific research, including medicine, biology, physics, chemistry and
+              materials. These lenses can share papers; they are not additive populations or evidence
+              of real-world deployment. Field-wide publication trends query the union of the declared
+              topic rules directly in OpenAlex, so overlapping matches count once. They do not sum
+              topic totals or use the collected map sample as publication history.
+            </p>
             {coverage && (
               <dl className="coverage-facts">
                 {[

@@ -3,10 +3,13 @@
 ## V2 development preview
 
 The `feature/research-atlas-v2-plan` branch contains the **AI research, in context** preview:
-Overview opens directly into the text-similarity paper landscape, with compact
-starting-point collections below it. Trends contains annual publication charts and
-comparisons; People & collaboration combines the directory, profiles and paper-backed
-networks. Field and Topic filters carry across these workspaces. The sidebar starts
+Overview introduces the research landscape and explains how to read it, with compact
+starting-point collections for AI, Physics, Health & life sciences, and Chemistry &
+materials. Advancing AI and AI in science provide two lenses on the same evidence.
+Trends shows the selected topic or field's annual publications by default, with
+comparison available through Add comparison. People & collaboration combines the
+directory, profiles and paper-backed networks. Research focus, Field and Topic
+filters carry across these workspaces. The sidebar starts
 collapsed and the snapshot build date appears at the top right. Old Explore links
 resolve to Overview; comparisons and existing topic routes remain accessible
 without separate primary navigation entries. Local reading lists, CSV/BibTeX exports
@@ -48,11 +51,27 @@ python3 -m src.corpus.build
 python3 -m src.corpus.validate
 ```
 
-All 100 annual profiles must validate before the staged batch replaces the previous
-one. `--reuse-today` may reuse only same-day observations with exactly unchanged
+All 100 annual profiles and 26 nonempty field/focus unions must validate before
+the staged batch replaces the previous one. Broad totals use nested OpenAlex set
+queries preserving each topic's title/abstract, method and assignment rules—not
+summed topic counts. Requests use the documented [OpenAlex query-object API](https://help.openalex.org/api/oql/).
+`--reuse-today` may reuse only same-UTC-day topic observations with exactly unchanged
 query definitions. The build can reuse an accepted snapshot's annual data only
 when edition, query fingerprints and year coverage still match. Annual query totals
 are not a census, AI adoption rate, or the number of locally collected papers.
+
+When only annual context changed, preserve accepted paper evidence and map geometry
+while producing a new immutable snapshot:
+
+```bash
+python3 -m src.corpus.attach_trends
+```
+
+This validates both contexts and the candidate before changing the local pointer;
+it does not deploy. The full annual batch reserves $0.252 for bounded retries at the
+current 100-topic/26-union scope, in addition to today's existing project reservations.
+Use an adequate budget (for example 0.45) when enabling the manual workflow's
+annual refresh. This ledger cannot account for unrelated use of the API key.
 
 Collection persists canonical records, memberships, citation observations, usage and
 transactional page cursors in `.cache/corpus/atlas.sqlite`. Rerunning resumes work.

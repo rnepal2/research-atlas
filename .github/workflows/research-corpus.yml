@@ -9,7 +9,7 @@ on:
         description: Maximum project spend today in USD
         default: '0.25'
       refresh_trends:
-        description: Refresh the complete annual AI/computing query batch before collection
+        description: Refresh the complete annual batch before collection (set budget to 0.45 or higher)
         type: boolean
         default: false
 permissions:

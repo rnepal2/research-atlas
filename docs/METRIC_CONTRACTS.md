@@ -53,3 +53,12 @@ Deferred collection is a separate workflow outcome. It never processes or republ
   incompatible edition/query/year context instead of mixing scopes or inventing
   annual counts from sampled papers. Older immutable snapshots retain their own
   definitions rather than being reinterpreted using today's query plan.
+- Schema-2 annual context includes 100 topic queries and 26 nonempty Field ×
+  research-focus unions. Each union directly counts the source work set matching
+  any constituent topic rule, including that topic's own assignment constraints.
+  A shared method predicate is factored without changing its logical scope.
+  Overlapping works count once. Broad-scope selection never substitutes a topic.
+- Advancing AI and AI in science retain the edition's methods/applications roles.
+  These sets can overlap. The same focus filters map papers, annual queries,
+  directories, evidence, navigation and exports. Resetting map refinements does
+  not reset the separately visible research focus.

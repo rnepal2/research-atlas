@@ -102,6 +102,32 @@ Validation: 28 Python tests, seven frontend tests, corpus validation, complete
 Desktop/mobile interaction evidence, independent scoped-impact calculations and
 remaining limitations are in [consolidation QA](qa-2026-11-09/consolidation/README.md).
 
+## November 9 product framing and selected-scope trends
+
+- Overview now states the two-part purpose—advances in AI and their scientific
+  applications—and explains dots, proximity, themes and paper inspection before
+  the map. Advancing AI / AI in science are visible, shared research lenses.
+  Chemistry & materials joins the compact starting-point collections.
+- Trends defaults to one annual series for the actual selected topic or field.
+  Broad scopes use deduplicated provider unions, not a representative topic or
+  added topic counts. Add comparison is secondary; indexed mode appears only for
+  a comparison. Exact counts, queries and matching-series CSV export remain.
+- Snapshot `5b9852ac6e1c43c2` adds refreshed annual context: 100 topics and 26
+  nonempty field/focus unions. All other evidence-file checksums equal snapshot
+  `680a6307e8ea7f9a`: 16,063 paper records and map geometry are unchanged.
+  For 2023–2025 the Physics union is 13,046, versus 14,651 when adding topics;
+  the interface reports the union. All-covered union is 618,038, versus 804,359
+  summed topic matches. These are query populations, not a complete field census.
+- Annual union acquisition uses budget-preflighted POST query objects and validates
+  every year's source groups, totals, query boundaries and set bounds before atomic
+  replacement. Same-day topic reuse uses UTC, consistent with observations and the
+  usage ledger. A tested context-only attachment path preserves geometry and old
+  snapshots, validating before changing the accepted pointer.
+- Current verification: 34 Python and nine frontend tests, snapshot/static
+  validation, lint/type checking and a Pages-base build. See
+  [framing QA](qa-2026-11-09/framing/README.md) for rendered checks and limits.
+  Production weekly-refresh/deployment workflow files were not changed in this pass.
+
 ## Delivered
 
 - Correct full-set institution counts and authorship-specific institution attribution, regression fixtures, inverse-strength bridge distances.
