@@ -116,7 +116,10 @@ def main() -> None:
     artifact = json.loads(artifact_path.read_text())
 
     topics = artifact.get("topics") or []
-    require(artifact.get("version") == 1, "Artifact version must be 1")
+    require(artifact.get("version") in {1, 2}, "Unsupported artifact schema version")
+    if artifact.get('version') == 2:
+        require(artifact.get('metricContractVersion') == '2', 'Schema 2 requires versioned metric definitions')
+        require(bool(artifact.get('processedAt')), 'Schema 2 requires a processing timestamp')
     require(len(topics) >= args.min_topics, f"Expected at least {args.min_topics} topics")
     if args.require_complete_config:
         config = yaml.safe_load(Path(args.config).read_text()) or {}
@@ -152,6 +155,13 @@ def main() -> None:
         require(row.get("qualityLabel"), f"{row.get('slug', 'trending row')} has no quality label")
     for topic in topics:
         validate_topic(topic)
+        if artifact.get('version') == 2:
+            quality = topic['quality']
+            require(bool(quality.get('aggregateObservedAt')), f'{topic["slug"]} has no aggregate observation date')
+            query = quality.get('aggregateQuery') or {}
+            require(bool(query.get('filter')), f'{topic["slug"]} has no inspectable annual query')
+            if quality['yearlyCountSource'] == 'curated-search':
+                require(bool(query.get('search.title_and_abstract')), f'{topic["slug"]} does not use a declared title-and-abstract aggregate query')
     if len(topics) >= 20:
         current_year = date.today().year
         current_year_peaks = sum(

@@ -19,6 +19,7 @@ concurrency:
 
 jobs:
   refresh:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
@@ -50,6 +51,7 @@ jobs:
         run: test -n "$OPENALEX_API_KEY" || (echo "OPENALEX_API_KEY is not configured" && exit 1)
 
       - name: Refresh and validate data
+        id: refresh
         env:
           OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
           MAX_WORKS: ${{ inputs.max_works || '1000' }}
@@ -62,12 +64,18 @@ jobs:
           --require-complete-config
 
       - name: Build static site
+        if: steps.refresh.outputs.outcome == 'fresh'
         working-directory: frontend
         env:
           GITHUB_PAGES: "true"
         run: npm run build
 
+      - name: Validate publishable research snapshot
+        if: steps.refresh.outputs.outcome == 'fresh'
+        run: python -m src.corpus.validate frontend/dist/research
+
       - name: Publish gh-pages branch
+        if: steps.refresh.outputs.outcome == 'fresh'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
