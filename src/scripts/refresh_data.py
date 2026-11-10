@@ -21,6 +21,14 @@ def run(command: list[str]) -> None:
         raise SystemExit(exc.returncode) from None
 
 
+def report_outcome(outcome: str) -> None:
+    """Expose refresh state to CI without treating stale data as a new release."""
+    if os.getenv("GITHUB_OUTPUT"):
+        with Path(os.environ["GITHUB_OUTPUT"]).open("a") as handle:
+            handle.write(f"outcome={outcome}\n")
+    print(f"Refresh outcome: {outcome}", flush=True)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Refresh Research Atlas data end to end.")
     parser.add_argument("--config", default="data/config/topics.yaml")
@@ -130,7 +138,7 @@ def main() -> None:
                 print(message, flush=True)
                 if os.getenv("GITHUB_ACTIONS") == "true":
                     print(f"::warning title=OpenAlex refresh deferred::{message}", flush=True)
-                run([sys.executable, str(SCRIPT_DIR / "validate_static_data.py"), *validation_args])
+                report_outcome("deferred")
                 return
 
     process = [
@@ -170,6 +178,7 @@ def main() -> None:
     )
     run([sys.executable, str(SCRIPT_DIR / "generate_static_assets.py"), "--artifact", artifact, "--public-dir", args.public_dir])
     run([sys.executable, str(SCRIPT_DIR / "measure_progress.py"), "--artifact", artifact])
+    report_outcome("fresh")
 
 
 if __name__ == "__main__":

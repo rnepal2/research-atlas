@@ -7,94 +7,94 @@
   "current": {
     "configuredTopics": 100,
     "topics": 100,
-    "worksCollected": 7071,
+    "worksCollected": 7007,
     "rawTopicsWithWorks": 100,
-    "rawWorksTotal": 83568,
-    "minimumRawWorksPerTopic": 451,
-    "medianRawWorksPerTopic": 764,
-    "topicsAtOrAboveTargetDepth": 1,
-    "topicsBelowTargetDepth": 99,
+    "rawWorksTotal": 76553,
+    "minimumRawWorksPerTopic": 434,
+    "medianRawWorksPerTopic": 711,
+    "topicsAtOrAboveTargetDepth": 0,
+    "topicsBelowTargetDepth": 100,
     "medianInsightItemsPerTopic": 6,
-    "artifactBytes": 13797567,
-    "indexArtifactBytes": 1517940,
+    "artifactBytes": 17839287,
+    "indexArtifactBytes": 1604626,
     "topicArtifactCount": 100,
     "skippedTopics": 0,
     "shallowestTopics": [
       {
         "slug": "glioblastoma",
         "label": "Glioblastoma",
-        "rawWorks": 451,
+        "rawWorks": 434,
         "field": "Medicine",
         "workArea": "Oncology"
       },
       {
-        "slug": "autoimmune-disease",
-        "label": "Autoimmune Disease",
-        "rawWorks": 551,
-        "field": "Medicine",
-        "workArea": "Immunology"
+        "slug": "neutrino-physics",
+        "label": "Neutrino Physics",
+        "rawWorks": 459,
+        "field": "Physics and Astronomy",
+        "workArea": "Physics"
+      },
+      {
+        "slug": "exoplanets",
+        "label": "Exoplanets",
+        "rawWorks": 462,
+        "field": "Physics and Astronomy",
+        "workArea": "Physics"
+      },
+      {
+        "slug": "topological-materials",
+        "label": "Topological Materials",
+        "rawWorks": 485,
+        "field": "Physics and Astronomy",
+        "workArea": "Physics"
+      },
+      {
+        "slug": "gravitational-waves",
+        "label": "Gravitational Waves",
+        "rawWorks": 508,
+        "field": "Physics and Astronomy",
+        "workArea": "Physics"
+      },
+      {
+        "slug": "cosmology",
+        "label": "Cosmology",
+        "rawWorks": 524,
+        "field": "Physics and Astronomy",
+        "workArea": "Physics"
       },
       {
         "slug": "sodium-ion-batteries",
         "label": "Sodium-Ion Batteries",
-        "rawWorks": 553,
+        "rawWorks": 530,
         "field": "Materials Science",
         "workArea": "Materials"
       },
       {
-        "slug": "renal-cell-carcinoma",
-        "label": "Renal Cell Carcinoma",
-        "rawWorks": 569,
-        "field": "Medicine",
-        "workArea": "Oncology"
+        "slug": "spintronics",
+        "label": "Spintronics",
+        "rawWorks": 540,
+        "field": "Physics and Astronomy",
+        "workArea": "Physics"
       },
       {
-        "slug": "melanoma",
-        "label": "Melanoma",
-        "rawWorks": 570,
-        "field": "Medicine",
-        "workArea": "Oncology"
+        "slug": "superconductivity",
+        "label": "Superconductivity",
+        "rawWorks": 541,
+        "field": "Physics and Astronomy",
+        "workArea": "Physics"
       },
       {
-        "slug": "alzheimers-disease",
-        "label": "Alzheimer's Disease",
-        "rawWorks": 590,
-        "field": "Medicine",
-        "workArea": "Neuroscience"
-      },
-      {
-        "slug": "rheumatoid-arthritis",
-        "label": "Rheumatoid Arthritis",
-        "rawWorks": 595,
+        "slug": "autoimmune-disease",
+        "label": "Autoimmune Disease",
+        "rawWorks": 541,
         "field": "Medicine",
         "workArea": "Immunology"
-      },
-      {
-        "slug": "organoids",
-        "label": "Organoids",
-        "rawWorks": 599,
-        "field": "Biochemistry, Genetics and Molecular Biology",
-        "workArea": "Disease Models"
-      },
-      {
-        "slug": "asthma",
-        "label": "Asthma",
-        "rawWorks": 607,
-        "field": "Medicine",
-        "workArea": "Immunology"
-      },
-      {
-        "slug": "parkinsons-disease",
-        "label": "Parkinson's Disease",
-        "rawWorks": 618,
-        "field": "Medicine",
-        "workArea": "Neuroscience"
       }
     ]
   },
   "multipliers": {
     "topicCoverage": 1.282,
-    "workCoverage": 0.136,
+    "workCoverage": 0.135,
     "analyticsDepth": 1.0
   },
   "targets": {
@@ -106,7 +106,7 @@
   },
   "deficit": {
     "topicsToFiveX": 290,
-    "worksToFiveX": 253374,
+    "worksToFiveX": 253438,
     "rawTopicsWithoutWorks": 0,
     "avgWorksNeededPerConfiguredTopic": 2604,
     "suggestedCollectionCommand": "./src/refresh_data.sh --stale-below 3000 --max-works 3000"

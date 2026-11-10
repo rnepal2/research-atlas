@@ -1,14 +1,16 @@
 import * as d3 from 'd3'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import type { YearlyMetric } from '../data/types'
 import { formatCompact } from '../lib/format'
 import { Button } from './ui'
 
 interface TrendChartProps {
   rows: YearlyMetric[]
+  maxValue?: number
 }
 
-export function TrendChart({ rows }: TrendChartProps) {
+export function TrendChart({ rows, maxValue }: TrendChartProps) {
+  const gradientId = useId().replaceAll(':', '')
   const [range, setRange] = useState<'5y' | '10y'>('10y')
   const visibleRows = range === '5y' ? rows.slice(-5) : rows
   const width = 820
@@ -25,14 +27,14 @@ export function TrendChart({ rows }: TrendChartProps) {
     .padding(0.5)
   const yWorks = d3
     .scaleLinear()
-    .domain([0, d3.max(visibleRows, (row) => row.works) || 1])
+    .domain([0, maxValue || d3.max(visibleRows, (row) => row.works) || 1])
     .nice()
     .range([height - margin.bottom, margin.top])
   const line = d3
     .line<YearlyMetric>()
     .x((row) => x(row.year) || 0)
     .y((row) => yWorks(row.works))
-    .curve(d3.curveCatmullRom.alpha(0.55))
+    .curve(d3.curveMonotoneX)
   const workLine = line(completedRows)
   const partialLine = line(partialRows)
   const workArea =
@@ -41,7 +43,7 @@ export function TrendChart({ rows }: TrendChartProps) {
       .x((row) => x(row.year) || 0)
       .y0(height - margin.bottom)
       .y1((row) => yWorks(row.works))
-      .curve(d3.curveCatmullRom.alpha(0.55))(visibleRows) || ''
+      .curve(d3.curveMonotoneX)(visibleRows) || ''
 
   const yTicks = yWorks.ticks(4)
   const xTicks = visibleRows.filter((_, index) => index % 2 === 0 || index === visibleRows.length - 1)
@@ -63,7 +65,7 @@ export function TrendChart({ rows }: TrendChartProps) {
       </div>
       <svg className="w-full" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Annual matched research works trend">
         <defs>
-          <linearGradient id="works-area-gradient" x1="0" x2="0" y1="0" y2="1">
+          <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
             <stop offset="0%" stopColor="var(--chart-primary)" stopOpacity="0.28" />
             <stop offset="100%" stopColor="var(--chart-primary)" stopOpacity="0" />
           </linearGradient>
@@ -84,7 +86,7 @@ export function TrendChart({ rows }: TrendChartProps) {
         <text className="fill-[color-mix(in_srgb,var(--foreground)_74%,transparent)] text-[11px] font-bold" x={margin.left} y={15}>
           Works
         </text>
-        <path className="fill-[url(#works-area-gradient)]" d={workArea} />
+        <path fill={`url(#${gradientId})`} d={workArea} />
         {workLine && <path className="fill-none stroke-chart-primary [stroke-width:3.2]" d={workLine} />}
         {partialLine && <path className="fill-none stroke-chart-primary [stroke-dasharray:6_6] [stroke-width:3.2]" d={partialLine} />}
         {visibleRows.map((row) => (

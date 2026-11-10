@@ -1,234 +1,379 @@
-import { Activity, ArrowUpRight, Filter } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { PageHeader } from '../components/PageHeader'
-import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Pagination,
-  SelectField,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../components/ui'
+import { useEffect, useMemo, useState } from 'react'
+import { ArrowRight, Download, Plus, X } from 'lucide-react'
 import type { AtlasData } from '../data/types'
-import { formatNumber, formatPercent, formatScore } from '../lib/format'
-import { navigate } from '../lib/router'
+import { useResearch, researchFile } from '../data/research'
+import { ResearchScopeControls } from '../components/ResearchScopeControls'
+import { ResearchTrendChart } from '../components/ResearchTrendChart'
+import { Button, Pagination, SelectField } from '../components/ui'
+import { PageHeader } from '../components/PageHeader'
+import { completedPeriod, selectedTrend } from '../lib/researchTrends'
+import type { ResearchTrends } from '../lib/researchTrends'
+import { normalizeScope, readScope, scopePath, topicSlugs } from '../lib/researchScope'
+import { navigate, replaceViewUrl } from '../lib/router'
+import { downloadText } from '../lib/exportResearch'
+import { SnapshotNotice } from '../components/SnapshotNotice'
+import { ResearchLens } from '../components/ResearchLens'
 
-interface TrendingPageProps {
-  atlas: AtlasData
-}
+const growthLabel = (value: number | null) =>
+  value === null
+    ? 'No prior baseline'
+    : `${value > 0 ? '+' : ''}${(value * 100).toLocaleString(undefined, { maximumFractionDigits: 1 })}%`
 
-import { dataTableStyles } from '../components/ui/data-table-styles'
-
-const tableClass = 'min-w-[1040px] border-collapse [&_strong]:font-[650] [&_strong]:text-foreground'
-const { head: headClass, cell: cellClass, row: rowClass } = dataTableStyles
-
-const scorePillClass =
-  'inline-flex h-[26px] min-w-11 items-center justify-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--primary)_18%,transparent)] px-[7px] text-[0.74rem] font-bold text-primary [&_svg]:size-4'
-
-export function TrendingPage({ atlas }: TrendingPageProps) {
-  const [domain, setDomain] = useState('All domains')
-  const [field, setField] = useState('All fields')
-  const [workArea, setWorkArea] = useState('All work areas')
-  const [page, setPage] = useState(1)
-  const pageSize = 6
-  const domains = ['All domains', ...new Set(atlas.trending.map((topic) => topic.domain))]
-  const fields = ['All fields', ...new Set(atlas.trending.filter((topic) => domain === 'All domains' || topic.domain === domain).map((topic) => topic.field).filter(Boolean))]
-  const workAreas = [
-    'All work areas',
-    ...new Set(
-      atlas.trending
-        .filter((topic) => domain === 'All domains' || topic.domain === domain)
-        .filter((topic) => field === 'All fields' || topic.field === field)
-        .map((topic) => topic.workArea)
-        .filter(Boolean),
-    ),
-  ]
+export function TrendingPage({ atlas }: { atlas: AtlasData }) {
+  const { manifest, notice, error } = useResearch()
+  const [scope, setScope] = useState(() => readScope(atlas.topics))
+  const [context, setContext] = useState<ResearchTrends | null>(null)
+  const [failure, setFailure] = useState('')
+  const [compare, setCompare] = useState(
+    () => new URLSearchParams(location.search).get('compare') || 'none',
+  )
+  const [showComparison, setShowComparison] = useState(() =>
+    new URLSearchParams(location.search).has('compare'),
+  )
+  const [sort, setSort] = useState('volume'),
+    [page, setPage] = useState(1)
+  useEffect(() => {
+    if (!manifest) return
+    if (!manifest.files['trends.json']) return
+    const controller = new AbortController()
+    researchFile<ResearchTrends>(manifest, 'trends.json', controller.signal)
+      .then(setContext)
+      .catch((error) => {
+        if (!controller.signal.aborted) setFailure(String(error))
+      })
+    return () => controller.abort()
+  }, [manifest])
+  const allowed = useMemo(() => topicSlugs(atlas.topics, scope), [atlas, scope])
   const rows = useMemo(
     () =>
-      atlas.trending
-        .filter((topic) => domain === 'All domains' || topic.domain === domain)
-        .filter((topic) => field === 'All fields' || topic.field === field)
-        .filter((topic) => workArea === 'All work areas' || topic.workArea === workArea),
-    [atlas.trending, domain, field, workArea],
+      (context?.topics || [])
+        .filter((r) => allowed.has(r.slug))
+        .map((r) => ({ ...r, ...completedPeriod(r.years, context!.throughYear) }))
+        .sort((a, b) =>
+          sort === 'growth'
+            ? (b.growth ?? -Infinity) - (a.growth ?? -Infinity) || a.slug.localeCompare(b.slug)
+            : (b.recent ?? -1) - (a.recent ?? -1) || a.slug.localeCompare(b.slug),
+        ),
+    [context, allowed, sort],
   )
-  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize))
-  const currentPage = Math.min(page, pageCount)
-  const pageStart = (currentPage - 1) * pageSize
-  const visibleRows = rows.slice(pageStart, pageStart + pageSize)
-
+  const selected = context ? selectedTrend(context, scope) : undefined
+  const active = selected && {
+    ...selected,
+    ...completedPeriod(selected.years, context!.throughYear),
+  }
+  const comparisonScope = context?.scopes?.find((r) => r.id === compare)
+  const comparison =
+    context?.topics.find((r) => r.slug === compare) ||
+    (context && comparisonScope
+      ? selectedTrend(context, {
+          field: comparisonScope.field,
+          topic: 'all',
+          ...(comparisonScope.track !== 'all' ? { track: comparisonScope.track } : {}),
+        })
+      : undefined)
+  const second = comparison?.slug !== active?.slug ? comparison : undefined
+  useEffect(() => {
+    if (!manifest) return
+    const params = new URLSearchParams({ field: scope.field, topic: scope.topic })
+    if (scope.track) params.set('track', scope.track)
+    if (second) params.set('compare', second.slug)
+    if (manifest) params.set('snapshot', manifest.snapshot)
+    replaceViewUrl(params)
+  }, [scope, second, manifest])
+  const year = context?.throughYear
+  const series = active
+    ? [
+        active,
+        ...(second ? [{ ...second, ...completedPeriod(second.years, context!.throughYear) }] : []),
+      ]
+    : []
+  const pageCount = Math.max(1, Math.ceil(rows.length / 8)),
+    currentPage = Math.min(page, pageCount)
   return (
-    <div className="grid min-w-0 gap-3">
+    <div className="trends-page">
       <PageHeader
-        title="Research Momentum"
-        description="Compare topics by recent growth, participation, and research breadth, adjusted for differences in field size."
-        actionsClassName="min-w-[min(620px,52vw)] max-[1160px]:min-w-0 max-[760px]:w-full"
+        title="Publication trends"
+        description="Follow publication trends in AI research and its scientific applications."
         actions={
-          <div className="grid grid-cols-3 gap-2 max-[1160px]:grid-cols-1">
-          <SelectField
-            label="Domain"
-            value={domain}
-            onValueChange={(value) => {
-              setDomain(value)
-              setField('All fields')
-              setWorkArea('All work areas')
-              setPage(1)
-            }}
-            options={domains.map((item) => ({ value: item, label: item }))}
-          />
-          <SelectField
-            label="Field"
-            value={field}
-            onValueChange={(value) => {
-              setField(value)
-              setWorkArea('All work areas')
-              setPage(1)
-            }}
-            options={fields.map((item) => ({ value: item, label: item }))}
-          />
-          <SelectField
-            label="Work area"
-            value={workArea}
-            onValueChange={(value) => {
-              setWorkArea(value)
-              setPage(1)
-            }}
-            options={workAreas.map((item) => ({ value: item, label: item }))}
-          />
-        </div>
+          <Button
+            variant="outline"
+            onClick={() =>
+              navigate(scopePath('/', scope, manifest ? { snapshot: manifest.snapshot } : {}))
+            }
+          >
+            Investigate the papers <ArrowRight size={15} />
+          </Button>
         }
       />
-
-      <section className="grid grid-cols-4 gap-2 max-[1160px]:grid-cols-2 max-[760px]:grid-cols-1">
-        {rows.slice(0, 4).map((topic, index) => (
-          <Card
-            className="group relative min-h-[138px] overflow-hidden bg-[linear-gradient(145deg,color-mix(in_srgb,var(--primary)_4%,transparent),transparent_56%),var(--card)] hover:-translate-y-px hover:shadow-[0_12px_30px_rgba(0,0,0,0.12)]"
-            key={topic.slug}
-          >
-            <CardContent className="grid min-h-[138px] content-between gap-3">
-              <div className="flex items-center justify-between gap-2">
-                <Badge variant={index === 0 ? 'default' : 'outline'}>#{String(index + 1).padStart(2, '0')}</Badge>
-                <span className="truncate text-[0.68rem] font-bold uppercase text-muted-foreground">{topic.domain}</span>
-              </div>
-              <div className="grid gap-2">
-                <h3 className="m-0 line-clamp-2 min-h-[2.3em] text-[0.92rem] leading-[1.2] font-[680]">{topic.label}</h3>
-                <p className="m-0 line-clamp-1 text-[0.71rem] text-muted-foreground">{topic.workArea}</p>
-              </div>
-              <div className="flex items-end justify-between gap-3">
-                <div className="grid gap-0.5">
-                  <span className="text-[0.64rem] font-bold uppercase text-muted-foreground">Momentum score</span>
-                  <strong className="text-[1.26rem] leading-none font-[720] text-primary">{formatScore(topic.trendScore)}</strong>
+      <ResearchLens
+        value={scope.track}
+        onChange={(value) => {
+          setScope(normalizeScope(atlas.topics, scope.field, scope.topic, value))
+          setPage(1)
+        }}
+      />
+      <ResearchScopeControls
+        atlas={atlas}
+        topicLabels={context?.topics}
+        scope={scope}
+        onChange={(value) => {
+          setScope(value)
+          setPage(1)
+        }}
+      />
+      <SnapshotNotice message={notice} />
+      {(error || failure) && <p role="alert">{error || failure}</p>}
+      {manifest && !manifest.files['trends.json'] ? (
+        <div className="research-empty">
+          <h2>Annual context is unavailable for this saved snapshot.</h2>
+          <p>We do not substitute broader field totals for AI-related activity.</p>
+          <Button onClick={() => navigate(scopePath('/trending', scope))}>
+            Use the latest release
+          </Button>
+        </div>
+      ) : !context ? (
+        <p role="status">Loading verified annual query context…</p>
+      ) : (
+        <>
+          {active ? (
+            <section className="trend-analysis" aria-label="Annual research publication analysis">
+              <header>
+                <div>
+                  <span className="eyebrow">PUBLICATIONS OVER TIME</span>
+                  <h2>{active.label}</h2>
                 </div>
-                <div className="grid justify-items-end gap-1">
-                  <Badge variant="secondary">{formatNumber(topic.worksLast3Years)} works</Badge>
-                  <span className="text-[0.66rem] font-bold text-muted-foreground">{topic.qualityLabel?.replace('snapshot', 'coverage') || 'Coverage available'}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </section>
-
-      <Card>
-        <CardHeader>
-          <div>
-            <CardTitle>Topics by Momentum</CardTitle>
-            <CardDescription>Ranked using recent growth, participation, and breadth in the current data release.</CardDescription>
-          </div>
-          <Filter aria-hidden="true" />
-        </CardHeader>
-        <CardContent className="grid gap-3">
-            <Table className={tableClass}>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className={headClass}>Rank</TableHead>
-                  <TableHead className={headClass}>Topic</TableHead>
-                  <TableHead className={headClass}>Research area</TableHead>
-                  <TableHead className={headClass}>What is changing</TableHead>
-                  <TableHead className={headClass}>Contributing factors</TableHead>
-                  <TableHead className={headClass}>Context</TableHead>
-                  <TableHead className={headClass}>Recent works</TableHead>
-                  <TableHead className={headClass}>Growth</TableHead>
-                  <TableHead className={headClass}>Momentum</TableHead>
-                  <TableHead className={headClass} />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {visibleRows.map((topic, index) => (
-                  <TableRow className={rowClass} key={topic.slug}>
-                    <TableCell className={cellClass}>
-                      <strong>{pageStart + index + 1}</strong>
-                    </TableCell>
-                    <TableCell className={cellClass}>
-                      <strong>{topic.label}</strong>
-                      <br />
-                      <span className="text-muted-foreground">{topic.workArea}</span>
-                    </TableCell>
-                    <TableCell className={cellClass}>
-                      {topic.domain}
-                      <br />
-                      <span className="text-muted-foreground">{topic.field}</span>
-                    </TableCell>
-                    <TableCell className={cellClass}>
-                      <strong>{topic.topSubtopic}</strong>
-                      <br />
-                      <span className="text-muted-foreground">
-                        {formatNumber(topic.worksLast3Years)} recent works; {formatPercent(topic.growthRate)} growth versus the prior period.
-                      </span>
-                    </TableCell>
-                    <TableCell className={cellClass}>
-                      <div className="flex max-w-[300px] flex-wrap gap-1.5">
-                        {(topic.signalDrivers?.length ? topic.signalDrivers : [topic.topSubtopic]).slice(0, 4).map((driver) => (
-                          <span className="max-w-[145px] truncate whitespace-nowrap rounded-full border border-border bg-card-soft px-2 py-1 text-[0.67rem] font-bold text-muted-foreground" title={driver} key={`${topic.slug}-${driver}`}>
-                            {driver}
-                          </span>
-                        ))}
+                {showComparison ? (
+                  <div className="trend-comparison-controls">
+                    <SelectField
+                      label="Compare with"
+                      value={second?.slug || 'none'}
+                      onValueChange={setCompare}
+                      options={[
+                        { value: 'none', label: 'No comparison' },
+                        ...(context.scopes || [])
+                          .filter((r) => r.track === (scope.track || 'all') && r.id !== active.slug)
+                          .map((r) => ({
+                            value: r.id,
+                            label: selectedTrend(context, {
+                              field: r.field,
+                              topic: 'all',
+                              track: scope.track,
+                            })!.label,
+                            meta: 'Covered field total',
+                          })),
+                        ...context.topics
+                          .filter((r) => r.slug !== active.slug)
+                          .map((r) => ({ value: r.slug, label: r.label, meta: r.field })),
+                      ]}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Remove comparison"
+                      onClick={() => {
+                        setCompare('none')
+                        setShowComparison(false)
+                      }}
+                    >
+                      <X size={16} />
+                    </Button>
+                  </div>
+                ) : (
+                  <Button variant="ghost" size="sm" onClick={() => setShowComparison(true)}>
+                    <Plus size={14} /> Add comparison
+                  </Button>
+                )}
+              </header>
+              <div className="trend-analysis-main">
+                <div className="trend-period-summary">
+                  {series.map((r) => (
+                    <div key={r.slug}>
+                      {series.length > 1 && <span className="period-series-name">{r.label}</span>}
+                      <div className="period-volume">
+                        <strong>{r.recent?.toLocaleString() ?? 'Unavailable'}</strong>
+                        <span>
+                          query matches · {year! - 3}–{year! - 1}
+                        </span>
                       </div>
-                    </TableCell>
-                    <TableCell className={cellClass}>
-                      {topic.topInstitution || 'Institution not resolved'}
-                      <br />
-                      <span className="text-muted-foreground">
-                        {topic.topCountry || 'Unknown'} / {formatPercent(topic.newAuthorShare || 0)} new authors
-                      </span>
-                      {topic.qualityLabel && <span className="mt-1 block text-[0.68rem] font-bold text-muted-foreground">{topic.qualityLabel.replace('snapshot', 'coverage')}</span>}
-                    </TableCell>
-                    <TableCell className={cellClass}>{formatNumber(topic.worksLast3Years)}</TableCell>
-                    <TableCell className={cellClass}>{formatPercent(topic.growthRate)}</TableCell>
-                    <TableCell className={cellClass}>
-                      <span className={scorePillClass}>
-                        <Activity aria-hidden="true" />
-                        {formatScore(topic.trendScore)}
-                      </span>
-                    </TableCell>
-                    <TableCell className={cellClass}>
-                      <Button variant="outline" size="sm" type="button" onClick={() => navigate(`/topic/${topic.slug}`)}>
-                        Open
-                        <ArrowUpRight aria-hidden="true" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                      <div className="period-growth">
+                        <strong>{growthLabel(r.growth)}</strong>
+                        <span>
+                          vs {year! - 6}–{year! - 4}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <ResearchTrendChart
+                  key={active.slug + '/' + second?.slug}
+                  series={series.map((r) => ({ label: r.label, rows: r.years }))}
+                  throughYear={year!}
+                />
+              </div>
+              <p className="source-note">
+                {scope.topic === 'all'
+                  ? 'Distinct OpenAlex works matching the covered topic queries; overlapping matches count once.'
+                  : active.role === 'applications'
+                    ? 'AI/ML-method query matches within this application topic.'
+                    : 'Matches to the declared computational-method query.'}{' '}
+                Not a field census, verified adoption rate or measure of research quality.
+                Current-year data is excluded from completed-period growth.
+              </p>
+              <details className="aggregate-query">
+                <summary>Source and query definition</summary>
+                <p>{context.definition}</p>
+                {series.map((r) => (
+                  <div key={r.slug}>
+                    <strong>{r.label}</strong>
+                    <p>Observed {r.observedAt.slice(0, 10)} (UTC)</p>
+                    <pre>{JSON.stringify(r.query, null, 2)}</pre>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
-          <Pagination
-            page={currentPage}
-            pageCount={pageCount}
-            pageSize={pageSize}
-            totalItems={rows.length}
-            itemLabel="topics"
-            onPageChange={setPage}
-          />
-        </CardContent>
-      </Card>
+              </details>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() =>
+                  downloadText(
+                    'selected-research-trend.csv',
+                    [
+                      'series,year,query_matches,observed_at,snapshot',
+                      ...series.flatMap((r) =>
+                        r.years.map((y) =>
+                          [
+                            JSON.stringify(r.label),
+                            y.year,
+                            y.works,
+                            r.observedAt,
+                            manifest?.snapshot,
+                          ].join(','),
+                        ),
+                      ),
+                    ].join('\n'),
+                    'text/csv',
+                  )
+                }
+              >
+                <Download size={14} /> Export this trend
+              </Button>
+            </section>
+          ) : (
+            <div className="research-empty">
+              <h2>Annual totals are unavailable for this scope.</h2>
+              <p>
+                This saved snapshot does not include a deduplicated field total. Select a topic to
+                view its trend, or use the latest release. We do not add overlapping topic counts.
+              </p>
+            </div>
+          )}
+          <section className="trend-ranking" aria-label="Research topic publication ranking">
+            <header>
+              <div>
+                <h2>Topics in this view</h2>
+                <p>
+                  Declared query matches over the same completed periods. Topic collections overlap;
+                  their counts are not additive.
+                </p>
+              </div>
+              <SelectField
+                label="Order topics by"
+                value={sort}
+                onValueChange={(value) => {
+                  setSort(value)
+                  setPage(1)
+                }}
+                options={[
+                  { value: 'volume', label: 'Publication volume' },
+                  { value: 'growth', label: 'Publication growth' },
+                ]}
+              />
+            </header>
+            <div className="trend-table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Topic</th>
+                    <th>Field</th>
+                    <th>
+                      {year! - 3}–{year! - 1}
+                    </th>
+                    <th>Change vs prior 3 years</th>
+                    <th>
+                      <span className="sr-only">Action</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.slice((currentPage - 1) * 8, currentPage * 8).map((r) => (
+                    <tr key={r.slug} className={active?.slug === r.slug ? 'is-plotted' : ''}>
+                      <td>
+                        <strong>{r.label}</strong>
+                        <span>
+                          {r.role === 'applications'
+                            ? 'AI-related application query'
+                            : 'Computational-method query'}
+                        </span>
+                      </td>
+                      <td>{r.field}</td>
+                      <td>{r.recent?.toLocaleString() ?? 'Unavailable'}</td>
+                      <td>{growthLabel(r.growth)}</td>
+                      <td>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setScope(normalizeScope(atlas.topics, scope.field, r.slug, scope.track))
+                            document
+                              .querySelector('.trend-analysis')
+                              ?.scrollIntoView({ block: 'start' })
+                          }}
+                        >
+                          Show trend <ArrowRight size={14} />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Pagination
+              page={currentPage}
+              pageCount={pageCount}
+              pageSize={8}
+              totalItems={rows.length}
+              onPageChange={setPage}
+              itemLabel="topics"
+            />
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() =>
+                downloadText(
+                  'research-query-trends.csv',
+                  [
+                    'topic,year,query_matches,observed_at,snapshot',
+                    ...rows.flatMap((r) =>
+                      r.years.map((y) =>
+                        [
+                          JSON.stringify(r.label),
+                          y.year,
+                          y.works,
+                          r.observedAt,
+                          manifest?.snapshot,
+                        ].join(','),
+                      ),
+                    ),
+                  ].join('\n'),
+                  'text/csv',
+                )
+              }
+            >
+              <Download size={14} />
+              Export topic annual counts
+            </Button>
+          </section>
+        </>
+      )}
     </div>
   )
 }

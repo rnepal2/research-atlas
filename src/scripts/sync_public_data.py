@@ -40,6 +40,8 @@ def topic_summary(topic: dict) -> dict:
 def build_index(artifact: dict) -> dict:
     return {
         "version": artifact["version"],
+        "processedAt": artifact.get('processedAt'),
+        "metricContractVersion": artifact.get('metricContractVersion'),
         "generatedAt": artifact["generatedAt"],
         "artifactStatus": artifact["artifactStatus"],
         "source": artifact["source"],
@@ -70,6 +72,9 @@ def main() -> None:
     if not source.exists():
         raise SystemExit(f"Missing {source}; run src/scripts/process_openalex_data.py first.")
     artifact = json.loads(source.read_text())
+    research = ROOT / 'data' / 'research'
+    if research.exists():
+        shutil.copytree(research, ROOT / 'frontend' / 'public' / 'research', dirs_exist_ok=True)
     target.parent.mkdir(parents=True, exist_ok=True)
     if args.include_full_artifact:
         shutil.copyfile(source, target)

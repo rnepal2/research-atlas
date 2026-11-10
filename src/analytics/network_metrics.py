@@ -29,21 +29,30 @@ def degree_centrality(edges: Counter) -> dict[str, float]:
 
 
 def betweenness_centrality(edges: Counter, max_nodes: int = 180) -> dict[str, float]:
-    try:
-        import networkx as nx
-    except ImportError:
-        return degree_centrality(edges)
+    import networkx as nx
 
     graph = nx.Graph()
     for (source, target), weight in edges.items():
-        graph.add_edge(source, target, weight=weight)
+        graph.add_edge(source, target, weight=weight, distance=1.0 / max(weight, 1))
     if graph.number_of_nodes() == 0:
         return {}
-    if graph.number_of_nodes() > max_nodes:
-        degree = dict(graph.degree(weight="weight"))
-        keep = {
-            node
-            for node, _ in sorted(degree.items(), key=lambda item: item[1], reverse=True)[:max_nodes]
-        }
-        graph = graph.subgraph(keep).copy()
-    return nx.betweenness_centrality(graph, weight="weight", normalized=True)
+    # Sample source paths on the complete graph rather than deleting peripheral
+    # nodes, which changes the topology being measured. The seed is reproducible.
+    return nx.betweenness_centrality(
+        graph, k=min(max_nodes, graph.number_of_nodes()), seed=42,
+        weight="distance", normalized=True,
+    )
+
+
+def layout_network(network: dict) -> dict:
+    """Precompute a stable layout; keep categorical grouping distinct from topology."""
+    import networkx as nx
+
+    graph = nx.Graph()
+    graph.add_nodes_from(sorted(node['id'] for node in network['nodes']))
+    graph.add_weighted_edges_from((edge['source'], edge['target'], edge['weight']) for edge in network['edges'])
+    positions = nx.spring_layout(graph, seed=42, iterations=80)
+    for node in network['nodes']:
+        node['x'], node['y'] = map(float, positions[node['id']])
+    network['layout'] = {'method': 'spring', 'seed': 42, 'iterations': 80, 'computedOffline': True}
+    return network

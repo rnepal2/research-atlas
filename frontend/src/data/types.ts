@@ -196,6 +196,8 @@ export interface TopicQuality {
   dataCompletenessScore: number
   yearlyCountSource: 'openalex-topic' | 'curated-search'
   yearlyCountYears: number
+  aggregateObservedAt?: string
+  aggregateQuery?: { search?: string; 'search.title_and_abstract'?: string; filter: string; group_by: string }
 }
 
 export interface TopicInsight {
@@ -248,6 +250,8 @@ export interface NetworkData {
 }
 
 export interface NetworkNode {
+  x?: number
+  y?: number
   id: string
   openalexId: string
   label: string

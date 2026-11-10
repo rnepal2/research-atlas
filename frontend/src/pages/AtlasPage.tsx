@@ -108,8 +108,8 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
           )}
           <div className="mt-3 grid grid-cols-4 gap-2.5 max-[1160px]:grid-cols-2 max-[760px]:grid-cols-1">
             <div className="grid gap-1 rounded-card border border-border bg-card-soft p-2.5">
-              <span className="text-[0.66rem] font-bold uppercase text-muted-foreground">Data coverage</span>
-              <strong className="text-[1.25rem] leading-none text-foreground">{formatScore(selected.quality?.dataCompletenessScore ?? 0)}</strong>
+              <span className="text-[0.66rem] font-bold uppercase text-muted-foreground">Coverage status</span>
+              <strong className="text-[1.25rem] leading-none text-foreground">Sampled</strong>
             </div>
             <div className="grid gap-1 rounded-card border border-border bg-card-soft p-2.5">
               <span className="text-[0.66rem] font-bold uppercase text-muted-foreground">Sampled works</span>
@@ -129,21 +129,21 @@ export function AtlasPage({ atlas, initialTopicSlug, theme, onThemeChange }: Atl
 
       <section className="grid grid-cols-4 gap-2 max-[1160px]:grid-cols-2 max-[760px]:grid-cols-1">
         <MetricCard
-          label="Works (2023–2025)"
+          label={`Query-matched works (${new Date(atlas.generatedAt).getFullYear()-3}–${new Date(atlas.generatedAt).getFullYear()-1})`}
           value={formatNumber(selected.metrics.worksLast3Years)}
-          note={`${formatNumber(selected.metrics.worksLast5Years)} across 2021–2025`}
+          note={`${formatNumber(selected.metrics.worksLast5Years)} across five completed years`}
           icon={BookOpen}
         />
         <MetricCard
-          label="Momentum"
-          value={formatScore(selected.metrics.trendScore)}
-          note={`${formatPercent(selected.metrics.growthRate)} growth vs prior`}
+          label="Publication growth"
+          value={formatPercent(selected.metrics.growthRate)}
+          note="Three completed years vs the preceding three"
           icon={Activity}
         />
         <MetricCard
           label="Authors in sample"
           value={formatCompact(selected.metrics.activeAuthors)}
-          note={`${formatPercent(selected.metrics.newAuthorShare)} new-author share`}
+          note={`${formatPercent(selected.metrics.newAuthorShare)} first observed in the recent sample`}
           icon={Users}
         />
         <MetricCard
