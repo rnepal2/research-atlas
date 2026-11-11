@@ -1,0 +1,4 @@
+function e(e,t,n=`text/plain`){let r=URL.createObjectURL(new Blob([t],{type:n})),i=document.createElement(`a`);i.href=r,i.download=e,i.click(),setTimeout(()=>URL.revokeObjectURL(r),1e3)}function t(t,n,r){let i=e=>`"${(typeof e==`string`&&/^[=+@\-\t\r]/.test(e)?`'${e}`:String(e)).replaceAll(`"`,`""`)}"`,a=e=>e.replace(/[{}\\]/g,` `),o=r===`csv`?[`id,title,year,citations,snapshot`,...t.map(e=>[e.id,e.title,e.year,e.citations,n].map(i).join(`,`))].join(`
+`):t.map(e=>`@misc{${e.id},\n title = {${a(e.title)}},\n year = {${e.year}},\n url = {https://openalex.org/${e.id}},\n note = {Research Atlas snapshot ${n}}\n}`).join(`
+
+`);e(`research-atlas-${n}.${r}`,o,r===`csv`?`text/csv;charset=utf-8`:`application/x-bibtex`)}export{t as n,e as t};
