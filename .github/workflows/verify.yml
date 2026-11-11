@@ -1,4 +1,4 @@
-name: Verify feature changes
+name: Verify changes
 on:
   push:
     branches: ['feature/**', develop]
@@ -30,6 +30,6 @@ jobs:
         working-directory: frontend
       - uses: actions/upload-artifact@v4
         with:
-          name: research-atlas-preview
+          name: research-atlas-build
           path: frontend/dist
           retention-days: 14

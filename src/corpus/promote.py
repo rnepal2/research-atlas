@@ -29,6 +29,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('snapshot')
     parser.add_argument('--source', type=Path, default=Path('data/research'))
-    parser.add_argument('--target', type=Path, required=True, help='Local preview asset directory; does not publish to production.')
+    parser.add_argument('--target', type=Path, required=True, help='Local research asset directory; does not publish to production.')
     args = parser.parse_args()
     promote(args.source, args.target, args.snapshot)

@@ -177,7 +177,6 @@ def main() -> None:
         ]
     )
     run([sys.executable, str(SCRIPT_DIR / "generate_static_assets.py"), "--artifact", artifact, "--public-dir", args.public_dir])
-    run([sys.executable, str(SCRIPT_DIR / "measure_progress.py"), "--artifact", artifact])
     report_outcome("fresh")
 
 
