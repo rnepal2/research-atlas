@@ -692,7 +692,8 @@ topics:
       - materials discovery artificial intelligence
       - high throughput materials screening
       - materials property prediction deep learning
-    collection: { years_back: 10, max_works: 160 }
+    # Keep sampled evidence in the same title/abstract scope as annual counts.
+    collection: { years_back: 10, max_works: 160, sample_search_field: search.title_and_abstract }
 
   - slug: perovskite-solar-cells
     label: Perovskite Solar Cells

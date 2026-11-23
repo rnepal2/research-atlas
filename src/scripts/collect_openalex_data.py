@@ -234,6 +234,9 @@ def collect_works(client: OpenAlexClient, topic: dict[str, Any], output_dir: Pat
     min_year = current_year - years_back
     configured_max = int(topic.get("collection", {}).get("max_works", 0))
     max_works = int(max_works_override if max_works_override is not None else max(configured_max, DEFAULT_MAX_WORKS))
+    search_field = topic.get("collection", {}).get("sample_search_field", "search")
+    if search_field not in {"search", "search.title_and_abstract"}:
+        raise ValueError(f"{topic['slug']} has invalid sample_search_field: {search_field!r}")
     collected: dict[str, dict[str, Any]] = {}
     works_path = output_dir / topic["slug"] / "works.jsonl"
 
@@ -247,18 +250,28 @@ def collect_works(client: OpenAlexClient, topic: dict[str, Any], output_dir: Pat
     if topic_ids:
         filter_value += f",topics.id:{'|'.join(topic_ids)}"
 
+    # Topics can opt into the title/abstract scope and all-terms semantics
+    # used by yearly counts when broad search crowds these bounded pages
+    # with locally ineligible hits. Preserve existing requests by default.
     # Search each curated phrase once for influential works. Keeping the
     # phrases separate avoids broad combined searches crowding niche phrases
     # out of the first page, while the one-page cap keeps API spend bounded.
     for query in topic.get("keyword_queries", []):
         params = {
-            "search": query,
+            search_field: boolean_search_query([query]) if search_field == "search.title_and_abstract" else query,
             "filter": filter_value,
             "sort": "cited_by_count:desc",
         }
-        for work in fetch_works_for_params(client, params, MAX_RESULTS_PER_QUERY):
-            if work.get("id") and work_matches_topic(work, topic):
-                collected[work["id"]] = work
+        rows = fetch_works_for_params(client, params, MAX_RESULTS_PER_QUERY)
+        eligible = [work for work in rows if work.get("id") and work_matches_topic(work, topic)]
+        before = len(collected)
+        for work in eligible:
+            collected[work["id"]] = work
+        logging.info(
+            "Sample %s sort=%s query=%s: fetched=%s eligible=%s new_ids=%s",
+            topic["slug"], params["sort"], params[search_field],
+            len(rows), len(eligible), len(collected) - before,
+        )
 
     # Add one recency-focused page across all phrases so the sample supports
     # current-activity metrics as well as historical impact. At the current
@@ -267,13 +280,20 @@ def collect_works(client: OpenAlexClient, topic: dict[str, Any], output_dir: Pat
     combined_query = yearly_search_query(topic)
     if combined_query:
         params = {
-            "search": combined_query,
+            search_field: combined_query,
             "filter": filter_value,
             "sort": "publication_date:desc",
         }
-        for work in fetch_works_for_params(client, params, MAX_RESULTS_PER_QUERY):
-            if work.get("id") and work_matches_topic(work, topic):
-                collected[work["id"]] = work
+        rows = fetch_works_for_params(client, params, MAX_RESULTS_PER_QUERY)
+        eligible = [work for work in rows if work.get("id") and work_matches_topic(work, topic)]
+        before = len(collected)
+        for work in eligible:
+            collected[work["id"]] = work
+        logging.info(
+            "Sample %s sort=%s query=%s: fetched=%s eligible=%s new_ids=%s",
+            topic["slug"], params["sort"], params[search_field],
+            len(rows), len(eligible), len(collected) - before,
+        )
 
     works = list(collected.values())[:max_works]
     write_jsonl(works_path, works)
